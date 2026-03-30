@@ -9,7 +9,11 @@
     "lint": "eslint",
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
-    "db:seed": "node prisma/seed.mjs"
+    "db:seed": "node prisma/seed.mjs",
+    "neon:auth": "npx neonctl@latest auth",
+    "neon:create": "npx neonctl@latest projects create --name project-tracker --region-id aws-us-east-1 --set-context",
+    "neon:url": "npx neonctl@latest connection-string main --prisma --pooled",
+    "neon:init": "npx neonctl@latest init --agent cursor"
   },
   "dependencies": {
     "@prisma/client": "6.16.2",

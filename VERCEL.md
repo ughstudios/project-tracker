@@ -23,6 +23,40 @@ Example shape (yours will differ):
 postgresql://USER:PASSWORD@HOST.neon.tech/neondb?sslmode=require
 ```
 
+### Neon CLI (same database; good for local + copy/paste to Vercel)
+
+Install nothing permanently; commands use `npx` under the hood (`package.json` scripts wrap them).
+
+1. **Log in** (opens browser once):
+
+   ```bash
+   npm run neon:auth
+   ```
+
+2. **Create a project** in a region near Vercel (US East is `aws-us-east-1`; change `--name` / `--region-id` if you like):
+
+   ```bash
+   npm run neon:create
+   ```
+
+   Or create manually in the [Neon console](https://console.neon.tech) and run **`npm run neon:url`** after selecting that project with `neonctl set-context` if needed.
+
+3. **Print a Prisma-friendly pooled connection string** (use this as `DATABASE_URL` in `.env` locally and in Vercel):
+
+   ```bash
+   npm run neon:url
+   ```
+
+   Copy the full URI into Vercel → Environment Variables → `DATABASE_URL`.
+
+4. **Optional — `neonctl init` for Cursor** (Neon’s “AI assistant” starter; not required for the app to run):
+
+   ```bash
+   npm run neon:init
+   ```
+
+   See also: [Neon CLI — connection-string](https://neon.com/docs/reference/neon-cli).
+
 ## 2. Vercel project
 
 - Import [github.com/ughstudios/project-tracker](https://github.com/ughstudios/project-tracker).
