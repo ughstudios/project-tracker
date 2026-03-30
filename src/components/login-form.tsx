@@ -1,6 +1,7 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { loginAction } from "@/app/login/actions";
 
 type LoginState = { error?: string; ok?: boolean };
@@ -8,7 +9,14 @@ type LoginState = { error?: string; ok?: boolean };
 const initialState: LoginState = {};
 
 export function LoginForm() {
+  const router = useRouter();
   const [state, formAction, pending] = useActionState(loginAction, initialState);
+
+  useEffect(() => {
+    if (!state?.ok) return;
+    router.replace("/");
+    router.refresh();
+  }, [state?.ok, router]);
 
   return (
     <form action={formAction} className="mt-6 space-y-4">

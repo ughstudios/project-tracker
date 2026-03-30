@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { redirect } from "next/navigation";
-import { logoutAction } from "@/app/actions";
 import { AppShell } from "@/components/app-shell";
+import { LogoutButton } from "@/components/logout-button";
 
 export default async function AppLayout({
   children,
@@ -14,13 +14,7 @@ export default async function AppLayout({
   return (
     <AppShell
       user={{ name: session.user.name, email: session.user.email }}
-      onLogout={
-        <form action={logoutAction}>
-          <button className="w-full rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-100">
-            Logout
-          </button>
-        </form>
-      }
+      onLogout={<LogoutButton />}
     >
       {children}
     </AppShell>
