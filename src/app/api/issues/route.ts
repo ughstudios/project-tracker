@@ -50,13 +50,25 @@ export async function POST(request: Request) {
     );
   }
 
-  const project = projectId
-    ? await prisma.project.findUnique({ where: { id: projectId } })
-    : await prisma.project.upsert({
-        where: { name: projectName.trim() },
-        update: { product: product.trim() },
-        create: { name: projectName.trim(), product: product.trim() },
-      });
+  let project;
+  if (projectId) {
+    project = await prisma.project.findUnique({ where: { id: projectId } });
+  } else {
+    const adHocCustomer = await prisma.customer.upsert({
+      where: { name: "Ad hoc" },
+      update: {},
+      create: { name: "Ad hoc" },
+    });
+    project = await prisma.project.upsert({
+      where: { name: projectName.trim() },
+      update: { product: product.trim() },
+      create: {
+        name: projectName.trim(),
+        product: product.trim(),
+        customerId: adHocCustomer.id,
+      },
+    });
+  }
 
   if (!project) {
     return NextResponse.json({ error: "Selected project not found." }, { status: 404 });
