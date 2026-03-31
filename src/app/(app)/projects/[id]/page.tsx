@@ -269,22 +269,29 @@ export default function ProjectDetailsPage() {
           <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
-          <h2 className="text-base font-semibold">Attachments & Linked Issues</h2>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Attach config file (.rcvbp/.cbp)
-              </p>
-              <input
-                type="file"
-                accept=".rcvbp,.cbp"
-                onChange={(e) => uploadAttachment(e.currentTarget.files?.[0] ?? null)}
-              />
-              {uploading ? <p className="mt-1 text-xs text-zinc-500">Uploading...</p> : null}
-              <ul className="mt-2 space-y-1 text-sm">
+        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
+          <h2 className="text-base font-semibold">Project Files</h2>
+          <p className="text-sm text-zinc-600">
+            Upload `.rcvbp` or `.cbp` files used for this project.
+          </p>
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+            <input
+              type="file"
+              accept=".rcvbp,.cbp"
+              onChange={(e) => uploadAttachment(e.currentTarget.files?.[0] ?? null)}
+            />
+            {uploading ? <p className="mt-2 text-xs text-zinc-500">Uploading file...</p> : null}
+          </div>
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+              Uploaded files ({attachments.length})
+            </p>
+            {attachments.length === 0 ? (
+              <p className="mt-2 text-sm text-zinc-500">No files uploaded yet.</p>
+            ) : (
+              <ul className="mt-2 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
                 {attachments.map((a) => (
-                  <li key={a.id}>
+                  <li key={a.id} className="flex items-center justify-between px-3 py-2 text-sm">
                     <a
                       href={a.fileUrl}
                       target="_blank"
@@ -292,32 +299,36 @@ export default function ProjectDetailsPage() {
                       className="text-blue-700 hover:underline"
                     >
                       {a.fileName}
-                    </a>{" "}
-                    <span className="text-zinc-500">({Math.round((a.fileSize ?? 0) / 1024)} KB)</span>
+                    </a>
+                    <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
                   </li>
                 ))}
-                {attachments.length === 0 ? (
-                  <li className="text-sm text-zinc-500">No attachments yet.</li>
-                ) : null}
               </ul>
-            </div>
-            <div>
-              <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-zinc-600">
-                Linked issues
-              </p>
-              <ul className="space-y-1 text-sm">
-                {issues.map((issue) => (
-                  <li key={issue.id}>
-                    <Link href={`/issues/${issue.id}`} className="text-blue-700 hover:underline">
-                      {issue.title}
-                    </Link>{" "}
-                    <span className="text-zinc-500">({issue.status})</span>
-                  </li>
-                ))}
-                {issues.length === 0 ? <li className="text-sm text-zinc-500">No linked issues.</li> : null}
-              </ul>
-            </div>
+            )}
           </div>
+        </section>
+
+        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
+          <h2 className="text-base font-semibold">Linked Issues</h2>
+          <p className="text-sm text-zinc-600">
+            Issues assigned to this project. Create or reassign issues from the `Issues` page.
+          </p>
+          {issues.length === 0 ? (
+            <p className="text-sm text-zinc-500">No linked issues yet.</p>
+          ) : (
+            <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
+              {issues.map((issue) => (
+                <li key={issue.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <Link href={`/issues/${issue.id}`} className="text-blue-700 hover:underline">
+                    {issue.title}
+                  </Link>
+                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
+                    {issue.status}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
