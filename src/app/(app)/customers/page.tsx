@@ -10,6 +10,7 @@ export default function CustomersPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [archivingId, setArchivingId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -21,6 +22,11 @@ export default function CustomersPage() {
   useEffect(() => {
     const run = async () => {
       await load();
+      const sessionRes = await fetch("/api/auth/session");
+      if (sessionRes.ok) {
+        const session = (await sessionRes.json()) as { user?: { role?: string } };
+        setIsAdmin(session.user?.role === "ADMIN");
+      }
     };
     void run();
   }, []);
@@ -104,7 +110,7 @@ export default function CustomersPage() {
                 <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
                   <th className="border border-zinc-200 px-2 py-2">Customer</th>
                   <th className="border border-zinc-200 px-2 py-2">Projects</th>
-                  <th className="border border-zinc-200 px-2 py-2">Actions</th>
+                  {isAdmin ? <th className="border border-zinc-200 px-2 py-2">Actions</th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -116,16 +122,18 @@ export default function CustomersPage() {
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-700">
                       {c._count?.projects ?? 0}
                     </td>
-                    <td className="border border-zinc-200 px-2 py-2">
-                      <button
-                        type="button"
-                        className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
-                        onClick={() => archiveCustomer(c.id, c.name)}
-                        disabled={archivingId === c.id}
-                      >
-                        {archivingId === c.id ? "Archiving..." : "Archive"}
-                      </button>
-                    </td>
+                    {isAdmin ? (
+                      <td className="border border-zinc-200 px-2 py-2">
+                        <button
+                          type="button"
+                          className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                          onClick={() => archiveCustomer(c.id, c.name)}
+                          disabled={archivingId === c.id}
+                        >
+                          {archivingId === c.id ? "Archiving..." : "Archive"}
+                        </button>
+                      </td>
+                    ) : null}
                   </tr>
                 ))}
               </tbody>

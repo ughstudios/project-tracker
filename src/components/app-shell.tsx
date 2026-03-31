@@ -45,7 +45,7 @@ export function AppShell({ user, onLogout, children }: Props) {
               <NavItem href="/customers" label="Customers" />
               <NavItem href="/projects" label="Projects" />
               <NavItem href="/logs" label="Logs" />
-              {isAdmin ? <NavItem href="/archive" label="Archive" /> : null}
+              <NavItem href="/archive" label="Archive" />
               {isAdmin ? <NavItem href="/pending-registrations" label="Pending Registrations" /> : null}
             </nav>
             <div className="mt-6">{onLogout}</div>

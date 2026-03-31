@@ -40,6 +40,7 @@ export default function IssuesPage() {
   const [formAssigneeId, setFormAssigneeId] = useState("");
   const [creating, setCreating] = useState(false);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const loadLists = useCallback(async () => {
     const [usersRes, issuesRes, projectsRes] = await Promise.all([
@@ -60,6 +61,11 @@ export default function IssuesPage() {
   useEffect(() => {
     void (async () => {
       await loadLists();
+      const sessionRes = await fetch("/api/auth/session");
+      if (sessionRes.ok) {
+        const session = (await sessionRes.json()) as { user?: { role?: string } };
+        setIsAdmin(session.user?.role === "ADMIN");
+      }
     })();
   }, [loadLists]);
 
@@ -263,14 +269,16 @@ export default function IssuesPage() {
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
                   </Link>
-                  <button
-                    type="button"
-                    className="mt-2 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 sm:mt-0"
-                    onClick={() => archiveIssue(i.id, i.title)}
-                    disabled={archivingIssueId === i.id}
-                  >
-                    {archivingIssueId === i.id ? "Archiving..." : "Archive"}
-                  </button>
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      className="mt-2 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 sm:mt-0"
+                      onClick={() => archiveIssue(i.id, i.title)}
+                      disabled={archivingIssueId === i.id}
+                    >
+                      {archivingIssueId === i.id ? "Archiving..." : "Archive"}
+                    </button>
+                  ) : null}
                 </li>
               ))}
             </ul>

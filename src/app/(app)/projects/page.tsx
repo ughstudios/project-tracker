@@ -66,10 +66,8 @@ export default function ProjectsPage() {
   const [otherProducts, setOtherProducts] = useState<OtherProductConfig[]>([
     { category: "", model: "", quantity: 1 },
   ]);
-  const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
-  const [postingNoteProjectId, setPostingNoteProjectId] = useState<string | null>(null);
-  const [uploadingProjectId, setUploadingProjectId] = useState<string | null>(null);
   const [archivingProjectId, setArchivingProjectId] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -92,6 +90,11 @@ export default function ProjectsPage() {
   useEffect(() => {
     const run = async () => {
       await load();
+      const sessionRes = await fetch("/api/auth/session");
+      if (sessionRes.ok) {
+        const session = (await sessionRes.json()) as { user?: { role?: string } };
+        setIsAdmin(session.user?.role === "ADMIN");
+      }
     };
     void run();
   }, []);
@@ -133,42 +136,6 @@ export default function ProjectsPage() {
     setReceiverCards([{ model: "", version: "", quantity: 1 }]);
     setOtherProducts([{ category: "", model: "", quantity: 1 }]);
     setWizardStep(1);
-    await load();
-  };
-
-  const addNote = async (projectId: string) => {
-    const content = (noteInputs[projectId] ?? "").trim();
-    if (!content) return;
-    setPostingNoteProjectId(projectId);
-    const res = await fetch(`/api/projects/${projectId}/notes`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
-    setPostingNoteProjectId(null);
-    if (!res.ok) {
-      alert("Could not add note.");
-      return;
-    }
-    setNoteInputs((prev) => ({ ...prev, [projectId]: "" }));
-    await load();
-  };
-
-  const uploadAttachment = async (projectId: string, file: File | null) => {
-    if (!file) return;
-    setUploadingProjectId(projectId);
-    const formData = new FormData();
-    formData.append("file", file);
-    const res = await fetch(`/api/projects/${projectId}/attachments`, {
-      method: "POST",
-      body: formData,
-    });
-    setUploadingProjectId(null);
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "Could not upload file.");
-      return;
-    }
     await load();
   };
 
@@ -569,115 +536,24 @@ export default function ProjectsPage() {
                                 ?.map((x) => `${x.category}: ${x.model} x${x.quantity}`)
                                 .join(", ")}
                         </div>
-                        <details className="mt-2 rounded border border-zinc-200 bg-zinc-50 p-2">
-                          <summary className="cursor-pointer text-xs font-semibold text-zinc-700">
-                            Project attachments, issues, and notes
-                          </summary>
-                          <div className="mt-2 space-y-3">
-                            <div>
-                              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
-                                Attach config file (.rcvbp/.cbp)
-                              </p>
-                              <input
-                                type="file"
-                                accept=".rcvbp,.cbp"
-                                onChange={(e) =>
-                                  uploadAttachment(p.id, e.currentTarget.files?.[0] ?? null)
-                                }
-                              />
-                              {uploadingProjectId === p.id ? (
-                                <p className="text-[11px] text-zinc-500">Uploading...</p>
-                              ) : null}
-                              <ul className="mt-1 list-disc pl-4">
-                                {(p.attachments ?? []).map((a) => (
-                                  <li key={a.id}>
-                                    <a
-                                      href={a.fileUrl}
-                                      target="_blank"
-                                      rel="noreferrer"
-                                      className="text-blue-700 hover:underline"
-                                    >
-                                      {a.fileName}
-                                    </a>{" "}
-                                    ({Math.round((a.fileSize ?? 0) / 1024)} KB)
-                                  </li>
-                                ))}
-                                {(p.attachments ?? []).length === 0 ? <li>-</li> : null}
-                              </ul>
-                            </div>
-
-                            <div>
-                              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
-                                Linked issues
-                              </p>
-                              <ul className="list-disc pl-4">
-                                {(p.issues ?? []).map((issue) => (
-                                  <li key={issue.id}>
-                                    {issue.title} ({issue.status})
-                                  </li>
-                                ))}
-                                {(p.issues ?? []).length === 0 ? <li>-</li> : null}
-                              </ul>
-                            </div>
-
-                            <div>
-                              <p className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-zinc-600">
-                                Notes
-                              </p>
-                              <div className="mb-2 flex gap-2">
-                                <input
-                                  className="input"
-                                  placeholder="Add a project note..."
-                                  value={noteInputs[p.id] ?? ""}
-                                  onChange={(e) =>
-                                    setNoteInputs((prev) => ({
-                                      ...prev,
-                                      [p.id]: e.target.value,
-                                    }))
-                                  }
-                                />
-                                <button
-                                  type="button"
-                                  className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-xs font-medium text-zinc-700 hover:bg-zinc-100"
-                                  onClick={() => addNote(p.id)}
-                                  disabled={postingNoteProjectId === p.id}
-                                >
-                                  {postingNoteProjectId === p.id ? "Saving..." : "Add"}
-                                </button>
-                              </div>
-                              <ul className="space-y-1">
-                                {(p.notes ?? []).map((n) => (
-                                  <li key={n.id} className="rounded border border-zinc-200 bg-white px-2 py-1">
-                                    <div>{n.content}</div>
-                                    <div className="text-[10px] text-zinc-500">
-                                      {n.author?.name ?? "Unknown"}{" "}
-                                      {n.createdAt
-                                        ? `• ${new Date(n.createdAt).toLocaleString()}`
-                                        : ""}
-                                    </div>
-                                  </li>
-                                ))}
-                                {(p.notes ?? []).length === 0 ? <li>-</li> : null}
-                              </ul>
-                            </div>
-                          </div>
-                        </details>
                       </div>
                     </td>
                     <td className="border border-zinc-200 px-2 py-2">{p._count?.issues ?? 0}</td>
                     <td className="border border-zinc-200 px-2 py-2">
                       <div className="flex items-center gap-2">
                         <Link href={`/projects/${p.id}`} className="text-blue-700 hover:underline">
-                          Edit
+                          Open
                         </Link>
-                        <button
-                          type="button"
-                          className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
-                          onClick={() => archiveProject(p.id, p.name)}
-                          disabled={archivingProjectId === p.id}
-                        >
-                          {archivingProjectId === p.id ? "Archiving..." : "Archive"}
-                        </button>
+                        {isAdmin ? (
+                          <button
+                            type="button"
+                            className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                            onClick={() => archiveProject(p.id, p.name)}
+                            disabled={archivingProjectId === p.id}
+                          >
+                            {archivingProjectId === p.id ? "Archiving..." : "Archive"}
+                          </button>
+                        ) : null}
                       </div>
                     </td>
                   </tr>
