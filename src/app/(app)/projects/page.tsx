@@ -69,6 +69,7 @@ export default function ProjectsPage() {
   const [noteInputs, setNoteInputs] = useState<Record<string, string>>({});
   const [postingNoteProjectId, setPostingNoteProjectId] = useState<string | null>(null);
   const [uploadingProjectId, setUploadingProjectId] = useState<string | null>(null);
+  const [archivingProjectId, setArchivingProjectId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -166,6 +167,24 @@ export default function ProjectsPage() {
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
       alert(data.error ?? "Could not upload file.");
+      return;
+    }
+    await load();
+  };
+
+  const archiveProject = async (projectId: string, projectName: string) => {
+    const confirmed = confirm(`Archive project "${projectName}"?`);
+    if (!confirmed) return;
+    setArchivingProjectId(projectId);
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archive: true }),
+    });
+    setArchivingProjectId(null);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? "Could not archive project.");
       return;
     }
     await load();
@@ -647,9 +666,19 @@ export default function ProjectsPage() {
                     </td>
                     <td className="border border-zinc-200 px-2 py-2">{p._count?.issues ?? 0}</td>
                     <td className="border border-zinc-200 px-2 py-2">
-                      <Link href={`/projects/${p.id}`} className="text-blue-700 hover:underline">
-                        Edit
-                      </Link>
+                      <div className="flex items-center gap-2">
+                        <Link href={`/projects/${p.id}`} className="text-blue-700 hover:underline">
+                          Edit
+                        </Link>
+                        <button
+                          type="button"
+                          className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                          onClick={() => archiveProject(p.id, p.name)}
+                          disabled={archivingProjectId === p.id}
+                        >
+                          {archivingProjectId === p.id ? "Archiving..." : "Archive"}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}

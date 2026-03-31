@@ -10,6 +10,7 @@ export async function GET() {
   }
 
   const issues = await prisma.issue.findMany({
+    where: { archivedAt: null } as Record<string, null>,
     orderBy: { createdAt: "desc" },
     include: {
       project: true,
@@ -50,16 +51,18 @@ export async function POST(request: Request) {
     );
   }
 
-  let project;
+  let project: { id: string; name: string; archivedAt?: Date | null } | null = null;
   if (projectId) {
-    project = await prisma.project.findUnique({ where: { id: projectId } });
+    project = (await prisma.project.findUnique({ where: { id: projectId } })) as
+      | { id: string; name: string; archivedAt?: Date | null }
+      | null;
   } else {
     const adHocCustomer = await prisma.customer.upsert({
       where: { name: "Ad hoc" },
       update: {},
       create: { name: "Ad hoc" },
     });
-    project = await prisma.project.upsert({
+    project = (await prisma.project.upsert({
       where: { name: projectName.trim() },
       update: { product: product.trim() },
       create: {
@@ -67,11 +70,14 @@ export async function POST(request: Request) {
         product: product.trim(),
         customerId: adHocCustomer.id,
       },
-    });
+    })) as { id: string; name: string; archivedAt?: Date | null };
   }
 
   if (!project) {
     return NextResponse.json({ error: "Selected project not found." }, { status: 404 });
+  }
+  if (project.archivedAt) {
+    return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
   }
 
   const issue = await prisma.issue.create({

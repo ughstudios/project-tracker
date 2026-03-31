@@ -1,0 +1,8 @@
+ALTER TABLE "Customer"
+ADD COLUMN "archivedAt" TIMESTAMP(3);
+
+ALTER TABLE "Project"
+ADD COLUMN "archivedAt" TIMESTAMP(3);
+
+ALTER TABLE "Issue"
+ADD COLUMN "archivedAt" TIMESTAMP(3);

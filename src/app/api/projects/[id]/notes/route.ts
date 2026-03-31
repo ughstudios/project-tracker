@@ -13,6 +13,14 @@ export async function POST(
   }
 
   const { id: projectId } = await params;
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, archivedAt: true },
+  });
+  if (!project || project.archivedAt) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const body = (await request.json()) as { content?: string };
   const content = body.content?.trim() ?? "";
   if (!content) {

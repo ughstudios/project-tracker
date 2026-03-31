@@ -45,11 +45,15 @@ export async function GET(
         orderBy: { createdAt: "desc" },
         include: { author: { select: { id: true, name: true, email: true } } },
       },
-      issues: { orderBy: { createdAt: "desc" }, select: { id: true, title: true, status: true } },
+      issues: {
+        where: { archivedAt: null },
+        orderBy: { createdAt: "desc" },
+        select: { id: true, title: true, status: true },
+      },
     },
   });
 
-  if (!project) {
+  if (!project || project.archivedAt) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
@@ -67,12 +71,32 @@ export async function PATCH(
 
   const { id } = await params;
   const body = (await request.json()) as {
+    archive?: boolean;
     name?: string;
     customerId?: string;
     processorConfigs?: ProcessorIn[];
     receiverCardConfigs?: ReceiverIn[];
     otherProductConfigs?: OtherIn[];
   };
+
+  if (body.archive === true) {
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const archivedProject = await prisma.project.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+      select: { id: true, name: true },
+    });
+    await writeAuditLog({
+      actorId: session.user.id,
+      entityType: "Project",
+      entityId: archivedProject.id,
+      action: "ARCHIVE",
+      description: `Project "${archivedProject.name}" archived.`,
+    });
+    return NextResponse.json({ ok: true });
+  }
 
   const name = body.name?.trim() ?? "";
   const customerId = body.customerId?.trim() ?? "";

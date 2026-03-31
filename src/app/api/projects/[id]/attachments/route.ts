@@ -17,6 +17,14 @@ export async function POST(
   }
 
   const { id: projectId } = await params;
+  const project = await prisma.project.findUnique({
+    where: { id: projectId },
+    select: { id: true, archivedAt: true },
+  });
+  if (!project || project.archivedAt) {
+    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  }
+
   const formData = await request.formData();
   const file = formData.get("file");
   if (!(file instanceof File)) {

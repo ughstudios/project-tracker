@@ -10,9 +10,10 @@ export async function GET() {
   }
 
   const customers = await prisma.customer.findMany({
+    where: { archivedAt: null },
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { projects: true } },
+      _count: { select: { projects: { where: { archivedAt: null } } } },
     },
   });
 
@@ -33,10 +34,10 @@ export async function POST(request: Request) {
 
   const customer = await prisma.customer.upsert({
     where: { name },
-    update: {},
+    update: { archivedAt: null },
     create: { name },
     include: {
-      _count: { select: { projects: true } },
+      _count: { select: { projects: { where: { archivedAt: null } } } },
     },
   });
 

@@ -10,6 +10,7 @@ export async function GET() {
   }
 
   const projects = await prisma.project.findMany({
+    where: { archivedAt: null, customer: { archivedAt: null } },
     orderBy: { name: "asc" },
     include: {
       customer: true,
@@ -32,11 +33,12 @@ export async function GET() {
         },
       },
       issues: {
+        where: { archivedAt: null },
         orderBy: { createdAt: "desc" },
         select: { id: true, title: true, status: true },
       },
       _count: {
-        select: { issues: true },
+        select: { issues: { where: { archivedAt: null } } },
       },
     },
   });
@@ -65,6 +67,14 @@ export async function POST(request: Request) {
       { error: "Project name and customer are required." },
       { status: 400 },
     );
+  }
+
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { id: true, archivedAt: true },
+  });
+  if (!customer || customer.archivedAt) {
+    return NextResponse.json({ error: "Selected customer not found." }, { status: 404 });
   }
 
   const processorConfigs = (body.processorConfigs ?? [])
@@ -109,6 +119,7 @@ export async function POST(request: Request) {
     update: {
       product,
       customerId,
+      archivedAt: null,
       processorConfigs: {
         deleteMany: {},
         create: processorConfigs,
@@ -148,10 +159,11 @@ export async function POST(request: Request) {
         },
       },
       issues: {
+        where: { archivedAt: null },
         select: { id: true, title: true, status: true },
       },
       _count: {
-        select: { issues: true },
+        select: { issues: { where: { archivedAt: null } } },
       },
     },
   });

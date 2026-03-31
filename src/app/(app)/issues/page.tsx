@@ -39,6 +39,7 @@ export default function IssuesPage() {
   const [formRnd, setFormRnd] = useState("");
   const [formAssigneeId, setFormAssigneeId] = useState("");
   const [creating, setCreating] = useState(false);
+  const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
 
   const loadLists = useCallback(async () => {
     const [usersRes, issuesRes, projectsRes] = await Promise.all([
@@ -107,6 +108,24 @@ export default function IssuesPage() {
     setFormAssigneeId("");
     await loadLists();
     router.push(`/issues/${created.id}`);
+  };
+
+  const archiveIssue = async (issueId: string, title: string) => {
+    const confirmed = confirm(`Archive issue "${title}"?`);
+    if (!confirmed) return;
+    setArchivingIssueId(issueId);
+    const res = await fetch(`/api/issues/${issueId}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archive: true }),
+    });
+    setArchivingIssueId(null);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? "Could not archive issue.");
+      return;
+    }
+    await loadLists();
   };
 
   return (
@@ -236,17 +255,22 @@ export default function IssuesPage() {
           ) : (
             <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200">
               {filteredIssues.map((i) => (
-                <li key={i.id}>
-                  <Link
-                    href={`/issues/${i.id}`}
-                    className="block px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between"
-                  >
+                <li key={i.id} className="px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between">
+                  <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
-                    <span className="text-xs text-zinc-500 sm:text-sm">
+                    <span className="block text-xs text-zinc-500 sm:text-sm">
                       {i.project.name} · {i.status}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
                   </Link>
+                  <button
+                    type="button"
+                    className="mt-2 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 sm:mt-0"
+                    onClick={() => archiveIssue(i.id, i.title)}
+                    disabled={archivingIssueId === i.id}
+                  >
+                    {archivingIssueId === i.id ? "Archiving..." : "Archive"}
+                  </button>
                 </li>
               ))}
             </ul>

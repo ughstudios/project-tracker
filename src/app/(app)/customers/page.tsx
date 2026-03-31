@@ -9,6 +9,7 @@ export default function CustomersPage() {
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [archivingId, setArchivingId] = useState<string | null>(null);
 
   const load = async () => {
     setLoading(true);
@@ -45,6 +46,20 @@ export default function CustomersPage() {
       return;
     }
     setName("");
+    await load();
+  };
+
+  const archiveCustomer = async (id: string, displayName: string) => {
+    const confirmed = confirm(`Archive customer "${displayName}"?`);
+    if (!confirmed) return;
+    setArchivingId(id);
+    const res = await fetch(`/api/customers/${id}`, { method: "PATCH" });
+    setArchivingId(null);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? "Could not archive customer.");
+      return;
+    }
     await load();
   };
 
@@ -89,6 +104,7 @@ export default function CustomersPage() {
                 <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
                   <th className="border border-zinc-200 px-2 py-2">Customer</th>
                   <th className="border border-zinc-200 px-2 py-2">Projects</th>
+                  <th className="border border-zinc-200 px-2 py-2">Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -99,6 +115,16 @@ export default function CustomersPage() {
                     </td>
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-700">
                       {c._count?.projects ?? 0}
+                    </td>
+                    <td className="border border-zinc-200 px-2 py-2">
+                      <button
+                        type="button"
+                        className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                        onClick={() => archiveCustomer(c.id, c.name)}
+                        disabled={archivingId === c.id}
+                      >
+                        {archivingId === c.id ? "Archiving..." : "Archive"}
+                      </button>
                     </td>
                   </tr>
                 ))}

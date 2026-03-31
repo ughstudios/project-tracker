@@ -27,7 +27,7 @@ export async function GET(
       },
     });
 
-    if (!issue) {
+    if (!issue || issue.archivedAt) {
       return NextResponse.json({ error: "Issue not found." }, { status: 404 });
     }
 
@@ -51,8 +51,30 @@ export async function PATCH(
   if (!existing) {
     return NextResponse.json({ error: "Issue not found." }, { status: 404 });
   }
+  if (existing.archivedAt) {
+    return NextResponse.json({ error: "Issue not found." }, { status: 404 });
+  }
 
   const body = (await request.json()) as Record<string, unknown>;
+
+  if (body.archive === true) {
+    if (session.user.role !== "ADMIN") {
+      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+    }
+    const archivedIssue = await prisma.issue.update({
+      where: { id },
+      data: { archivedAt: new Date() },
+      select: { id: true, title: true },
+    });
+    await writeAuditLog({
+      actorId: session.user.id,
+      entityType: "Issue",
+      entityId: archivedIssue.id,
+      action: "ARCHIVE",
+      description: `Issue "${archivedIssue.title}" archived.`,
+    });
+    return NextResponse.json({ ok: true });
+  }
 
   const title =
     typeof body.title === "string" ? body.title.trim() : existing.title;

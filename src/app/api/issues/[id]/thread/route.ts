@@ -21,9 +21,9 @@ export async function POST(
 
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
-    select: { id: true, title: true },
+    select: { id: true, title: true, archivedAt: true },
   });
-  if (!issue) {
+  if (!issue || issue.archivedAt) {
     return NextResponse.json({ error: "Issue not found." }, { status: 404 });
   }
 
