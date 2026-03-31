@@ -1,13 +1,52 @@
 import { spawnSync } from "node:child_process";
 
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 function run(cmd, args) {
   const result = spawnSync(cmd, args, {
-    stdio: "inherit",
+    stdio: "pipe",
     env: process.env,
     shell: false,
+    encoding: "utf8",
   });
+  if (result.stdout) process.stdout.write(result.stdout);
+  if (result.stderr) process.stderr.write(result.stderr);
   if (result.error) throw result.error;
+  return result;
+}
+
+async function runOrExit(cmd, args) {
+  const result = run(cmd, args);
   if (result.status !== 0) process.exit(result.status ?? 1);
+}
+
+function isAdvisoryLockTimeout(output) {
+  return (
+    output.includes("P1002") &&
+    output.includes("pg_advisory_lock")
+  );
+}
+
+async function runMigrateDeployWithRetry() {
+  const maxAttempts = 5;
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const result = run("npx", ["prisma", "migrate", "deploy"]);
+    if (result.status === 0) return;
+
+    const combinedOutput = `${result.stdout ?? ""}\n${result.stderr ?? ""}`;
+    const shouldRetry = isAdvisoryLockTimeout(combinedOutput) && attempt < maxAttempts;
+    if (!shouldRetry) {
+      process.exit(result.status ?? 1);
+    }
+
+    const waitMs = 2000 * attempt;
+    console.warn(
+      `Prisma migrate deploy hit advisory lock timeout (attempt ${attempt}/${maxAttempts}). Retrying in ${waitMs}ms...`,
+    );
+    await sleep(waitMs);
+  }
 }
 
 const dbUrl = process.env.DATABASE_URL?.trim();
@@ -34,6 +73,6 @@ See VERCEL.md in this repo for the full checklist.
   process.exit(1);
 }
 
-run("npx", ["prisma", "generate"]);
-run("npx", ["prisma", "migrate", "deploy"]);
-run("npx", ["next", "build"]);
+await runOrExit("npx", ["prisma", "generate"]);
+await runMigrateDeployWithRetry();
+await runOrExit("npx", ["next", "build"]);
