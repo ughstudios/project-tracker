@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 type Props = {
-  user: { name?: string | null; email?: string | null };
+  user: { name?: string | null; email?: string | null; role?: string | null };
   onLogout: React.ReactNode;
   children: React.ReactNode;
 };
@@ -26,6 +26,8 @@ function NavItem({ href, label, prefix }: { href: string; label: string; prefix?
 }
 
 export function AppShell({ user, onLogout, children }: Props) {
+  const isAdmin = user.role === "ADMIN";
+
   return (
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
@@ -43,6 +45,7 @@ export function AppShell({ user, onLogout, children }: Props) {
               <NavItem href="/customers" label="Customers" />
               <NavItem href="/projects" label="Projects" />
               <NavItem href="/logs" label="Logs" />
+              {isAdmin ? <NavItem href="/pending-registrations" label="Pending Registrations" /> : null}
             </nav>
             <div className="mt-6">{onLogout}</div>
           </aside>

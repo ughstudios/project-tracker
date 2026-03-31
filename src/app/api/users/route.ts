@@ -9,6 +9,7 @@ export async function GET() {
   }
 
   const users = await prisma.user.findMany({
+    where: { approvalStatus: "APPROVED" },
     orderBy: { name: "asc" },
     select: {
       id: true,

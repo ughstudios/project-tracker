@@ -19,6 +19,8 @@ model User {
   email        String   @unique
   passwordHash String
   role         String   @default("EMPLOYEE")
+  approvalStatus String @default("APPROVED")
+  approvedAt   DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

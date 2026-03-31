@@ -13,7 +13,7 @@ export default async function AppLayout({
 
   return (
     <AppShell
-      user={{ name: session.user.name, email: session.user.email }}
+      user={{ name: session.user.name, email: session.user.email, role: session.user.role }}
       onLogout={<LogoutButton />}
     >
       {children}

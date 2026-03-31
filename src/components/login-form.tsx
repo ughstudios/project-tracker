@@ -2,6 +2,7 @@
 
 import { useActionState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { loginAction } from "@/app/login/actions";
 
 type LoginState = { error?: string; ok?: boolean };
@@ -48,6 +49,12 @@ export function LoginForm() {
       >
         {pending ? "Signing in..." : "Sign In"}
       </button>
+      <p className="text-center text-sm text-zinc-600">
+        Need an account?{" "}
+        <Link href="/register" className="font-medium text-zinc-900 underline">
+          Register
+        </Link>
+      </p>
     </form>
   );
 }
