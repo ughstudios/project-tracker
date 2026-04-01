@@ -55,6 +55,7 @@ model Customer {
   updatedAt DateTime @updatedAt
 
   projects Project[]
+  issues   Issue[]
 }
 
 model Project {
@@ -166,10 +167,12 @@ model Issue {
   updatedAt      DateTime @updatedAt
 
   projectId      String?
+  customerId     String?
   assigneeId     String?
   reporterId     String
 
-  project   Project? @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  project   Project?  @relation(fields: [projectId], references: [id], onDelete: SetNull)
+  customer  Customer? @relation(fields: [customerId], references: [id], onDelete: SetNull)
   assignee  User?   @relation("IssueAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   reporter  User    @relation("IssueReporter", fields: [reporterId], references: [id], onDelete: Restrict)
   threadEntries IssueThreadEntry[]

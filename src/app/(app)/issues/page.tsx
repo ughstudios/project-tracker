@@ -13,7 +13,9 @@ type ProjectSummary = {
   product: string;
 };
 
-const FILTER_NO_PROJECT = "__none__";
+type CustomerSummary = { id: string; name: string };
+
+const FILTER_UNLINKED = "__unlinked__";
 
 type IssueListItem = {
   id: string;
@@ -21,8 +23,17 @@ type IssueListItem = {
   status: string;
   symptom: string;
   project: { id: string; name: string; product: string } | null;
+  customer: { id: string; name: string } | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
 };
+
+function matchesLinkFilter(issue: IssueListItem, filter: string) {
+  if (!filter) return true;
+  if (filter === FILTER_UNLINKED) return !issue.project && !issue.customer;
+  if (filter.startsWith("p:")) return issue.project?.id === filter.slice(2);
+  if (filter.startsWith("c:")) return issue.customer?.id === filter.slice(2);
+  return true;
+}
 
 function statusLabel(t: (k: string) => string, status: string) {
   const key = `issueStatus.${status}`;
@@ -35,14 +46,16 @@ export default function IssuesPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [issues, setIssues] = useState<IssueListItem[]>([]);
   const [listLoading, setListLoading] = useState(true);
 
-  const [projectFilter, setProjectFilter] = useState("");
+  const [linkFilter, setLinkFilter] = useState("");
   const [listQuery, setListQuery] = useState("");
 
   const [formTitle, setFormTitle] = useState("");
   const [formProjectId, setFormProjectId] = useState("");
+  const [formCustomerId, setFormCustomerId] = useState("");
   const [formSymptom, setFormSymptom] = useState("");
   const [formCause, setFormCause] = useState("");
   const [formSolution, setFormSolution] = useState("");
@@ -53,10 +66,11 @@ export default function IssuesPage() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   const loadLists = useCallback(async () => {
-    const [usersRes, issuesRes, projectsRes] = await Promise.all([
+    const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
       fetch("/api/users"),
       fetch("/api/issues"),
       fetch("/api/projects"),
+      fetch("/api/customers"),
     ]);
     if (usersRes.ok) setUsers((await usersRes.json()) as User[]);
     if (issuesRes.ok) setIssues((await issuesRes.json()) as IssueListItem[]);
@@ -64,6 +78,7 @@ export default function IssuesPage() {
       const plist = (await projectsRes.json()) as ProjectSummary[];
       setProjects(plist);
     }
+    if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
     setListLoading(false);
   }, []);
 
@@ -81,20 +96,22 @@ export default function IssuesPage() {
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
     return issues.filter((i) => {
-      const matchProj =
-        !projectFilter ||
-        (projectFilter === FILTER_NO_PROJECT
-          ? i.project === null
-          : i.project?.id === projectFilter);
+      const matchLink = matchesLinkFilter(i, linkFilter);
       const matchText =
         !q ||
-        [i.title, i.symptom, i.project?.name ?? "", i.assignee?.name ?? ""]
+        [
+          i.title,
+          i.symptom,
+          i.project?.name ?? "",
+          i.customer?.name ?? "",
+          i.assignee?.name ?? "",
+        ]
           .join(" ")
           .toLowerCase()
           .includes(q);
-      return matchProj && matchText;
+      return matchLink && matchText;
     });
-  }, [issues, listQuery, projectFilter]);
+  }, [issues, listQuery, linkFilter]);
 
   const createIssue = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -106,6 +123,7 @@ export default function IssuesPage() {
       body: JSON.stringify({
         title: formTitle.trim(),
         ...(formProjectId ? { projectId: formProjectId } : {}),
+        ...(formCustomerId ? { customerId: formCustomerId } : {}),
         symptom: formSymptom.trim(),
         cause: formCause.trim(),
         solution: formSolution.trim(),
@@ -166,14 +184,16 @@ export default function IssuesPage() {
               required
             />
           </label>
+          <p className="text-xs text-zinc-500 md:col-span-2">{t("issues.linkHint")}</p>
           <label className="block text-sm">
-            <span className="text-zinc-600">
-              {t("issues.projectOptional")}
-            </span>
+            <span className="text-zinc-600">{t("issues.projectOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={formProjectId}
-              onChange={(e) => setFormProjectId(e.target.value)}
+              onChange={(e) => {
+                setFormProjectId(e.target.value);
+                if (e.target.value) setFormCustomerId("");
+              }}
             >
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
@@ -184,6 +204,24 @@ export default function IssuesPage() {
             </select>
           </label>
           <label className="block text-sm">
+            <span className="text-zinc-600">{t("issues.customerOptional")}</span>
+            <select
+              className="input mt-1 w-full"
+              value={formCustomerId}
+              onChange={(e) => {
+                setFormCustomerId(e.target.value);
+                if (e.target.value) setFormProjectId("");
+              }}
+            >
+              <option value="">{t("issues.noCustomer")}</option>
+              {customers.map((c) => (
+                <option key={c.id} value={c.id}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm md:col-span-2">
             <span className="text-zinc-600">{t("common.assignee")}</span>
             <select
               className="input mt-1 w-full"
@@ -249,16 +287,25 @@ export default function IssuesPage() {
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <select
             className="input w-full"
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
+            value={linkFilter}
+            onChange={(e) => setLinkFilter(e.target.value)}
           >
-            <option value="">{t("issues.allProjects")}</option>
-            <option value={FILTER_NO_PROJECT}>{t("issues.noProject")}</option>
-            {projects.map((proj) => (
-              <option key={proj.id} value={proj.id}>
-                {proj.name}
-              </option>
-            ))}
+            <option value="">{t("issues.allLinks")}</option>
+            <option value={FILTER_UNLINKED}>{t("issues.unlinked")}</option>
+            <optgroup label={t("common.customer")}>
+              {customers.map((c) => (
+                <option key={c.id} value={`c:${c.id}`}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={t("common.projects")}>
+              {projects.map((proj) => (
+                <option key={proj.id} value={`p:${proj.id}`}>
+                  {proj.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <input
             className="input w-full"
@@ -282,7 +329,11 @@ export default function IssuesPage() {
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
                     <span className="block text-xs text-zinc-500 sm:text-sm">
-                      {i.project ? `${i.project.name} · ` : `${t("issues.noProject")} · `}
+                      {i.project
+                        ? `${i.project.name} · `
+                        : i.customer
+                          ? `${t("common.customer")}: ${i.customer.name} · `
+                          : `${t("issues.unlinked")} · `}
                       {statusLabel(t, i.status)}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>

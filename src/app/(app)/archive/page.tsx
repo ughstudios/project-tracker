@@ -106,6 +106,7 @@ export default async function ArchivePage() {
         status: true,
         archivedAt: true,
         project: { select: { name: true } },
+        customer: { select: { name: true } },
       },
     }),
   ]);
@@ -183,7 +184,8 @@ export default async function ArchivePage() {
             {issues.map((i) => (
               <li key={i.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {i.title} ({i.status}) - {i.project?.name ?? t("common.noProject")} -{" "}
+                  {i.title} ({i.status}) -{" "}
+                  {i.project?.name ?? i.customer?.name ?? t("issues.unlinked")} -{" "}
                   {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
                 </span>
                 {isAdmin ? (

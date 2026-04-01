@@ -13,6 +13,8 @@ type ProjectSummary = {
   product: string;
 };
 
+type CustomerSummary = { id: string; name: string };
+
 type ThreadEntry = {
   id: string;
   content: string;
@@ -30,7 +32,9 @@ type IssueDetail = {
   rndContact: string;
   createdAt: string;
   projectId: string | null;
+  customerId: string | null;
   project: ProjectSummary | null;
+  customer: { id: string; name: string } | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
   reporter: { id: string; name: string | null };
   threadEntries: ThreadEntry[];
@@ -48,6 +52,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [issue, setIssue] = useState<IssueDetail | null>(null);
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
+  const [customers, setCustomers] = useState<CustomerSummary[]>([]);
   const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,6 +62,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [solution, setSolution] = useState("");
   const [rndContact, setRndContact] = useState("");
   const [projectId, setProjectId] = useState("");
+  const [customerId, setCustomerId] = useState("");
   const [status, setStatus] = useState("OPEN");
   const [assigneeId, setAssigneeId] = useState("");
   const [saving, setSaving] = useState(false);
@@ -71,6 +77,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setSolution(data.solution);
     setRndContact(data.rndContact);
     setProjectId(data.projectId ?? "");
+    setCustomerId(data.customerId ?? "");
     setStatus(data.status);
     setAssigneeId(data.assignee?.id ?? "");
   }, []);
@@ -84,14 +91,16 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       setLoadError(null);
       setIssue(null);
       try {
-        const [issueRes, usersRes, projectsRes] = await Promise.all([
+        const [issueRes, usersRes, projectsRes, customersRes] = await Promise.all([
           fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
           fetch("/api/users", fetchInit),
           fetch("/api/projects", fetchInit),
+          fetch("/api/customers", fetchInit),
         ]);
         if (cancelled) return;
         if (usersRes.ok) setUsers((await usersRes.json()) as User[]);
         if (projectsRes.ok) setProjects((await projectsRes.json()) as ProjectSummary[]);
+        if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
         if (!issueRes.ok) {
           setIssue(null);
           if (issueRes.status === 404) {
@@ -146,6 +155,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         solution: solution.trim(),
         rndContact: rndContact.trim(),
         projectId: projectId || null,
+        customerId: customerId || null,
         status,
         assigneeId: assigneeId || null,
       }),
@@ -218,6 +228,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   }
 
   const p = issue.project;
+  const c = issue.customer;
 
   return (
     <div className="space-y-4">
@@ -248,8 +259,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               </Link>{" "}
               · {p.product}
             </>
+          ) : c ? (
+            <span className="text-zinc-700">
+              {t("issueDetail.customerColon")}{" "}
+              <span className="font-medium text-zinc-900">{c.name}</span>
+            </span>
           ) : (
-            <span className="text-zinc-700">{t("issueDetail.noProjectLinked")}</span>
+            <span className="text-zinc-700">{t("issueDetail.notLinked")}</span>
           )}
         </p>
         <p className="mt-1 text-xs text-zinc-600">
@@ -275,17 +291,39 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               required
             />
           </label>
+          <p className="text-xs text-zinc-500 md:col-span-2">{t("issueDetail.linkMutualHint")}</p>
           <label className="block text-sm">
             <span className="text-zinc-600">{t("issueDetail.projectOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={projectId}
-              onChange={(e) => setProjectId(e.target.value)}
+              onChange={(e) => {
+                setProjectId(e.target.value);
+                if (e.target.value) setCustomerId("");
+              }}
             >
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name} — {proj.product}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="text-zinc-600">{t("issues.customerOptional")}</span>
+            <select
+              className="input mt-1 w-full"
+              value={customerId}
+              onChange={(e) => {
+                setCustomerId(e.target.value);
+                if (e.target.value) setProjectId("");
+              }}
+            >
+              <option value="">{t("issues.noCustomer")}</option>
+              {customers.map((cust) => (
+                <option key={cust.id} value={cust.id}>
+                  {cust.name}
                 </option>
               ))}
             </select>
@@ -302,7 +340,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               <option value="DONE">{t("issueStatus.DONE")}</option>
             </select>
           </label>
-          <label className="block text-sm md:col-span-2">
+          <label className="block text-sm">
             <span className="text-zinc-600">{t("common.assignee")}</span>
             <select
               className="input mt-1 w-full"

@@ -18,6 +18,7 @@ export async function GET(
       where: { id },
       include: {
         project: true,
+        customer: { select: { id: true, name: true } },
         assignee: { select: { id: true, name: true, email: true } },
         reporter: { select: { id: true, name: true } },
         threadEntries: {
@@ -95,7 +96,22 @@ export async function PATCH(
         : null
       : existing.assigneeId;
 
+  const projectIdProvided = body.projectId !== undefined;
+  const customerIdProvided = body.customerId !== undefined;
+  if (projectIdProvided && customerIdProvided) {
+    const pEmpty = body.projectId === null || body.projectId === "";
+    const cEmpty = body.customerId === null || body.customerId === "";
+    if (!pEmpty && !cEmpty) {
+      return NextResponse.json(
+        { error: "Link either a project or a customer, not both." },
+        { status: 400 },
+      );
+    }
+  }
+
   let projectId: string | null = existing.projectId;
+  let customerId: string | null = existing.customerId;
+
   if (body.projectId !== undefined) {
     if (body.projectId === null || body.projectId === "") {
       projectId = null;
@@ -109,7 +125,32 @@ export async function PATCH(
         return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
       }
       projectId = nextPid;
+      customerId = null;
     }
+  }
+
+  if (body.customerId !== undefined) {
+    if (body.customerId === null || body.customerId === "") {
+      customerId = null;
+    } else {
+      const nextCid = String(body.customerId);
+      const cust = await prisma.customer.findUnique({ where: { id: nextCid } });
+      if (!cust) {
+        return NextResponse.json({ error: "Customer not found." }, { status: 404 });
+      }
+      if (cust.archivedAt) {
+        return NextResponse.json({ error: "Selected customer is archived." }, { status: 400 });
+      }
+      customerId = nextCid;
+      projectId = null;
+    }
+  }
+
+  if (projectId && customerId) {
+    return NextResponse.json(
+      { error: "Issue cannot be linked to both a project and a customer." },
+      { status: 400 },
+    );
   }
 
   if (!title || !symptom) {
@@ -128,12 +169,14 @@ export async function PATCH(
       solution,
       rndContact,
       projectId,
+      customerId,
       status,
       assigneeId,
       doneAt: status === "DONE" ? new Date() : null,
     },
     include: {
       project: true,
+      customer: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
       threadEntries: {

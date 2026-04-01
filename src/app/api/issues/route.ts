@@ -14,6 +14,7 @@ export async function GET() {
     orderBy: { createdAt: "desc" },
     include: {
       project: true,
+      customer: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
     },
@@ -32,6 +33,7 @@ export async function POST(request: Request) {
   const {
     title,
     projectId: rawProjectId,
+    customerId: rawCustomerId,
     projectName,
     product,
     symptom,
@@ -43,6 +45,8 @@ export async function POST(request: Request) {
 
   const projectIdStr =
     typeof rawProjectId === "string" && rawProjectId.trim() ? rawProjectId.trim() : "";
+  const customerIdStr =
+    typeof rawCustomerId === "string" && rawCustomerId.trim() ? rawCustomerId.trim() : "";
 
   if (!title?.trim() || !symptom?.trim()) {
     return NextResponse.json(
@@ -51,22 +55,37 @@ export async function POST(request: Request) {
     );
   }
 
+  if (projectIdStr && customerIdStr) {
+    return NextResponse.json(
+      { error: "Link either a project or a customer, not both." },
+      { status: 400 },
+    );
+  }
+
+  const adHocRequested = !!(projectName?.trim() && product?.trim());
+  if (adHocRequested && customerIdStr) {
+    return NextResponse.json(
+      { error: "Cannot use ad-hoc project creation together with a customer link." },
+      { status: 400 },
+    );
+  }
+
   let project: { id: string; name: string; archivedAt?: Date | null } | null = null;
 
   if (projectIdStr) {
     project = await prisma.project.findUnique({ where: { id: projectIdStr } });
-  } else if (projectName?.trim() && product?.trim()) {
+  } else if (adHocRequested) {
     const adHocCustomer = await prisma.customer.upsert({
       where: { name: "Ad hoc" },
       update: {},
       create: { name: "Ad hoc" },
     });
     project = await prisma.project.upsert({
-      where: { name: projectName.trim() },
-      update: { product: product.trim() },
+      where: { name: projectName!.trim() },
+      update: { product: product!.trim() },
       create: {
-        name: projectName.trim(),
-        product: product.trim(),
+        name: projectName!.trim(),
+        product: product!.trim(),
         customerId: adHocCustomer.id,
       },
     });
@@ -79,6 +98,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
   }
 
+  let customer: { id: string; name: string; archivedAt: Date | null } | null = null;
+  if (customerIdStr) {
+    customer = await prisma.customer.findUnique({ where: { id: customerIdStr } });
+    if (!customer) {
+      return NextResponse.json({ error: "Selected customer not found." }, { status: 404 });
+    }
+    if (customer.archivedAt) {
+      return NextResponse.json({ error: "Selected customer is archived." }, { status: 400 });
+    }
+  }
+
   const issue = await prisma.issue.create({
     data: {
       title: title.trim(),
@@ -86,24 +116,26 @@ export async function POST(request: Request) {
       cause: (cause ?? "").trim(),
       solution: (solution ?? "").trim(),
       rndContact: (rndContact ?? "").trim(),
-      projectId: project?.id ?? null,
+      projectId: customer ? null : (project?.id ?? null),
+      customerId: customer?.id ?? null,
       assigneeId: assigneeId || null,
       reporterId: session.user.id,
     },
     include: {
       project: true,
+      customer: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
     },
   });
 
-  const projectLabel = issue.project?.name ?? "no project";
+  const linkLabel = issue.project?.name ?? issue.customer?.name ?? "no link";
   await writeAuditLog({
     actorId: session.user.id,
     entityType: "Issue",
     entityId: issue.id,
     action: "CREATE",
-    description: `Issue "${issue.title}" created (${projectLabel}).`,
+    description: `Issue "${issue.title}" created (${linkLabel}).`,
   });
 
   return NextResponse.json(issue, { status: 201 });

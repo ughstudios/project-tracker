@@ -3,7 +3,7 @@
 import { useI18n } from "@/i18n/context";
 import { useEffect, useMemo, useState } from "react";
 
-const FILTER_NO_PROJECT = "__none__";
+const FILTER_UNLINKED = "__unlinked__";
 
 type User = { id: string; name: string; email: string; role: string };
 type Project = {
@@ -12,6 +12,7 @@ type Project = {
   product: string;
   _count?: { issues: number };
 };
+type Customer = { id: string; name: string };
 type Issue = {
   id: string;
   title: string;
@@ -21,32 +22,44 @@ type Issue = {
   solution: string;
   rndContact: string;
   project: { id: string; name: string; product: string } | null;
+  customer: { id: string; name: string } | null;
   assignee: { id: string; name: string; email: string } | null;
   reporter: { id: string; name: string };
 };
+
+function matchesLinkFilter(issue: Issue, filter: string) {
+  if (!filter) return true;
+  if (filter === FILTER_UNLINKED) return !issue.project && !issue.customer;
+  if (filter.startsWith("p:")) return issue.project?.id === filter.slice(2);
+  if (filter.startsWith("c:")) return issue.customer?.id === filter.slice(2);
+  return true;
+}
 
 export function IssueDashboard() {
   const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
   const [query, setQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("");
-  const [projectFilter, setProjectFilter] = useState("");
+  const [linkFilter, setLinkFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [draggingIssueId, setDraggingIssueId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   const loadData = async () => {
     setLoading(true);
-    const [usersRes, issuesRes, projectsRes] = await Promise.all([
+    const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
       fetch("/api/users"),
       fetch("/api/issues"),
       fetch("/api/projects"),
+      fetch("/api/customers"),
     ]);
     if (usersRes.ok) setUsers(await usersRes.json());
     if (issuesRes.ok) setIssues(await issuesRes.json());
     if (projectsRes.ok) setProjects(await projectsRes.json());
+    if (customersRes.ok) setCustomers(await customersRes.json());
     setLoading(false);
   };
 
@@ -66,6 +79,7 @@ export function IssueDashboard() {
           issue.title,
           issue.project?.name ?? "",
           issue.project?.product ?? "",
+          issue.customer?.name ?? "",
           issue.symptom,
           issue.cause,
           issue.solution,
@@ -77,16 +91,12 @@ export function IssueDashboard() {
           .includes(q);
       const matchesAssignee =
         !assigneeFilter || issue.assignee?.id === assigneeFilter;
-      const matchesProject =
-        !projectFilter ||
-        (projectFilter === FILTER_NO_PROJECT
-          ? issue.project === null
-          : issue.project?.id === projectFilter);
+      const matchesLink = matchesLinkFilter(issue, linkFilter);
       const matchesStatus = !statusFilter || issue.status === statusFilter;
 
-      return matchesText && matchesAssignee && matchesProject && matchesStatus;
+      return matchesText && matchesAssignee && matchesLink && matchesStatus;
     });
-  }, [issues, query, assigneeFilter, projectFilter, statusFilter]);
+  }, [issues, query, assigneeFilter, linkFilter, statusFilter]);
 
   const updateIssue = async (id: string, payload: { status?: string; assigneeId?: string }) => {
     await fetch(`/api/issues/${id}`, {
@@ -142,16 +152,26 @@ export function IssueDashboard() {
           </select>
           <select
             className="input"
-            value={projectFilter}
-            onChange={(e) => setProjectFilter(e.target.value)}
+            value={linkFilter}
+            onChange={(e) => setLinkFilter(e.target.value)}
+            aria-label={t("dashboard.filterByLink")}
           >
-            <option value="">{t("dashboard.allProjects")}</option>
-            <option value={FILTER_NO_PROJECT}>{t("dashboard.noProjectFilter")}</option>
-            {projects.map((project) => (
-              <option key={project.id} value={project.id}>
-                {project.name}
-              </option>
-            ))}
+            <option value="">{t("dashboard.allLinks")}</option>
+            <option value={FILTER_UNLINKED}>{t("dashboard.unlinked")}</option>
+            <optgroup label={t("common.customer")}>
+              {customers.map((c) => (
+                <option key={c.id} value={`c:${c.id}`}>
+                  {c.name}
+                </option>
+              ))}
+            </optgroup>
+            <optgroup label={t("common.projects")}>
+              {projects.map((project) => (
+                <option key={project.id} value={`p:${project.id}`}>
+                  {project.name}
+                </option>
+              ))}
+            </optgroup>
           </select>
           <button
             type="button"
@@ -159,7 +179,7 @@ export function IssueDashboard() {
             onClick={() => {
               setQuery("");
               setAssigneeFilter("");
-              setProjectFilter("");
+              setLinkFilter("");
               setStatusFilter("");
             }}
           >
@@ -229,7 +249,9 @@ export function IssueDashboard() {
                               <p className="mt-1 text-xs text-zinc-500">
                                 {issue.project
                                   ? `${issue.project.name} - ${issue.project.product}`
-                                  : t("common.noProject")}
+                                  : issue.customer
+                                    ? `${t("common.customer")}: ${issue.customer.name}`
+                                    : t("dashboard.unlinked")}
                               </p>
                               <p className="mt-2 text-sm text-zinc-700">{issue.symptom}</p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
