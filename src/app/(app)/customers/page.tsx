@@ -1,10 +1,12 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import { useEffect, useState } from "react";
 
 type Customer = { id: string; name: string; _count?: { projects: number } };
 
 export default function CustomersPage() {
+  const { t } = useI18n();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [name, setName] = useState("");
   const [loading, setLoading] = useState(true);
@@ -48,7 +50,7 @@ export default function CustomersPage() {
       } catch {
         // ignore
       }
-      alert(`Could not create customer. (HTTP ${res.status})${detail}`);
+      alert(t("customers.couldNotCreate", { status: String(res.status), detail }));
       return;
     }
     setName("");
@@ -56,14 +58,14 @@ export default function CustomersPage() {
   };
 
   const archiveCustomer = async (id: string, displayName: string) => {
-    const confirmed = confirm(`Archive customer "${displayName}"?`);
+    const confirmed = confirm(t("customers.archiveConfirm", { name: displayName }));
     if (!confirmed) return;
     setArchivingId(id);
     const res = await fetch(`/api/customers/${id}`, { method: "PATCH" });
     setArchivingId(null);
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "Could not archive customer.");
+      alert(data.error ?? t("customers.couldNotArchive"));
       return;
     }
     await load();
@@ -72,18 +74,16 @@ export default function CustomersPage() {
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Customers</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Create customers, then assign projects to them.
-        </p>
+        <h1 className="text-xl font-semibold">{t("customers.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t("customers.subtitle")}</p>
       </header>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Create Customer</h2>
+        <h2 className="text-base font-semibold">{t("customers.createSection")}</h2>
         <form onSubmit={create} className="mt-3 flex flex-col gap-2 md:flex-row">
           <input
             className="input flex-1"
-            placeholder="Customer name"
+            placeholder={t("customers.namePlaceholder")}
             required
             value={name}
             onChange={(e) => setName(e.target.value)}
@@ -92,33 +92,33 @@ export default function CustomersPage() {
             disabled={saving}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
           >
-            {saving ? "Creating..." : "Create"}
+            {saving ? t("common.creating") : t("common.create")}
           </button>
         </form>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Customer List</h2>
+        <h2 className="text-base font-semibold">{t("customers.listSection")}</h2>
         {loading ? (
-          <p className="mt-3 text-sm text-zinc-600">Loading...</p>
+          <p className="mt-3 text-sm text-zinc-600">{t("customers.loading")}</p>
         ) : customers.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600">No customers yet.</p>
+          <p className="mt-3 text-sm text-zinc-600">{t("customers.none")}</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
-                  <th className="border border-zinc-200 px-2 py-2">Customer</th>
-                  <th className="border border-zinc-200 px-2 py-2">Projects</th>
-                  {isAdmin ? <th className="border border-zinc-200 px-2 py-2">Actions</th> : null}
+                  <th className="border border-zinc-200 px-2 py-2">{t("common.customer")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("common.projects")}</th>
+                  {isAdmin ? (
+                    <th className="border border-zinc-200 px-2 py-2">{t("common.actions")}</th>
+                  ) : null}
                 </tr>
               </thead>
               <tbody>
                 {customers.map((c) => (
                   <tr key={c.id} className="odd:bg-white even:bg-zinc-50/50">
-                    <td className="border border-zinc-200 px-2 py-2 font-medium">
-                      {c.name}
-                    </td>
+                    <td className="border border-zinc-200 px-2 py-2 font-medium">{c.name}</td>
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-700">
                       {c._count?.projects ?? 0}
                     </td>
@@ -130,7 +130,7 @@ export default function CustomersPage() {
                           onClick={() => archiveCustomer(c.id, c.name)}
                           disabled={archivingId === c.id}
                         >
-                          {archivingId === c.id ? "Archiving..." : "Archive"}
+                          {archivingId === c.id ? t("common.archiving") : t("common.archive")}
                         </button>
                       </td>
                     ) : null}
@@ -144,4 +144,3 @@ export default function CustomersPage() {
     </div>
   );
 }
-

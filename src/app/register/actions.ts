@@ -1,21 +1,23 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { getServerTranslator } from "@/i18n/server";
 import { prisma } from "@/lib/prisma";
 
 type RegisterState = { error?: string; ok?: boolean };
 
 export async function registerAction(_prevState: RegisterState, formData: FormData) {
+  const t = await getServerTranslator();
   const name = String(formData.get("name") ?? "").trim();
   const email = String(formData.get("email") ?? "").trim().toLowerCase();
   const password = String(formData.get("password") ?? "");
 
   if (!name || !email || !password) {
-    return { error: "Name, email, and password are required." };
+    return { error: t("errors.register.requiredFields") };
   }
 
   if (password.length < 8) {
-    return { error: "Password must be at least 8 characters." };
+    return { error: t("errors.register.passwordShort") };
   }
 
   const existingUser = await prisma.user.findUnique({
@@ -25,9 +27,9 @@ export async function registerAction(_prevState: RegisterState, formData: FormDa
 
   if (existingUser) {
     if (existingUser.approvalStatus === "PENDING") {
-      return { error: "This email already has a pending registration." };
+      return { error: t("errors.register.pendingEmail") };
     }
-    return { error: "An account with this email already exists." };
+    return { error: t("errors.register.exists") };
   }
 
   const passwordHash = await bcrypt.hash(password, 10);

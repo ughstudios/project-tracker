@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { updateEmailAction, updatePasswordAction } from "@/app/(app)/account/actions";
 import { logoutAction } from "@/app/actions";
+import { useI18n } from "@/i18n/context";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 
 type PasswordState = { error?: string; ok?: boolean };
 type EmailState = { error?: string; ok?: boolean };
@@ -13,6 +14,7 @@ const emailInitial: EmailState = {};
 
 export function AccountSettingsForms({ currentEmail }: { currentEmail: string }) {
   const router = useRouter();
+  const { t } = useI18n();
   const [passwordState, passwordFormAction, passwordPending] = useActionState(
     updatePasswordAction,
     passwordInitial,
@@ -31,13 +33,11 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
   return (
     <div className="space-y-10">
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Change password</h2>
-        <p className="mt-1 text-sm text-zinc-600">
-          Use a strong password you do not use elsewhere.
-        </p>
+        <h2 className="text-lg font-semibold">{t("account.changePassword")}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t("account.passwordHelp")}</p>
         <form action={passwordFormAction} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Current password</label>
+            <label className="mb-1 block text-sm font-medium">{t("account.currentPassword")}</label>
             <input
               name="currentPassword"
               type="password"
@@ -47,7 +47,7 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">New password</label>
+            <label className="mb-1 block text-sm font-medium">{t("account.newPassword")}</label>
             <input
               name="newPassword"
               type="password"
@@ -58,7 +58,7 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">Confirm new password</label>
+            <label className="mb-1 block text-sm font-medium">{t("account.confirmPassword")}</label>
             <input
               name="confirmPassword"
               type="password"
@@ -70,27 +70,26 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
           </div>
           {passwordState?.error ? <p className="text-sm text-red-600">{passwordState.error}</p> : null}
           {passwordState?.ok ? (
-            <p className="text-sm text-emerald-700">Password updated successfully.</p>
+            <p className="text-sm text-emerald-700">{t("account.passwordOk")}</p>
           ) : null}
           <button
             type="submit"
             disabled={passwordPending}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
           >
-            {passwordPending ? "Saving..." : "Update password"}
+            {passwordPending ? t("common.saving") : t("account.updatePassword")}
           </button>
         </form>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold">Change email</h2>
+        <h2 className="text-lg font-semibold">{t("account.changeEmail")}</h2>
         <p className="mt-1 text-sm text-zinc-600">
-          Current email: <span className="font-medium text-zinc-800">{currentEmail}</span>. You will be
-          signed out and need to sign in with the new address.
+          {t("account.emailHelp", { email: currentEmail })}
         </p>
         <form action={emailFormAction} className="mt-4 space-y-4">
           <div>
-            <label className="mb-1 block text-sm font-medium">Current password</label>
+            <label className="mb-1 block text-sm font-medium">{t("account.currentPassword")}</label>
             <input
               name="currentPassword"
               type="password"
@@ -100,7 +99,7 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
             />
           </div>
           <div>
-            <label className="mb-1 block text-sm font-medium">New email</label>
+            <label className="mb-1 block text-sm font-medium">{t("account.newEmail")}</label>
             <input
               name="newEmail"
               type="email"
@@ -111,14 +110,14 @@ export function AccountSettingsForms({ currentEmail }: { currentEmail: string })
           </div>
           {emailState?.error ? <p className="text-sm text-red-600">{emailState.error}</p> : null}
           {emailPending ? (
-            <p className="text-sm text-zinc-600">Updating email and signing you out…</p>
+            <p className="text-sm text-zinc-600">{t("account.emailUpdating")}</p>
           ) : null}
           <button
             type="submit"
             disabled={emailPending}
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
           >
-            {emailPending ? "Saving..." : "Update email"}
+            {emailPending ? t("common.saving") : t("account.updateEmail")}
           </button>
         </form>
       </section>

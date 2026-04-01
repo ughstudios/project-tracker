@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { auth } from "@/auth";
+import { getServerTranslator } from "@/i18n/server";
 import { prisma } from "@/lib/prisma";
 
 type PasswordState = { error?: string; ok?: boolean };
@@ -11,9 +12,10 @@ export async function updatePasswordAction(
   _prevState: PasswordState,
   formData: FormData,
 ): Promise<PasswordState> {
+  const t = await getServerTranslator();
   const session = await auth();
   if (!session?.user?.id) {
-    return { error: "You must be signed in." };
+    return { error: t("errors.account.mustSignIn") };
   }
 
   const currentPassword = String(formData.get("currentPassword") ?? "");
@@ -21,15 +23,15 @@ export async function updatePasswordAction(
   const confirmPassword = String(formData.get("confirmPassword") ?? "");
 
   if (!currentPassword || !newPassword) {
-    return { error: "Current and new passwords are required." };
+    return { error: t("errors.account.passwordsRequired") };
   }
 
   if (newPassword.length < 8) {
-    return { error: "New password must be at least 8 characters." };
+    return { error: t("errors.account.newPasswordShort") };
   }
 
   if (newPassword !== confirmPassword) {
-    return { error: "New passwords do not match." };
+    return { error: t("errors.account.passwordsMismatch") };
   }
 
   const user = await prisma.user.findUnique({
@@ -38,12 +40,12 @@ export async function updatePasswordAction(
   });
 
   if (!user) {
-    return { error: "Account not found." };
+    return { error: t("errors.account.accountNotFound") };
   }
 
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) {
-    return { error: "Current password is incorrect." };
+    return { error: t("errors.account.wrongPassword") };
   }
 
   const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -59,21 +61,22 @@ export async function updateEmailAction(
   _prevState: EmailState,
   formData: FormData,
 ): Promise<EmailState> {
+  const t = await getServerTranslator();
   const session = await auth();
   if (!session?.user?.id) {
-    return { error: "You must be signed in." };
+    return { error: t("errors.account.mustSignIn") };
   }
 
   const currentPassword = String(formData.get("currentPassword") ?? "");
   const newEmail = String(formData.get("newEmail") ?? "").trim().toLowerCase();
 
   if (!currentPassword || !newEmail) {
-    return { error: "Current password and new email are required." };
+    return { error: t("errors.account.emailPasswordRequired") };
   }
 
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(newEmail)) {
-    return { error: "Enter a valid email address." };
+    return { error: t("errors.account.invalidEmail") };
   }
 
   const user = await prisma.user.findUnique({
@@ -82,16 +85,16 @@ export async function updateEmailAction(
   });
 
   if (!user) {
-    return { error: "Account not found." };
+    return { error: t("errors.account.accountNotFound") };
   }
 
   if (newEmail === user.email) {
-    return { error: "That is already your email address." };
+    return { error: t("errors.account.sameEmail") };
   }
 
   const valid = await bcrypt.compare(currentPassword, user.passwordHash);
   if (!valid) {
-    return { error: "Current password is incorrect." };
+    return { error: t("errors.account.wrongPassword") };
   }
 
   const taken = await prisma.user.findUnique({
@@ -100,7 +103,7 @@ export async function updateEmailAction(
   });
 
   if (taken) {
-    return { error: "Another account already uses this email." };
+    return { error: t("errors.account.emailTaken") };
   }
 
   await prisma.user.update({

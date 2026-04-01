@@ -2,6 +2,8 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useI18n } from "@/i18n/context";
+import { LanguageToggle } from "@/components/language-toggle";
 
 type Props = {
   user: { name?: string | null; email?: string | null; role?: string | null };
@@ -26,6 +28,7 @@ function NavItem({ href, label, prefix }: { href: string; label: string; prefix?
 }
 
 export function AppShell({ user, onLogout, children }: Props) {
+  const { t } = useI18n();
   const isAdmin = user.role === "ADMIN";
 
   return (
@@ -33,21 +36,26 @@ export function AppShell({ user, onLogout, children }: Props) {
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <div className="grid gap-5 lg:grid-cols-[240px_1fr]">
           <aside className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="mb-4">
-              <div className="text-base font-semibold">Project Tracker</div>
-              <div className="mt-1 text-xs text-zinc-500">
-                {user.name ?? "User"} {user.email ? `(${user.email})` : ""}
+            <div className="mb-4 flex flex-col gap-3">
+              <LanguageToggle className="justify-start" />
+              <div>
+                <div className="text-base font-semibold">{t("nav.appTitle")}</div>
+                <div className="mt-1 text-xs text-zinc-500">
+                  {user.name ?? t("common.user")} {user.email ? `(${user.email})` : ""}
+                </div>
               </div>
             </div>
             <nav className="space-y-1">
-              <NavItem href="/dashboard" label="Dashboard" />
-              <NavItem href="/issues" label="Issues" prefix />
-              <NavItem href="/customers" label="Customers" />
-              <NavItem href="/projects" label="Projects" />
-              <NavItem href="/logs" label="Logs" />
-              <NavItem href="/archive" label="Archive" />
-              <NavItem href="/account" label="Account" />
-              {isAdmin ? <NavItem href="/pending-registrations" label="Pending Registrations" /> : null}
+              <NavItem href="/dashboard" label={t("nav.dashboard")} />
+              <NavItem href="/issues" label={t("nav.issues")} prefix />
+              <NavItem href="/customers" label={t("nav.customers")} />
+              <NavItem href="/projects" label={t("nav.projects")} />
+              <NavItem href="/logs" label={t("nav.logs")} />
+              <NavItem href="/archive" label={t("nav.archive")} />
+              <NavItem href="/account" label={t("nav.account")} />
+              {isAdmin ? (
+                <NavItem href="/pending-registrations" label={t("nav.pendingRegistrations")} />
+              ) : null}
             </nav>
             <div className="mt-6">{onLogout}</div>
           </aside>
@@ -57,4 +65,3 @@ export function AppShell({ user, onLogout, children }: Props) {
     </div>
   );
 }
-

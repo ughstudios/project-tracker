@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getServerTranslator } from "@/i18n/server";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
@@ -77,6 +78,7 @@ export default async function ArchivePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
   const isAdmin = session.user.role === "ADMIN";
+  const t = await getServerTranslator();
 
   const [customers, projects, issues] = await Promise.all([
     prisma.customer.findMany({
@@ -111,14 +113,14 @@ export default async function ArchivePage() {
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Archive</h1>
-        <p className="mt-1 text-sm text-zinc-600">Archived customers, projects, and issues.</p>
+        <h1 className="text-xl font-semibold">{t("archive.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t("archive.subtitle")}</p>
       </header>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Customers</h2>
+        <h2 className="text-base font-semibold">{t("archive.customers")}</h2>
         {customers.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">No archived customers.</p>
+          <p className="mt-2 text-sm text-zinc-600">{t("archive.noCustomers")}</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {customers.map((c) => (
@@ -133,7 +135,7 @@ export default async function ArchivePage() {
                       type="submit"
                       className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
                     >
-                      Unarchive
+                      {t("common.unarchive")}
                     </button>
                   </form>
                 ) : null}
@@ -144,9 +146,9 @@ export default async function ArchivePage() {
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Projects</h2>
+        <h2 className="text-base font-semibold">{t("archive.projects")}</h2>
         {projects.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">No archived projects.</p>
+          <p className="mt-2 text-sm text-zinc-600">{t("archive.noProjects")}</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {projects.map((p) => (
@@ -162,7 +164,7 @@ export default async function ArchivePage() {
                       type="submit"
                       className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
                     >
-                      Unarchive
+                      {t("common.unarchive")}
                     </button>
                   </form>
                 ) : null}
@@ -173,15 +175,15 @@ export default async function ArchivePage() {
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Issues</h2>
+        <h2 className="text-base font-semibold">{t("archive.issues")}</h2>
         {issues.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">No archived issues.</p>
+          <p className="mt-2 text-sm text-zinc-600">{t("archive.noIssues")}</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {issues.map((i) => (
               <li key={i.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {i.title} ({i.status}) - {i.project?.name ?? "No project"} -{" "}
+                  {i.title} ({i.status}) - {i.project?.name ?? t("common.noProject")} -{" "}
                   {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
                 </span>
                 {isAdmin ? (
@@ -191,7 +193,7 @@ export default async function ArchivePage() {
                       type="submit"
                       className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
                     >
-                      Unarchive
+                      {t("common.unarchive")}
                     </button>
                   </form>
                 ) : null}

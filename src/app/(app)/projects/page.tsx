@@ -1,7 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useI18n } from "@/i18n/context";
 import Link from "next/link";
+import { useEffect, useMemo, useState } from "react";
 
 type Customer = { id: string; name: string };
 type ProcessorConfig = { model: string; firmware: string; quantity: number };
@@ -47,6 +48,7 @@ const receiverCardModels = [
 ];
 
 export default function ProjectsPage() {
+  const { t } = useI18n();
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [productGroups, setProductGroups] = useState<
@@ -128,7 +130,7 @@ export default function ProjectsPage() {
     });
     setSaving(false);
     if (!res.ok) {
-      alert("Could not create project. Make sure customer is selected.");
+      alert(t("projects.couldNotCreate"));
       return;
     }
     setForm({ name: "", customerId: "" });
@@ -140,7 +142,7 @@ export default function ProjectsPage() {
   };
 
   const archiveProject = async (projectId: string, projectName: string) => {
-    const confirmed = confirm(`Archive project "${projectName}"?`);
+    const confirmed = confirm(t("projects.archiveConfirm", { name: projectName }));
     if (!confirmed) return;
     setArchivingProjectId(projectId);
     const res = await fetch(`/api/projects/${projectId}`, {
@@ -151,7 +153,7 @@ export default function ProjectsPage() {
     setArchivingProjectId(null);
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "Could not archive project.");
+      alert(data.error ?? t("projects.couldNotArchive"));
       return;
     }
     await load();
@@ -172,29 +174,35 @@ export default function ProjectsPage() {
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Projects</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Create projects and link them to a customer.
-        </p>
+        <h1 className="text-xl font-semibold">{t("projects.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t("projects.subtitle")}</p>
       </header>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Create Project Wizard</h2>
+        <h2 className="text-base font-semibold">{t("projects.wizardTitle")}</h2>
         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600">
-          <span className={wizardStep === 1 ? "font-semibold text-zinc-900" : ""}>1. Basic</span>
+          <span className={wizardStep === 1 ? "font-semibold text-zinc-900" : ""}>
+            {t("projects.step1")}
+          </span>
           <span>→</span>
-          <span className={wizardStep === 2 ? "font-semibold text-zinc-900" : ""}>2. Processors</span>
+          <span className={wizardStep === 2 ? "font-semibold text-zinc-900" : ""}>
+            {t("projects.step2")}
+          </span>
           <span>→</span>
-          <span className={wizardStep === 3 ? "font-semibold text-zinc-900" : ""}>3. Receiver cards</span>
+          <span className={wizardStep === 3 ? "font-semibold text-zinc-900" : ""}>
+            {t("projects.step3")}
+          </span>
           <span>→</span>
-          <span className={wizardStep === 4 ? "font-semibold text-zinc-900" : ""}>4. Other products</span>
+          <span className={wizardStep === 4 ? "font-semibold text-zinc-900" : ""}>
+            {t("projects.step4")}
+          </span>
         </div>
         <form onSubmit={create} className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-4">
           {wizardStep === 1 && (
             <>
               <input
                 className="input md:col-span-3"
-                placeholder="Project name"
+                placeholder={t("projects.projectName")}
                 required
                 value={form.name}
                 onChange={(e) => setForm((p) => ({ ...p, name: e.target.value }))}
@@ -205,7 +213,7 @@ export default function ProjectsPage() {
                 value={form.customerId}
                 onChange={(e) => setForm((p) => ({ ...p, customerId: e.target.value }))}
               >
-                <option value="">Select customer</option>
+                <option value="">{t("common.selectCustomer")}</option>
                 {customers.map((c) => (
                   <option key={c.id} value={c.id}>
                     {c.name}
@@ -213,7 +221,7 @@ export default function ProjectsPage() {
                 ))}
               </select>
               <p className="md:col-span-4 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
-                Product is derived from selections in steps 2, 3, and 4.
+                {t("projects.productDerivedHint")}
               </p>
             </>
           )}
@@ -231,7 +239,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    <option value="">Select processor model</option>
+                    <option value="">{t("projects.selectProcessorModel")}</option>
                     {productGroups
                       .filter((g) =>
                         ["U Series", "X100 Pro", "Z Series", "VX Series", "DS Series", "S Series"]
@@ -246,7 +254,7 @@ export default function ProjectsPage() {
                   </select>
                   <input
                     className="input"
-                    placeholder="Firmware (e.g. 1.2.3)"
+                    placeholder={t("projects.firmwarePh")}
                     value={item.firmware}
                     onChange={(e) =>
                       setProcessors((prev) =>
@@ -258,7 +266,7 @@ export default function ProjectsPage() {
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="Qty"
+                    placeholder={t("projects.qty")}
                     value={item.quantity}
                     onChange={(e) =>
                       setProcessors((prev) =>
@@ -277,7 +285,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    Remove
+                    {t("common.remove")}
                   </button>
                 </div>
               ))}
@@ -288,7 +296,7 @@ export default function ProjectsPage() {
                   setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])
                 }
               >
-                + Add processor line
+                {t("projects.addProcessorLine")}
               </button>
             </div>
           )}
@@ -306,7 +314,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    <option value="">Select receiver card model</option>
+                    <option value="">{t("projects.selectReceiverModel")}</option>
                     {receiverCardModels.map((m) => (
                       <option key={m} value={m}>
                         {m}
@@ -315,7 +323,7 @@ export default function ProjectsPage() {
                   </select>
                   <input
                     className="input"
-                    placeholder="Card version"
+                    placeholder={t("projects.cardVersion")}
                     value={item.version}
                     onChange={(e) =>
                       setReceiverCards((prev) =>
@@ -327,7 +335,7 @@ export default function ProjectsPage() {
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="Qty"
+                    placeholder={t("projects.qty")}
                     value={item.quantity}
                     onChange={(e) =>
                       setReceiverCards((prev) =>
@@ -346,7 +354,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    Remove
+                    {t("common.remove")}
                   </button>
                 </div>
               ))}
@@ -357,7 +365,7 @@ export default function ProjectsPage() {
                   setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])
                 }
               >
-                + Add receiver line
+                {t("projects.addReceiverLine")}
               </button>
             </div>
           )}
@@ -377,7 +385,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    <option value="">Select category</option>
+                    <option value="">{t("common.selectCategory")}</option>
                     {otherGroups.map((g) => (
                       <option key={g.group} value={g.group}>
                         {g.group}
@@ -393,7 +401,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    <option value="">Select product</option>
+                    <option value="">{t("common.selectProduct")}</option>
                     {(otherGroups.find((g) => g.group === item.category)?.items ?? []).map((m) => (
                       <option key={`${item.category}:${m}`} value={m}>
                         {m}
@@ -404,7 +412,7 @@ export default function ProjectsPage() {
                     className="input"
                     type="number"
                     min={1}
-                    placeholder="Qty"
+                    placeholder={t("projects.qty")}
                     value={item.quantity}
                     onChange={(e) =>
                       setOtherProducts((prev) =>
@@ -423,7 +431,7 @@ export default function ProjectsPage() {
                       )
                     }
                   >
-                    Remove
+                    {t("common.remove")}
                   </button>
                 </div>
               ))}
@@ -437,7 +445,7 @@ export default function ProjectsPage() {
                   ])
                 }
               >
-                + Add other product line
+                {t("projects.addOtherLine")}
               </button>
             </div>
           )}
@@ -451,7 +459,7 @@ export default function ProjectsPage() {
               }
               className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
             >
-              Back
+              {t("projects.back")}
             </button>
             {wizardStep < 4 ? (
               <button
@@ -462,7 +470,7 @@ export default function ProjectsPage() {
                 }}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700"
               >
-                Next
+                {t("common.next")}
               </button>
             ) : (
               <button
@@ -470,7 +478,7 @@ export default function ProjectsPage() {
                 disabled={saving}
                 className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
               >
-                {saving ? "Creating..." : "Create Project"}
+                {saving ? t("common.creating") : t("projects.createProject")}
               </button>
             )}
           </div>
@@ -479,29 +487,29 @@ export default function ProjectsPage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <h2 className="text-base font-semibold">Project List</h2>
+          <h2 className="text-base font-semibold">{t("projects.listTitle")}</h2>
           <input
             className="input w-full md:w-80"
-            placeholder="Search projects..."
+            placeholder={t("projects.searchPh")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
         </div>
         {loading ? (
-          <p className="mt-3 text-sm text-zinc-600">Loading...</p>
+          <p className="mt-3 text-sm text-zinc-600">{t("common.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600">No projects found.</p>
+          <p className="mt-3 text-sm text-zinc-600">{t("projects.noneFound")}</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[800px] border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
-                  <th className="border border-zinc-200 px-2 py-2">Project</th>
-                  <th className="border border-zinc-200 px-2 py-2">Product</th>
-                  <th className="border border-zinc-200 px-2 py-2">Customer</th>
-                  <th className="border border-zinc-200 px-2 py-2">Hardware Summary</th>
-                  <th className="border border-zinc-200 px-2 py-2">Issues</th>
-                  <th className="border border-zinc-200 px-2 py-2">Actions</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("projects.colProject")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("projects.colProduct")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("projects.colCustomer")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("projects.colHardware")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("projects.colIssues")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -513,7 +521,7 @@ export default function ProjectsPage() {
                     <td className="border border-zinc-200 px-2 py-2">
                       <div className="space-y-1 text-xs">
                         <div>
-                          <span className="font-semibold">Processors:</span>{" "}
+                          <span className="font-semibold">{t("projects.processors")}</span>{" "}
                           {(p.processorConfigs ?? []).length === 0
                             ? "-"
                             : p.processorConfigs
@@ -521,7 +529,7 @@ export default function ProjectsPage() {
                                 .join(", ")}
                         </div>
                         <div>
-                          <span className="font-semibold">Receiver cards:</span>{" "}
+                          <span className="font-semibold">{t("projects.receivers")}</span>{" "}
                           {(p.receiverCardConfigs ?? []).length === 0
                             ? "-"
                             : p.receiverCardConfigs
@@ -529,7 +537,7 @@ export default function ProjectsPage() {
                                 .join(", ")}
                         </div>
                         <div>
-                          <span className="font-semibold">Other products:</span>{" "}
+                          <span className="font-semibold">{t("projects.otherProducts")}</span>{" "}
                           {(p.otherProductConfigs ?? []).length === 0
                             ? "-"
                             : p.otherProductConfigs
@@ -542,7 +550,7 @@ export default function ProjectsPage() {
                     <td className="border border-zinc-200 px-2 py-2">
                       <div className="flex items-center gap-2">
                         <Link href={`/projects/${p.id}`} className="text-blue-700 hover:underline">
-                          Open
+                          {t("projects.open")}
                         </Link>
                         {isAdmin ? (
                           <button
@@ -551,7 +559,7 @@ export default function ProjectsPage() {
                             onClick={() => archiveProject(p.id, p.name)}
                             disabled={archivingProjectId === p.id}
                           >
-                            {archivingProjectId === p.id ? "Archiving..." : "Archive"}
+                            {archivingProjectId === p.id ? t("common.archiving") : t("common.archive")}
                           </button>
                         ) : null}
                       </div>

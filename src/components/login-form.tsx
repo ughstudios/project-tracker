@@ -1,9 +1,10 @@
 "use client";
 
-import { useActionState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
 import { loginAction } from "@/app/login/actions";
+import { useI18n } from "@/i18n/context";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useActionState, useEffect } from "react";
 
 type LoginState = { error?: string; ok?: boolean };
 
@@ -11,6 +12,7 @@ const initialState: LoginState = {};
 
 export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
   const router = useRouter();
+  const { t } = useI18n();
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
   useEffect(() => {
@@ -27,7 +29,7 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
         </p>
       ) : null}
       <div>
-        <label className="mb-1 block text-sm font-medium">Email</label>
+        <label className="mb-1 block text-sm font-medium">{t("common.email")}</label>
         <input
           name="email"
           type="email"
@@ -37,7 +39,7 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
         />
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium">Password</label>
+        <label className="mb-1 block text-sm font-medium">{t("common.password")}</label>
         <input
           name="password"
           type="password"
@@ -52,12 +54,12 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
         disabled={pending}
         className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
       >
-        {pending ? "Signing in..." : "Sign In"}
+        {pending ? t("login.signingIn") : t("login.signIn")}
       </button>
       <p className="text-center text-sm text-zinc-600">
-        Need an account?{" "}
+        {t("login.needAccount")}{" "}
         <Link href="/register" className="font-medium text-zinc-900 underline">
-          Register
+          {t("login.register")}
         </Link>
       </p>
     </form>

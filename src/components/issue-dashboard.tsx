@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import { useEffect, useMemo, useState } from "react";
 
 const FILTER_NO_PROJECT = "__none__";
@@ -25,6 +26,7 @@ type Issue = {
 };
 
 export function IssueDashboard() {
+  const { t } = useI18n();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [issues, setIssues] = useState<Issue[]>([]);
@@ -96,32 +98,33 @@ export function IssueDashboard() {
   };
 
   const deleteIssue = async (id: string) => {
-    if (!confirm("Delete this issue?")) return;
+    if (!confirm(t("dashboard.deleteConfirm"))) return;
     await fetch(`/api/issues/${id}`, { method: "DELETE" });
     loadData();
   };
 
-  const moveIssueToStatus = async (id: string, status: string) => {
+  const moveIssueToStatus = async (id: string, nextStatus: string) => {
     const issue = issues.find((item) => item.id === id);
-    if (!issue || issue.status === status) return;
-    await updateIssue(id, { status });
+    if (!issue || issue.status === nextStatus) return;
+    await updateIssue(id, { status: nextStatus });
   };
 
   const statuses = ["OPEN", "IN_PROGRESS", "DONE"] as const;
-  const statusTitles: Record<(typeof statuses)[number], string> = {
-    OPEN: "Open",
-    IN_PROGRESS: "In Progress",
-    DONE: "Done",
+
+  const columnTitle = (status: (typeof statuses)[number]) => {
+    const key = `issueStatus.${status}`;
+    const label = t(key);
+    return label === key ? status : label;
   };
 
   return (
     <div className="space-y-5">
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Filters</h2>
+        <h2 className="text-base font-semibold">{t("dashboard.filters")}</h2>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
           <input
             className="input md:col-span-2"
-            placeholder="Search by title, symptom, cause, solution, contact..."
+            placeholder={t("dashboard.searchPlaceholder")}
             value={query}
             onChange={(e) => setQuery(e.target.value)}
           />
@@ -130,7 +133,7 @@ export function IssueDashboard() {
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
           >
-            <option value="">All users</option>
+            <option value="">{t("dashboard.allUsers")}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
@@ -142,8 +145,8 @@ export function IssueDashboard() {
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
           >
-            <option value="">All projects</option>
-            <option value={FILTER_NO_PROJECT}>No project</option>
+            <option value="">{t("dashboard.allProjects")}</option>
+            <option value={FILTER_NO_PROJECT}>{t("dashboard.noProjectFilter")}</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
@@ -160,7 +163,7 @@ export function IssueDashboard() {
               setStatusFilter("");
             }}
           >
-            Clear
+            {t("dashboard.clear")}
           </button>
         </div>
       </section>
@@ -169,7 +172,7 @@ export function IssueDashboard() {
         <div>
           {loading ? (
             <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm">
-              Loading...
+              {t("common.loading")}
             </div>
           ) : (
             <div className="grid gap-4 lg:grid-cols-3">
@@ -196,7 +199,7 @@ export function IssueDashboard() {
                     >
                       <header className="mb-3 flex items-center justify-between">
                         <h3 className="text-sm font-semibold text-zinc-700">
-                          {statusTitles[status]}
+                          {columnTitle(status)}
                         </h3>
                         <span className="rounded-full bg-white px-2 py-0.5 text-xs text-zinc-500">
                           {columnIssues.length}
@@ -205,7 +208,7 @@ export function IssueDashboard() {
                       <div className="space-y-3">
                         {columnIssues.length === 0 ? (
                           <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-3 text-xs text-zinc-500">
-                            No issues
+                            {t("common.noIssues")}
                           </p>
                         ) : (
                           columnIssues.map((issue) => (
@@ -222,13 +225,11 @@ export function IssueDashboard() {
                                 setDraggingIssueId(null);
                               }}
                             >
-                              <p className="text-sm font-semibold text-zinc-800">
-                                {issue.title}
-                              </p>
+                              <p className="text-sm font-semibold text-zinc-800">{issue.title}</p>
                               <p className="mt-1 text-xs text-zinc-500">
                                 {issue.project
                                   ? `${issue.project.name} - ${issue.project.product}`
-                                  : "No project"}
+                                  : t("common.noProject")}
                               </p>
                               <p className="mt-2 text-sm text-zinc-700">{issue.symptom}</p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
@@ -239,7 +240,7 @@ export function IssueDashboard() {
                                     updateIssue(issue.id, { assigneeId: e.target.value })
                                   }
                                 >
-                                  <option value="">Unassigned</option>
+                                  <option value="">{t("common.unassigned")}</option>
                                   {users.map((u) => (
                                     <option key={u.id} value={u.id}>
                                       {u.name}
@@ -253,32 +254,36 @@ export function IssueDashboard() {
                                     updateIssue(issue.id, { status: e.target.value })
                                   }
                                 >
-                                  <option value="OPEN">OPEN</option>
-                                  <option value="IN_PROGRESS">IN_PROGRESS</option>
-                                  <option value="DONE">DONE</option>
+                                  <option value="OPEN">{t("issueStatus.OPEN")}</option>
+                                  <option value="IN_PROGRESS">
+                                    {t("issueStatus.IN_PROGRESS")}
+                                  </option>
+                                  <option value="DONE">{t("issueStatus.DONE")}</option>
                                 </select>
                               </div>
                               <details className="mt-3 text-xs text-zinc-600">
                                 <summary className="cursor-pointer select-none">
-                                  Details
+                                  {t("common.details")}
                                 </summary>
                                 <div className="mt-2 space-y-1">
                                   <p>
-                                    <strong>Cause:</strong> {issue.cause || "-"}
+                                    <strong>{t("dashboard.cause")}</strong> {issue.cause || "-"}
                                   </p>
                                   <p>
-                                    <strong>Solution:</strong> {issue.solution || "-"}
+                                    <strong>{t("dashboard.solution")}</strong>{" "}
+                                    {issue.solution || "-"}
                                   </p>
                                   <p>
-                                    <strong>R&D:</strong> {issue.rndContact || "-"}
+                                    <strong>{t("dashboard.rnd")}</strong> {issue.rndContact || "-"}
                                   </p>
                                 </div>
                               </details>
                               <button
+                                type="button"
                                 onClick={() => deleteIssue(issue.id)}
                                 className="mt-3 rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
                               >
-                                Delete
+                                {t("common.delete")}
                               </button>
                             </article>
                           ))

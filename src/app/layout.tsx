@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { I18nProvider } from "@/i18n/context";
+import { getDictionary } from "@/i18n/dictionaries";
+import { getLocale, getServerTranslator } from "@/i18n/server";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -12,22 +15,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = {
-  title: "Project Tracker",
-  description: "Track projects, issues, and completed work",
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getServerTranslator();
+  return {
+    title: t("meta.title"),
+    description: t("meta.description"),
+  };
+}
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const locale = await getLocale();
+  const dict = getDictionary(locale);
+  const htmlLang = locale === "zh" ? "zh-CN" : "en";
+
   return (
     <html
-      lang="en"
+      lang={htmlLang}
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">{children}</body>
+      <body className="flex min-h-full flex-col font-sans">
+        <I18nProvider initialLocale={locale} dict={dict}>
+          {children}
+        </I18nProvider>
+      </body>
     </html>
   );
 }

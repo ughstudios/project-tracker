@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -42,6 +43,7 @@ const fetchInit: RequestInit = {
 
 export function IssueDetailClient({ issueId }: { issueId: string }) {
   const router = useRouter();
+  const { t } = useI18n();
 
   const [issue, setIssue] = useState<IssueDetail | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -93,19 +95,21 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         if (!issueRes.ok) {
           setIssue(null);
           if (issueRes.status === 404) {
-            setLoadError("Issue not found.");
+            setLoadError(t("issueDetail.notFound"));
           } else if (issueRes.status === 401) {
-            setLoadError("Session expired or not signed in. Try refreshing the page.");
+            setLoadError(t("issueDetail.sessionExpired"));
           } else {
             const errBody = (await issueRes.json().catch(() => null)) as { error?: string } | null;
-            setLoadError(errBody?.error ?? `Could not load issue (${issueRes.status}).`);
+            setLoadError(
+              errBody?.error ?? t("issueDetail.loadFailed", { status: String(issueRes.status) }),
+            );
           }
           return;
         }
         const data = (await issueRes.json()) as IssueDetail;
         if (cancelled) return;
         if (data.id !== issueId) {
-          setLoadError("Issue response did not match this page.");
+          setLoadError(t("issueDetail.mismatch"));
           return;
         }
         setIssue(data);
@@ -117,7 +121,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     return () => {
       cancelled = true;
     };
-  }, [issueId, syncDraftFromIssue]);
+  }, [issueId, syncDraftFromIssue, t]);
 
   const refreshIssue = async () => {
     const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit);
@@ -148,7 +152,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     });
     setSaving(false);
     if (!res.ok) {
-      alert("Could not save changes.");
+      alert(t("issueDetail.couldNotSave"));
       return;
     }
     const data = (await res.json()) as IssueDetail;
@@ -168,7 +172,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     });
     setPostingThread(false);
     if (!res.ok) {
-      alert("Could not post.");
+      alert(t("issueDetail.couldNotPost"));
       return;
     }
     setThreadInput("");
@@ -176,10 +180,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   };
 
   const remove = async () => {
-    if (!issue || !confirm(`Delete issue "${issue.title}"?`)) return;
-    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, { ...fetchInit, method: "DELETE" });
+    if (!issue || !confirm(t("issueDetail.deleteConfirm", { title: issue.title }))) return;
+    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, {
+      ...fetchInit,
+      method: "DELETE",
+    });
     if (!res.ok) {
-      alert("Could not delete.");
+      alert(t("issueDetail.couldNotDelete"));
       return;
     }
     router.push("/issues");
@@ -189,7 +196,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   if (loading) {
     return (
       <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-zinc-600">Loading issue…</p>
+        <p className="text-sm text-zinc-600">{t("issueDetail.loading")}</p>
       </div>
     );
   }
@@ -198,9 +205,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     return (
       <div className="space-y-4">
         <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-zinc-800">{loadError ?? "Issue not found."}</p>
-          <Link href="/issues" className="mt-3 inline-block text-sm font-medium text-zinc-900 underline">
-            Back to issues
+          <p className="text-sm text-zinc-800">{loadError ?? t("issueDetail.notFound")}</p>
+          <Link
+            href="/issues"
+            className="mt-3 inline-block text-sm font-medium text-zinc-900 underline"
+          >
+            {t("issueDetail.backToIssues")}
           </Link>
         </div>
       </div>
@@ -213,23 +223,23 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link href="/issues" className="text-sm font-medium text-zinc-700 underline underline-offset-2">
-          ← Issues
+          ← {t("nav.issues")}
         </Link>
         <button
           type="button"
           onClick={remove}
           className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-800 hover:bg-red-100"
         >
-          Delete issue
+          {t("issueDetail.deleteIssue")}
         </button>
       </div>
 
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Edit issue</h1>
+        <h1 className="text-xl font-semibold">{t("issueDetail.editTitle")}</h1>
         <p className="mt-1 text-sm text-zinc-600">
           {p ? (
             <>
-              Project:{" "}
+              {t("issueDetail.projectColon")}{" "}
               <Link
                 href={`/projects/${p.id}`}
                 className="font-medium text-zinc-900 underline underline-offset-2"
@@ -239,11 +249,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               · {p.product}
             </>
           ) : (
-            <span className="text-zinc-700">No project linked.</span>
+            <span className="text-zinc-700">{t("issueDetail.noProjectLinked")}</span>
           )}
         </p>
         <p className="mt-1 text-xs text-zinc-600">
-          Reporter: {issue.reporter.name ?? "—"} · Opened {new Date(issue.createdAt).toLocaleString()}
+          {t("issueDetail.metaLine", {
+            name: issue.reporter.name ?? "—",
+            at: new Date(issue.createdAt).toLocaleString(),
+          })}
         </p>
       </header>
 
@@ -251,20 +264,25 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         onSubmit={save}
         className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
       >
-        <h2 className="text-base font-semibold">Details</h2>
+        <h2 className="text-base font-semibold">{t("issueDetail.details")}</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">Title</span>
-            <input className="input mt-1 w-full" value={title} onChange={(e) => setTitle(e.target.value)} required />
+            <span className="text-zinc-600">{t("common.title")}</span>
+            <input
+              className="input mt-1 w-full"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              required
+            />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Project (optional)</span>
+            <span className="text-zinc-600">{t("issueDetail.projectOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
             >
-              <option value="">No project</option>
+              <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name} — {proj.product}
@@ -273,21 +291,25 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Status</span>
-            <select className="input mt-1 w-full" value={status} onChange={(e) => setStatus(e.target.value)}>
-              <option value="OPEN">OPEN</option>
-              <option value="IN_PROGRESS">IN_PROGRESS</option>
-              <option value="DONE">DONE</option>
+            <span className="text-zinc-600">{t("common.status")}</span>
+            <select
+              className="input mt-1 w-full"
+              value={status}
+              onChange={(e) => setStatus(e.target.value)}
+            >
+              <option value="OPEN">{t("issueStatus.OPEN")}</option>
+              <option value="IN_PROGRESS">{t("issueStatus.IN_PROGRESS")}</option>
+              <option value="DONE">{t("issueStatus.DONE")}</option>
             </select>
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">Assignee</span>
+            <span className="text-zinc-600">{t("common.assignee")}</span>
             <select
               className="input mt-1 w-full"
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
             >
-              <option value="">Unassigned</option>
+              <option value="">{t("common.unassigned")}</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name ?? u.email}
@@ -296,7 +318,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">Symptom</span>
+            <span className="text-zinc-600">{t("common.symptom")}</span>
             <textarea
               className="input mt-1 min-h-[72px] w-full"
               value={symptom}
@@ -305,11 +327,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Cause</span>
-            <textarea className="input mt-1 min-h-[64px] w-full" value={cause} onChange={(e) => setCause(e.target.value)} />
+            <span className="text-zinc-600">{t("common.cause")}</span>
+            <textarea
+              className="input mt-1 min-h-[64px] w-full"
+              value={cause}
+              onChange={(e) => setCause(e.target.value)}
+            />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Solution</span>
+            <span className="text-zinc-600">{t("common.solution")}</span>
             <textarea
               className="input mt-1 min-h-[64px] w-full"
               value={solution}
@@ -317,7 +343,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             />
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">R&amp;D contact</span>
+            <span className="text-zinc-600">{t("common.rndContact")}</span>
             <input
               className="input mt-1 w-full"
               value={rndContact}
@@ -330,17 +356,17 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           disabled={saving}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
         >
-          {saving ? "Saving…" : "Save changes"}
+          {saving ? t("common.saving") : t("issueDetail.saveChanges")}
         </button>
       </form>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">Thread</h2>
-        <p className="mt-1 text-sm text-zinc-600">Anyone logged in can add updates below.</p>
+        <h2 className="text-base font-semibold">{t("issueDetail.thread")}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.threadHelp")}</p>
         <div className="mt-3 flex gap-2">
           <textarea
             className="input min-h-[80px] flex-1"
-            placeholder="Add an update to this issue…"
+            placeholder={t("issueDetail.threadPlaceholder")}
             value={threadInput}
             onChange={(e) => setThreadInput(e.target.value)}
           />
@@ -350,18 +376,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             onClick={postThread}
             disabled={postingThread}
           >
-            {postingThread ? "Posting…" : "Post"}
+            {postingThread ? t("issueDetail.posting") : t("issueDetail.post")}
           </button>
         </div>
         <div className="mt-4 space-y-2">
           {issue.threadEntries.length === 0 ? (
-            <p className="text-sm text-zinc-500">No replies yet.</p>
+            <p className="text-sm text-zinc-500">{t("issueDetail.noReplies")}</p>
           ) : (
             issue.threadEntries.map((entry) => (
               <div key={entry.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 <p className="whitespace-pre-wrap text-sm text-zinc-800">{entry.content}</p>
                 <p className="mt-1 text-xs text-zinc-500">
-                  {entry.author.name ?? entry.author.email ?? "Unknown"}
+                  {entry.author.name ?? entry.author.email ?? t("common.unknown")}
                   {entry.createdAt ? ` · ${new Date(entry.createdAt).toLocaleString()}` : ""}
                 </p>
               </div>

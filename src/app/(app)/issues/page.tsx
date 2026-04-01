@@ -1,5 +1,6 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
@@ -23,7 +24,14 @@ type IssueListItem = {
   assignee: { id: string; name: string | null; email: string | null } | null;
 };
 
+function statusLabel(t: (k: string) => string, status: string) {
+  const key = `issueStatus.${status}`;
+  const translated = t(key);
+  return translated === key ? status : translated;
+}
+
 export default function IssuesPage() {
+  const { t } = useI18n();
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
@@ -107,7 +115,7 @@ export default function IssuesPage() {
     });
     setCreating(false);
     if (!res.ok) {
-      alert("Could not create issue.");
+      alert(t("issues.couldNotCreate"));
       return;
     }
     const created = (await res.json()) as { id: string };
@@ -122,7 +130,7 @@ export default function IssuesPage() {
   };
 
   const archiveIssue = async (issueId: string, title: string) => {
-    const confirmed = confirm(`Archive issue "${title}"?`);
+    const confirmed = confirm(t("issues.archiveConfirm", { title }));
     if (!confirmed) return;
     setArchivingIssueId(issueId);
     const res = await fetch(`/api/issues/${issueId}`, {
@@ -133,7 +141,7 @@ export default function IssuesPage() {
     setArchivingIssueId(null);
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "Could not archive issue.");
+      alert(data.error ?? t("issues.couldNotArchive"));
       return;
     }
     await loadLists();
@@ -142,17 +150,15 @@ export default function IssuesPage() {
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">Issues</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Create an issue, then open it to edit details and use the thread for updates.
-        </p>
+        <h1 className="text-xl font-semibold">{t("issues.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600">{t("issues.subtitle")}</p>
       </header>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">New issue</h2>
+        <h2 className="text-base font-semibold">{t("issues.newIssue")}</h2>
         <form onSubmit={createIssue} className="mt-3 grid gap-3 md:grid-cols-2">
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">Title</span>
+            <span className="text-zinc-600">{t("common.title")}</span>
             <input
               className="input mt-1 w-full"
               value={formTitle}
@@ -161,13 +167,15 @@ export default function IssuesPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Project (optional)</span>
+            <span className="text-zinc-600">
+              {t("issues.projectOptional")}
+            </span>
             <select
               className="input mt-1 w-full"
               value={formProjectId}
               onChange={(e) => setFormProjectId(e.target.value)}
             >
-              <option value="">No project</option>
+              <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name} — {proj.product}
@@ -176,13 +184,13 @@ export default function IssuesPage() {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Assignee</span>
+            <span className="text-zinc-600">{t("common.assignee")}</span>
             <select
               className="input mt-1 w-full"
               value={formAssigneeId}
               onChange={(e) => setFormAssigneeId(e.target.value)}
             >
-              <option value="">Unassigned</option>
+              <option value="">{t("common.unassigned")}</option>
               {users.map((u) => (
                 <option key={u.id} value={u.id}>
                   {u.name ?? u.email}
@@ -191,7 +199,7 @@ export default function IssuesPage() {
             </select>
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">Symptom</span>
+            <span className="text-zinc-600">{t("common.symptom")}</span>
             <textarea
               className="input mt-1 min-h-[72px] w-full"
               value={formSymptom}
@@ -200,7 +208,7 @@ export default function IssuesPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Cause</span>
+            <span className="text-zinc-600">{t("common.cause")}</span>
             <textarea
               className="input mt-1 min-h-[64px] w-full"
               value={formCause}
@@ -208,7 +216,7 @@ export default function IssuesPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Solution</span>
+            <span className="text-zinc-600">{t("common.solution")}</span>
             <textarea
               className="input mt-1 min-h-[64px] w-full"
               value={formSolution}
@@ -216,7 +224,7 @@ export default function IssuesPage() {
             />
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">R&amp;D contact</span>
+            <span className="text-zinc-600">{t("common.rndContact")}</span>
             <input
               className="input mt-1 w-full"
               value={formRnd}
@@ -229,23 +237,23 @@ export default function IssuesPage() {
               disabled={creating}
               className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
             >
-              {creating ? "Creating…" : "Create issue"}
+              {creating ? t("common.creating") : t("issues.createIssue")}
             </button>
           </div>
         </form>
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">All issues</h2>
-        <p className="mt-1 text-sm text-zinc-600">Click an issue to open its page (edit + thread).</p>
+        <h2 className="text-base font-semibold">{t("issues.allIssues")}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t("issues.listHelp")}</p>
         <div className="mt-3 grid gap-2 sm:grid-cols-2">
           <select
             className="input w-full"
             value={projectFilter}
             onChange={(e) => setProjectFilter(e.target.value)}
           >
-            <option value="">All projects</option>
-            <option value={FILTER_NO_PROJECT}>No project</option>
+            <option value="">{t("issues.allProjects")}</option>
+            <option value={FILTER_NO_PROJECT}>{t("issues.noProject")}</option>
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
                 {proj.name}
@@ -254,25 +262,28 @@ export default function IssuesPage() {
           </select>
           <input
             className="input w-full"
-            placeholder="Search title, symptom…"
+            placeholder={t("issues.searchPlaceholder")}
             value={listQuery}
             onChange={(e) => setListQuery(e.target.value)}
           />
         </div>
         <div className="mt-3 space-y-2">
           {listLoading ? (
-            <p className="text-sm text-zinc-600">Loading…</p>
+            <p className="text-sm text-zinc-600">{t("issues.loading")}</p>
           ) : filteredIssues.length === 0 ? (
-            <p className="text-sm text-zinc-500">No issues match.</p>
+            <p className="text-sm text-zinc-500">{t("issues.noMatch")}</p>
           ) : (
             <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200">
               {filteredIssues.map((i) => (
-                <li key={i.id} className="px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between">
+                <li
+                  key={i.id}
+                  className="px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between"
+                >
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
                     <span className="block text-xs text-zinc-500 sm:text-sm">
-                      {i.project ? `${i.project.name} · ` : "No project · "}
-                      {i.status}
+                      {i.project ? `${i.project.name} · ` : `${t("issues.noProject")} · `}
+                      {statusLabel(t, i.status)}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
                   </Link>
@@ -283,7 +294,7 @@ export default function IssuesPage() {
                       onClick={() => archiveIssue(i.id, i.title)}
                       disabled={archivingIssueId === i.id}
                     >
-                      {archivingIssueId === i.id ? "Archiving..." : "Archive"}
+                      {archivingIssueId === i.id ? t("common.archiving") : t("common.archive")}
                     </button>
                   ) : null}
                 </li>

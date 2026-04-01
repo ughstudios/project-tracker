@@ -3,9 +3,11 @@
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { logoutAction } from "@/app/actions";
+import { useI18n } from "@/i18n/context";
 
 export function LogoutButton() {
   const router = useRouter();
+  const { t } = useI18n();
   const [pending, startTransition] = useTransition();
 
   return (
@@ -21,7 +23,7 @@ export function LogoutButton() {
         });
       }}
     >
-      {pending ? "Logging out..." : "Logout"}
+      {pending ? t("logout.loggingOut") : t("logout.logout")}
     </button>
   );
 }

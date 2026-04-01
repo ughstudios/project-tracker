@@ -1,9 +1,9 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 type Customer = { id: string; name: string };
 type ProcessorConfig = { model: string; firmware: string; quantity: number };
@@ -41,6 +41,7 @@ const receiverCardModels = [
 ];
 
 export default function ProjectDetailsPage() {
+  const { t } = useI18n();
   const params = useParams<{ id: string }>();
   const projectId = params.id;
 
@@ -133,10 +134,10 @@ export default function ProjectDetailsPage() {
     });
     setSaving(false);
     if (!res.ok) {
-      alert("Could not save project changes.");
+      alert(t("projectDetail.couldNotSave"));
       return;
     }
-    alert("Project updated.");
+    alert(t("projectDetail.updated"));
     await load();
   };
 
@@ -151,7 +152,7 @@ export default function ProjectDetailsPage() {
     });
     setAddingNote(false);
     if (!res.ok) {
-      alert("Could not add note.");
+      alert(t("projectDetail.couldNotAddNote"));
       return;
     }
     setNoteInput("");
@@ -189,7 +190,11 @@ export default function ProjectDetailsPage() {
   );
 
   if (loading) {
-    return <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">Loading...</div>;
+    return (
+      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        {t("projectDetail.loading")}
+      </div>
+    );
   }
 
   return (
@@ -207,7 +212,7 @@ export default function ProjectDetailsPage() {
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
           <input className="input md:col-span-2" value={name} onChange={(e) => setName(e.target.value)} />
           <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
-            <option value="">Select customer</option>
+            <option value="">{t("common.selectCustomer")}</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
             ))}
@@ -219,17 +224,17 @@ export default function ProjectDetailsPage() {
           {processors.map((item, idx) => (
             <div key={`p-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <select className="input" value={item.model} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
-                <option value="">Select model</option>
+                <option value="">{t("common.selectModel")}</option>
                 {productGroups.filter((g) => processorGroups.has(g.group)).flatMap((g) => g.items).map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
               <input className="input" placeholder="Firmware" value={item.firmware} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, firmware: e.target.value } : x))} />
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
-              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>
+              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>
             </div>
           ))}
-          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>+ Add processor line</button>
+          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
@@ -237,23 +242,23 @@ export default function ProjectDetailsPage() {
           {receiverCards.map((item, idx) => (
             <div key={`r-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <select className="input" value={item.model} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
-                <option value="">Select model</option>
+                <option value="">{t("common.selectModel")}</option>
                 {receiverCardModels.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
-              <input className="input" placeholder="Version" value={item.version} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, version: e.target.value } : x))} />
+              <input className="input" placeholder={t("common.version")} value={item.version} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, version: e.target.value } : x))} />
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
               <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>
             </div>
           ))}
-          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>+ Add receiver line</button>
+          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
-          <h2 className="text-base font-semibold">Other products</h2>
+          <h2 className="text-base font-semibold">{t("projectDetail.otherProducts")}</h2>
           {otherProducts.map((item, idx) => (
             <div key={`o-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
               <select className="input" value={item.category} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, category: e.target.value, model: "" } : x))}>
-                <option value="">Select category</option>
+                <option value="">{t("common.selectCategory")}</option>
                 {otherGroups.map((g) => <option key={g.group} value={g.group}>{g.group}</option>)}
               </select>
               <select className="input" value={item.model} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
@@ -263,24 +268,22 @@ export default function ProjectDetailsPage() {
                 ))}
               </select>
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
-              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>
+              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>
             </div>
           ))}
           <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
-          <h2 className="text-base font-semibold">Project Files</h2>
-          <p className="text-sm text-zinc-600">
-            Upload `.rcvbp` or `.cbp` files used for this project.
-          </p>
+          <h2 className="text-base font-semibold">{t("projectDetail.filesTitle")}</h2>
+          <p className="text-sm text-zinc-600">{t("projectDetail.filesHelp")}</p>
           <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
             <input
               type="file"
               accept=".rcvbp,.cbp"
               onChange={(e) => uploadAttachment(e.currentTarget.files?.[0] ?? null)}
             />
-            {uploading ? <p className="mt-2 text-xs text-zinc-500">Uploading file...</p> : null}
+            {uploading ? <p className="mt-2 text-xs text-zinc-500">{t("projectDetail.uploading")}</p> : null}
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
@@ -309,12 +312,10 @@ export default function ProjectDetailsPage() {
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
-          <h2 className="text-base font-semibold">Linked Issues</h2>
-          <p className="text-sm text-zinc-600">
-            Issues assigned to this project. Create or reassign issues from the `Issues` page.
-          </p>
+          <h2 className="text-base font-semibold">{t("projectDetail.linkedIssues")}</h2>
+          <p className="text-sm text-zinc-600">{t("projectDetail.linkedIssuesHelp")}</p>
           {issues.length === 0 ? (
-            <p className="text-sm text-zinc-500">No linked issues yet.</p>
+            <p className="text-sm text-zinc-500">{t("projectDetail.noLinkedIssues")}</p>
           ) : (
             <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
               {issues.map((issue) => (
@@ -332,11 +333,11 @@ export default function ProjectDetailsPage() {
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
-          <h2 className="text-base font-semibold">Project Notes</h2>
+          <h2 className="text-base font-semibold">{t("projectDetail.notesTitle")}</h2>
           <div className="flex gap-2">
             <input
               className="input"
-              placeholder="Add note..."
+              placeholder={t("projectDetail.notePlaceholder")}
               value={noteInput}
               onChange={(e) => setNoteInput(e.target.value)}
             />
@@ -346,7 +347,7 @@ export default function ProjectDetailsPage() {
               onClick={addNote}
               disabled={addingNote}
             >
-              {addingNote ? "Adding..." : "Add Note"}
+              {addingNote ? t("projectDetail.adding") : t("projectDetail.addNote")}
             </button>
           </div>
           <ul className="space-y-1">
@@ -354,17 +355,17 @@ export default function ProjectDetailsPage() {
               <li key={n.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm">
                 <div>{n.content}</div>
                 <div className="text-[11px] text-zinc-500">
-                  {n.author?.name ?? n.author?.email ?? "Unknown"}{" "}
+                  {n.author?.name ?? n.author?.email ?? t("common.unknown")}{" "}
                   {n.createdAt ? `• ${new Date(n.createdAt).toLocaleString()}` : ""}
                 </div>
               </li>
             ))}
-            {notes.length === 0 ? <li className="text-sm text-zinc-500">No notes yet.</li> : null}
+            {notes.length === 0 ? <li className="text-sm text-zinc-500">{t("common.noNotes")}</li> : null}
           </ul>
         </section>
 
         <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700" disabled={saving}>
-          {saving ? "Saving..." : "Save Changes"}
+          {saving ? t("common.saving") : t("projectDetail.saveChanges")}
         </button>
       </form>
     </div>
