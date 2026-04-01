@@ -190,10 +190,7 @@ export default function IssuesPage() {
             <select
               className="input mt-1 w-full"
               value={formProjectId}
-              onChange={(e) => {
-                setFormProjectId(e.target.value);
-                if (e.target.value) setFormCustomerId("");
-              }}
+              onChange={(e) => setFormProjectId(e.target.value)}
             >
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
@@ -208,10 +205,7 @@ export default function IssuesPage() {
             <select
               className="input mt-1 w-full"
               value={formCustomerId}
-              onChange={(e) => {
-                setFormCustomerId(e.target.value);
-                if (e.target.value) setFormProjectId("");
-              }}
+              onChange={(e) => setFormCustomerId(e.target.value)}
             >
               <option value="">{t("issues.noCustomer")}</option>
               {customers.map((c) => (
@@ -329,12 +323,18 @@ export default function IssuesPage() {
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
                     <span className="block text-xs text-zinc-500 sm:text-sm">
-                      {i.project
-                        ? `${i.project.name} · `
-                        : i.customer
-                          ? `${t("common.customer")}: ${i.customer.name} · `
-                          : `${t("issues.unlinked")} · `}
-                      {statusLabel(t, i.status)}
+                      {(() => {
+                        const linkPart =
+                          [
+                            i.project?.name,
+                            i.customer
+                              ? `${t("common.customer")}: ${i.customer.name}`
+                              : null,
+                          ]
+                            .filter(Boolean)
+                            .join(" · ") || t("issues.unlinked");
+                        return `${linkPart} · ${statusLabel(t, i.status)}`;
+                      })()}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
                   </Link>

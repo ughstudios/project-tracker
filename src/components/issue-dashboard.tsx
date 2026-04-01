@@ -247,11 +247,16 @@ export function IssueDashboard() {
                             >
                               <p className="text-sm font-semibold text-zinc-800">{issue.title}</p>
                               <p className="mt-1 text-xs text-zinc-500">
-                                {issue.project
-                                  ? `${issue.project.name} - ${issue.project.product}`
-                                  : issue.customer
+                                {[
+                                  issue.project
+                                    ? `${issue.project.name} - ${issue.project.product}`
+                                    : null,
+                                  issue.customer
                                     ? `${t("common.customer")}: ${issue.customer.name}`
-                                    : t("dashboard.unlinked")}
+                                    : null,
+                                ]
+                                  .filter(Boolean)
+                                  .join(" · ") || t("dashboard.unlinked")}
                               </p>
                               <p className="mt-2 text-sm text-zinc-700">{issue.symptom}</p>
                               <div className="mt-3 grid grid-cols-1 gap-2">

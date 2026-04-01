@@ -96,19 +96,6 @@ export async function PATCH(
         : null
       : existing.assigneeId;
 
-  const projectIdProvided = body.projectId !== undefined;
-  const customerIdProvided = body.customerId !== undefined;
-  if (projectIdProvided && customerIdProvided) {
-    const pEmpty = body.projectId === null || body.projectId === "";
-    const cEmpty = body.customerId === null || body.customerId === "";
-    if (!pEmpty && !cEmpty) {
-      return NextResponse.json(
-        { error: "Link either a project or a customer, not both." },
-        { status: 400 },
-      );
-    }
-  }
-
   let projectId: string | null = existing.projectId;
   let customerId: string | null = existing.customerId;
 
@@ -125,7 +112,6 @@ export async function PATCH(
         return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
       }
       projectId = nextPid;
-      customerId = null;
     }
   }
 
@@ -142,15 +128,7 @@ export async function PATCH(
         return NextResponse.json({ error: "Selected customer is archived." }, { status: 400 });
       }
       customerId = nextCid;
-      projectId = null;
     }
-  }
-
-  if (projectId && customerId) {
-    return NextResponse.json(
-      { error: "Issue cannot be linked to both a project and a customer." },
-      { status: 400 },
-    );
   }
 
   if (!title || !symptom) {

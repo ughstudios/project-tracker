@@ -55,20 +55,7 @@ export async function POST(request: Request) {
     );
   }
 
-  if (projectIdStr && customerIdStr) {
-    return NextResponse.json(
-      { error: "Link either a project or a customer, not both." },
-      { status: 400 },
-    );
-  }
-
   const adHocRequested = !!(projectName?.trim() && product?.trim());
-  if (adHocRequested && customerIdStr) {
-    return NextResponse.json(
-      { error: "Cannot use ad-hoc project creation together with a customer link." },
-      { status: 400 },
-    );
-  }
 
   let project: { id: string; name: string; archivedAt?: Date | null } | null = null;
 
@@ -116,7 +103,7 @@ export async function POST(request: Request) {
       cause: (cause ?? "").trim(),
       solution: (solution ?? "").trim(),
       rndContact: (rndContact ?? "").trim(),
-      projectId: customer ? null : (project?.id ?? null),
+      projectId: project?.id ?? null,
       customerId: customer?.id ?? null,
       assigneeId: assigneeId || null,
       reporterId: session.user.id,
@@ -129,7 +116,8 @@ export async function POST(request: Request) {
     },
   });
 
-  const linkLabel = issue.project?.name ?? issue.customer?.name ?? "no link";
+  const linkLabel =
+    [issue.project?.name, issue.customer?.name].filter(Boolean).join(" · ") || "no link";
   await writeAuditLog({
     actorId: session.user.id,
     entityType: "Issue",

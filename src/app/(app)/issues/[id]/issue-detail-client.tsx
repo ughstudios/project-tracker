@@ -247,9 +247,9 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("issueDetail.editTitle")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <div className="mt-1 space-y-1 text-sm text-zinc-600">
           {p ? (
-            <>
+            <p>
               {t("issueDetail.projectColon")}{" "}
               <Link
                 href={`/projects/${p.id}`}
@@ -258,16 +258,16 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 {p.name}
               </Link>{" "}
               · {p.product}
-            </>
-          ) : c ? (
-            <span className="text-zinc-700">
+            </p>
+          ) : null}
+          {c ? (
+            <p className="text-zinc-700">
               {t("issueDetail.customerColon")}{" "}
               <span className="font-medium text-zinc-900">{c.name}</span>
-            </span>
-          ) : (
-            <span className="text-zinc-700">{t("issueDetail.notLinked")}</span>
-          )}
-        </p>
+            </p>
+          ) : null}
+          {!p && !c ? <p className="text-zinc-700">{t("issueDetail.notLinked")}</p> : null}
+        </div>
         <p className="mt-1 text-xs text-zinc-600">
           {t("issueDetail.metaLine", {
             name: issue.reporter.name ?? "—",
@@ -291,16 +291,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               required
             />
           </label>
-          <p className="text-xs text-zinc-500 md:col-span-2">{t("issueDetail.linkMutualHint")}</p>
+          <p className="text-xs text-zinc-500 md:col-span-2">{t("issues.linkHint")}</p>
           <label className="block text-sm">
             <span className="text-zinc-600">{t("issueDetail.projectOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={projectId}
-              onChange={(e) => {
-                setProjectId(e.target.value);
-                if (e.target.value) setCustomerId("");
-              }}
+              onChange={(e) => setProjectId(e.target.value)}
             >
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
@@ -315,10 +312,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             <select
               className="input mt-1 w-full"
               value={customerId}
-              onChange={(e) => {
-                setCustomerId(e.target.value);
-                if (e.target.value) setProjectId("");
-              }}
+              onChange={(e) => setCustomerId(e.target.value)}
             >
               <option value="">{t("issues.noCustomer")}</option>
               {customers.map((cust) => (

@@ -184,8 +184,10 @@ export default async function ArchivePage() {
             {issues.map((i) => (
               <li key={i.id} className="flex items-center justify-between gap-2">
                 <span>
-                  {i.title} ({i.status}) -{" "}
-                  {i.project?.name ?? i.customer?.name ?? t("issues.unlinked")} -{" "}
+                  {i.title} ({i.status}) —{" "}
+                  {[i.project?.name, i.customer?.name].filter(Boolean).join(" · ") ||
+                    t("issues.unlinked")}
+                  {" — "}
                   {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
                 </span>
                 {isAdmin ? (
