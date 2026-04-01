@@ -35,14 +35,11 @@ export function AppShell({ user, onLogout, children }: Props) {
     <div className="min-h-screen bg-zinc-50">
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <div className="grid gap-5 lg:grid-cols-[240px_1fr]">
-          <aside className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <div className="mb-4 flex flex-col gap-3">
-              <LanguageToggle className="justify-start" />
-              <div>
-                <div className="text-base font-semibold">{t("nav.appTitle")}</div>
-                <div className="mt-1 text-xs text-zinc-500">
-                  {user.name ?? t("common.user")} {user.email ? `(${user.email})` : ""}
-                </div>
+          <aside className="flex flex-col rounded-xl border border-zinc-200 bg-white p-4 shadow-sm lg:min-h-[calc(100vh-3rem)]">
+            <div className="mb-4">
+              <div className="text-base font-semibold">{t("nav.appTitle")}</div>
+              <div className="mt-1 text-xs text-zinc-500">
+                {user.name ?? t("common.user")} {user.email ? `(${user.email})` : ""}
               </div>
             </div>
             <nav className="space-y-1">
@@ -57,7 +54,10 @@ export function AppShell({ user, onLogout, children }: Props) {
                 <NavItem href="/pending-registrations" label={t("nav.pendingRegistrations")} />
               ) : null}
             </nav>
-            <div className="mt-6">{onLogout}</div>
+            <div className="mt-auto border-t border-zinc-200 pt-4">
+              <LanguageToggle className="justify-start" />
+              <div className="mt-3">{onLogout}</div>
+            </div>
           </aside>
           <main className="min-w-0">{children}</main>
         </div>
