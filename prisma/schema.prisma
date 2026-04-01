@@ -30,6 +30,21 @@ model User {
   uploadedProjectAttachments ProjectAttachment[] @relation("ProjectAttachmentUploader")
   projectNotes               ProjectNote[]       @relation("ProjectNoteAuthor")
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
+  workRecords                WorkRecord[]
+}
+
+model WorkRecord {
+  id        String   @id @default(cuid())
+  workDate  DateTime
+  title     String   @default("")
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, workDate])
 }
 
 model Customer {
