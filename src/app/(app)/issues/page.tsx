@@ -12,12 +12,14 @@ type ProjectSummary = {
   product: string;
 };
 
+const FILTER_NO_PROJECT = "__none__";
+
 type IssueListItem = {
   id: string;
   title: string;
   status: string;
   symptom: string;
-  project: { id: string; name: string; product: string };
+  project: { id: string; name: string; product: string } | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
 };
 
@@ -53,7 +55,6 @@ export default function IssuesPage() {
     if (projectsRes.ok) {
       const plist = (await projectsRes.json()) as ProjectSummary[];
       setProjects(plist);
-      setFormProjectId((prev) => prev || (plist[0]?.id ?? ""));
     }
     setListLoading(false);
   }, []);
@@ -72,10 +73,14 @@ export default function IssuesPage() {
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
     return issues.filter((i) => {
-      const matchProj = !projectFilter || i.project.id === projectFilter;
+      const matchProj =
+        !projectFilter ||
+        (projectFilter === FILTER_NO_PROJECT
+          ? i.project === null
+          : i.project?.id === projectFilter);
       const matchText =
         !q ||
-        [i.title, i.symptom, i.project.name, i.assignee?.name ?? ""]
+        [i.title, i.symptom, i.project?.name ?? "", i.assignee?.name ?? ""]
           .join(" ")
           .toLowerCase()
           .includes(q);
@@ -85,14 +90,14 @@ export default function IssuesPage() {
 
   const createIssue = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formTitle.trim() || !formSymptom.trim() || !formProjectId) return;
+    if (!formTitle.trim() || !formSymptom.trim()) return;
     setCreating(true);
     const res = await fetch("/api/issues", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: formTitle.trim(),
-        projectId: formProjectId,
+        ...(formProjectId ? { projectId: formProjectId } : {}),
         symptom: formSymptom.trim(),
         cause: formCause.trim(),
         solution: formSolution.trim(),
@@ -156,13 +161,13 @@ export default function IssuesPage() {
             />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Project</span>
+            <span className="text-zinc-600">Project (optional)</span>
             <select
               className="input mt-1 w-full"
               value={formProjectId}
               onChange={(e) => setFormProjectId(e.target.value)}
-              required
             >
+              <option value="">No project</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name} — {proj.product}
@@ -240,6 +245,7 @@ export default function IssuesPage() {
             onChange={(e) => setProjectFilter(e.target.value)}
           >
             <option value="">All projects</option>
+            <option value={FILTER_NO_PROJECT}>No project</option>
             {projects.map((proj) => (
               <option key={proj.id} value={proj.id}>
                 {proj.name}
@@ -265,7 +271,8 @@ export default function IssuesPage() {
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
                     <span className="block text-xs text-zinc-500 sm:text-sm">
-                      {i.project.name} · {i.status}
+                      {i.project ? `${i.project.name} · ` : "No project · "}
+                      {i.status}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
                   </Link>

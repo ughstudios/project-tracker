@@ -28,8 +28,8 @@ type IssueDetail = {
   solution: string;
   rndContact: string;
   createdAt: string;
-  projectId: string;
-  project: ProjectSummary;
+  projectId: string | null;
+  project: ProjectSummary | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
   reporter: { id: string; name: string | null };
   threadEntries: ThreadEntry[];
@@ -68,7 +68,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setCause(data.cause);
     setSolution(data.solution);
     setRndContact(data.rndContact);
-    setProjectId(data.projectId);
+    setProjectId(data.projectId ?? "");
     setStatus(data.status);
     setAssigneeId(data.assignee?.id ?? "");
   }, []);
@@ -141,7 +141,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         cause: cause.trim(),
         solution: solution.trim(),
         rndContact: rndContact.trim(),
-        projectId,
+        projectId: projectId || null,
         status,
         assigneeId: assigneeId || null,
       }),
@@ -227,14 +227,20 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h1 className="text-xl font-semibold">Edit issue</h1>
         <p className="mt-1 text-sm text-zinc-600">
-          Project:{" "}
-          <Link
-            href={`/projects/${p.id}`}
-            className="font-medium text-zinc-900 underline underline-offset-2"
-          >
-            {p.name}
-          </Link>{" "}
-          · {p.product}
+          {p ? (
+            <>
+              Project:{" "}
+              <Link
+                href={`/projects/${p.id}`}
+                className="font-medium text-zinc-900 underline underline-offset-2"
+              >
+                {p.name}
+              </Link>{" "}
+              · {p.product}
+            </>
+          ) : (
+            <span className="text-zinc-700">No project linked.</span>
+          )}
         </p>
         <p className="mt-1 text-xs text-zinc-600">
           Reporter: {issue.reporter.name ?? "—"} · Opened {new Date(issue.createdAt).toLocaleString()}
@@ -252,13 +258,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             <input className="input mt-1 w-full" value={title} onChange={(e) => setTitle(e.target.value)} required />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">Project</span>
+            <span className="text-zinc-600">Project (optional)</span>
             <select
               className="input mt-1 w-full"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
-              required
             >
+              <option value="">No project</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
                   {proj.name} — {proj.product}

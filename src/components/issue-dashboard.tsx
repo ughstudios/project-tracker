@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useState } from "react";
 
+const FILTER_NO_PROJECT = "__none__";
+
 type User = { id: string; name: string; email: string; role: string };
 type Project = {
   id: string;
@@ -17,7 +19,7 @@ type Issue = {
   cause: string;
   solution: string;
   rndContact: string;
-  project: { id: string; name: string; product: string };
+  project: { id: string; name: string; product: string } | null;
   assignee: { id: string; name: string; email: string } | null;
   reporter: { id: string; name: string };
 };
@@ -60,8 +62,8 @@ export function IssueDashboard() {
         !q ||
         [
           issue.title,
-          issue.project.name,
-          issue.project.product,
+          issue.project?.name ?? "",
+          issue.project?.product ?? "",
           issue.symptom,
           issue.cause,
           issue.solution,
@@ -73,7 +75,11 @@ export function IssueDashboard() {
           .includes(q);
       const matchesAssignee =
         !assigneeFilter || issue.assignee?.id === assigneeFilter;
-      const matchesProject = !projectFilter || issue.project.id === projectFilter;
+      const matchesProject =
+        !projectFilter ||
+        (projectFilter === FILTER_NO_PROJECT
+          ? issue.project === null
+          : issue.project?.id === projectFilter);
       const matchesStatus = !statusFilter || issue.status === statusFilter;
 
       return matchesText && matchesAssignee && matchesProject && matchesStatus;
@@ -137,6 +143,7 @@ export function IssueDashboard() {
             onChange={(e) => setProjectFilter(e.target.value)}
           >
             <option value="">All projects</option>
+            <option value={FILTER_NO_PROJECT}>No project</option>
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
                 {project.name}
@@ -219,7 +226,9 @@ export function IssueDashboard() {
                                 {issue.title}
                               </p>
                               <p className="mt-1 text-xs text-zinc-500">
-                                {issue.project.name} - {issue.project.product}
+                                {issue.project
+                                  ? `${issue.project.name} - ${issue.project.product}`
+                                  : "No project"}
                               </p>
                               <p className="mt-2 text-sm text-zinc-700">{issue.symptom}</p>
                               <div className="mt-3 grid grid-cols-1 gap-2">

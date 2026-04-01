@@ -31,7 +31,7 @@ export async function POST(request: Request) {
   const body = await request.json();
   const {
     title,
-    projectId,
+    projectId: rawProjectId,
     projectName,
     product,
     symptom,
@@ -39,30 +39,29 @@ export async function POST(request: Request) {
     solution,
     rndContact,
     assigneeId,
-  } = body as Record<string, string>;
+  } = body as Record<string, string | undefined>;
 
-  if (!title || !symptom || (!projectId && (!projectName || !product))) {
+  const projectIdStr =
+    typeof rawProjectId === "string" && rawProjectId.trim() ? rawProjectId.trim() : "";
+
+  if (!title?.trim() || !symptom?.trim()) {
     return NextResponse.json(
-      {
-        error:
-          "Title and symptom are required, plus either an existing project or project name/product.",
-      },
+      { error: "Title and symptom are required." },
       { status: 400 },
     );
   }
 
   let project: { id: string; name: string; archivedAt?: Date | null } | null = null;
-  if (projectId) {
-    project = (await prisma.project.findUnique({ where: { id: projectId } })) as
-      | { id: string; name: string; archivedAt?: Date | null }
-      | null;
-  } else {
+
+  if (projectIdStr) {
+    project = await prisma.project.findUnique({ where: { id: projectIdStr } });
+  } else if (projectName?.trim() && product?.trim()) {
     const adHocCustomer = await prisma.customer.upsert({
       where: { name: "Ad hoc" },
       update: {},
       create: { name: "Ad hoc" },
     });
-    project = (await prisma.project.upsert({
+    project = await prisma.project.upsert({
       where: { name: projectName.trim() },
       update: { product: product.trim() },
       create: {
@@ -70,13 +69,13 @@ export async function POST(request: Request) {
         product: product.trim(),
         customerId: adHocCustomer.id,
       },
-    })) as { id: string; name: string; archivedAt?: Date | null };
+    });
   }
 
-  if (!project) {
+  if (projectIdStr && !project) {
     return NextResponse.json({ error: "Selected project not found." }, { status: 404 });
   }
-  if (project.archivedAt) {
+  if (project?.archivedAt) {
     return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
   }
 
@@ -87,7 +86,7 @@ export async function POST(request: Request) {
       cause: (cause ?? "").trim(),
       solution: (solution ?? "").trim(),
       rndContact: (rndContact ?? "").trim(),
-      projectId: project.id,
+      projectId: project?.id ?? null,
       assigneeId: assigneeId || null,
       reporterId: session.user.id,
     },
@@ -98,12 +97,13 @@ export async function POST(request: Request) {
     },
   });
 
+  const projectLabel = issue.project?.name ?? "no project";
   await writeAuditLog({
     actorId: session.user.id,
     entityType: "Issue",
     entityId: issue.id,
     action: "CREATE",
-    description: `Issue "${issue.title}" created in project ${issue.project.name}.`,
+    description: `Issue "${issue.title}" created (${projectLabel}).`,
   });
 
   return NextResponse.json(issue, { status: 201 });

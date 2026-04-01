@@ -95,7 +95,7 @@ npm run db:generate
 npm run db:seed
 ```
 
-Defaults from seed: `admin@example.com` / `admin123` — change in production.
+Seed promotes `daniel.gleason@lednets.com` to ADMIN, removes legacy `admin@example.com` (reassigns their issues/notes to Daniel), and ensures the demo employee exists. New Daniel accounts use `SEED_ADMIN_PASSWORD` or `please-change-me`.
 
 ## 6. File uploads
 

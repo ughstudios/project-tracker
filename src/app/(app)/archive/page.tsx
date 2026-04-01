@@ -1,10 +1,82 @@
 import { auth } from "@/auth";
+import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+
+async function unarchiveCustomer(formData: FormData) {
+  "use server";
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") return;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const customer = await prisma.customer.update({
+    where: { id },
+    data: { archivedAt: null },
+    select: { id: true, name: true },
+  });
+  await writeAuditLog({
+    actorId: session.user.id,
+    entityType: "Customer",
+    entityId: customer.id,
+    action: "UNARCHIVE",
+    description: `Customer "${customer.name}" unarchived.`,
+  });
+  revalidatePath("/archive");
+}
+
+async function unarchiveProject(formData: FormData) {
+  "use server";
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") return;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const project = await prisma.project.update({
+    where: { id },
+    data: { archivedAt: null },
+    select: { id: true, name: true },
+  });
+  await writeAuditLog({
+    actorId: session.user.id,
+    entityType: "Project",
+    entityId: project.id,
+    action: "UNARCHIVE",
+    description: `Project "${project.name}" unarchived.`,
+  });
+  revalidatePath("/archive");
+}
+
+async function unarchiveIssue(formData: FormData) {
+  "use server";
+  const session = await auth();
+  if (!session?.user || session.user.role !== "ADMIN") return;
+
+  const id = String(formData.get("id") ?? "");
+  if (!id) return;
+
+  const issue = await prisma.issue.update({
+    where: { id },
+    data: { archivedAt: null },
+    select: { id: true, title: true },
+  });
+  await writeAuditLog({
+    actorId: session.user.id,
+    entityType: "Issue",
+    entityId: issue.id,
+    action: "UNARCHIVE",
+    description: `Issue "${issue.title}" unarchived.`,
+  });
+  revalidatePath("/archive");
+}
 
 export default async function ArchivePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+  const isAdmin = session.user.role === "ADMIN";
 
   const [customers, projects, issues] = await Promise.all([
     prisma.customer.findMany({
@@ -50,8 +122,21 @@ export default async function ArchivePage() {
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {customers.map((c) => (
-              <li key={c.id}>
-                {c.name} - {c.archivedAt ? new Date(c.archivedAt).toLocaleString() : ""}
+              <li key={c.id} className="flex items-center justify-between gap-2">
+                <span>
+                  {c.name} - {c.archivedAt ? new Date(c.archivedAt).toLocaleString() : ""}
+                </span>
+                {isAdmin ? (
+                  <form action={unarchiveCustomer}>
+                    <input type="hidden" name="id" value={c.id} />
+                    <button
+                      type="submit"
+                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                    >
+                      Unarchive
+                    </button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -65,9 +150,22 @@ export default async function ArchivePage() {
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {projects.map((p) => (
-              <li key={p.id}>
-                {p.name} ({p.product}) - {p.customer.name} -{" "}
-                {p.archivedAt ? new Date(p.archivedAt).toLocaleString() : ""}
+              <li key={p.id} className="flex items-center justify-between gap-2">
+                <span>
+                  {p.name} ({p.product}) - {p.customer.name} -{" "}
+                  {p.archivedAt ? new Date(p.archivedAt).toLocaleString() : ""}
+                </span>
+                {isAdmin ? (
+                  <form action={unarchiveProject}>
+                    <input type="hidden" name="id" value={p.id} />
+                    <button
+                      type="submit"
+                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                    >
+                      Unarchive
+                    </button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>
@@ -81,9 +179,22 @@ export default async function ArchivePage() {
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {issues.map((i) => (
-              <li key={i.id}>
-                {i.title} ({i.status}) - {i.project.name} -{" "}
-                {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
+              <li key={i.id} className="flex items-center justify-between gap-2">
+                <span>
+                  {i.title} ({i.status}) - {i.project?.name ?? "No project"} -{" "}
+                  {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
+                </span>
+                {isAdmin ? (
+                  <form action={unarchiveIssue}>
+                    <input type="hidden" name="id" value={i.id} />
+                    <button
+                      type="submit"
+                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                    >
+                      Unarchive
+                    </button>
+                  </form>
+                ) : null}
               </li>
             ))}
           </ul>

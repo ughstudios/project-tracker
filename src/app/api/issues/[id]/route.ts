@@ -95,14 +95,21 @@ export async function PATCH(
         : null
       : existing.assigneeId;
 
-  let projectId = existing.projectId;
+  let projectId: string | null = existing.projectId;
   if (body.projectId !== undefined) {
-    const nextPid = String(body.projectId);
-    const proj = await prisma.project.findUnique({ where: { id: nextPid } });
-    if (!proj) {
-      return NextResponse.json({ error: "Project not found." }, { status: 404 });
+    if (body.projectId === null || body.projectId === "") {
+      projectId = null;
+    } else {
+      const nextPid = String(body.projectId);
+      const proj = await prisma.project.findUnique({ where: { id: nextPid } });
+      if (!proj) {
+        return NextResponse.json({ error: "Project not found." }, { status: 404 });
+      }
+      if (proj.archivedAt) {
+        return NextResponse.json({ error: "Selected project is archived." }, { status: 400 });
+      }
+      projectId = nextPid;
     }
-    projectId = nextPid;
   }
 
   if (!title || !symptom) {
