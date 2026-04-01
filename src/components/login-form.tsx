@@ -9,7 +9,7 @@ type LoginState = { error?: string; ok?: boolean };
 
 const initialState: LoginState = {};
 
-export function LoginForm() {
+export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
   const router = useRouter();
   const [state, formAction, pending] = useActionState(loginAction, initialState);
 
@@ -21,6 +21,11 @@ export function LoginForm() {
 
   return (
     <form action={formAction} className="mt-6 space-y-4">
+      {bannerMessage ? (
+        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+          {bannerMessage}
+        </p>
+      ) : null}
       <div>
         <label className="mb-1 block text-sm font-medium">Email</label>
         <input

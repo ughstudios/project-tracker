@@ -2,9 +2,21 @@ import { auth } from "@/auth";
 import { redirect } from "next/navigation";
 import { LoginForm } from "@/components/login-form";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ message?: string | string[] }>;
+}) {
   const session = await auth();
   if (session?.user) redirect("/");
+
+  const params = await searchParams;
+  const raw = params.message;
+  const messageKey = Array.isArray(raw) ? raw[0] : raw;
+  const bannerMessage =
+    messageKey === "email-changed"
+      ? "Your email was updated. Sign in with your new address."
+      : undefined;
 
   return (
     <main className="mx-auto flex min-h-screen w-full max-w-md items-center px-6">
@@ -13,7 +25,7 @@ export default async function LoginPage() {
         <p className="mt-1 text-sm text-zinc-600">
           Sign in to manage and assign project issues.
         </p>
-        <LoginForm />
+        <LoginForm bannerMessage={bannerMessage} />
       </div>
     </main>
   );
