@@ -95,7 +95,7 @@ npm run db:generate
 npm run db:seed
 ```
 
-Seed promotes `daniel.gleason@lednets.com` to ADMIN (new installs: `SEED_ADMIN_PASSWORD` or `please-change-me`), ensures `admin@example.com` / `admin123` as **EMPLOYEE**, and removes legacy `employee1@example.com` if present.
+Seed promotes `daniel.gleason@lednets.com` to **SUPER_ADMIN** (new installs: `SEED_ADMIN_PASSWORD` or `please-change-me`), removes legacy `admin@example.com` and `employee1@example.com` if present, and promotes any remaining `ADMIN` role to `SUPER_ADMIN`.
 
 ## 6. File uploads
 

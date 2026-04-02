@@ -4,8 +4,41 @@ import { PrismaClient } from "../src/generated/prisma/index.js";
 const prisma = new PrismaClient();
 
 const DANIEL_EMAIL = "daniel.gleason@lednets.com";
-const DEMO_ADMIN_EMAIL = "admin@example.com";
-const DEMO_ADMIN_PASSWORD = "admin123";
+
+async function removeAdminExampleUser() {
+  const demo = await prisma.user.findUnique({ where: { email: "admin@example.com" } });
+  if (!demo) return;
+
+  const replacement =
+    (await prisma.user.findUnique({ where: { email: DANIEL_EMAIL } })) ??
+    (await prisma.user.findFirst({
+      where: { id: { not: demo.id } },
+      orderBy: { createdAt: "asc" },
+    }));
+
+  if (replacement) {
+    await prisma.issue.updateMany({ where: { assigneeId: demo.id }, data: { assigneeId: null } });
+    await prisma.issue.updateMany({
+      where: { reporterId: demo.id },
+      data: { reporterId: replacement.id },
+    });
+    await prisma.issueThreadEntry.updateMany({
+      where: { authorId: demo.id },
+      data: { authorId: replacement.id },
+    });
+    await prisma.projectNote.updateMany({
+      where: { authorId: demo.id },
+      data: { authorId: replacement.id },
+    });
+  }
+
+  try {
+    await prisma.user.delete({ where: { id: demo.id } });
+    console.log("Removed user admin@example.com.");
+  } catch (e) {
+    console.error("Could not remove admin@example.com:", e?.message ?? e);
+  }
+}
 
 async function main() {
   let daniel = await prisma.user.findUnique({ where: { email: DANIEL_EMAIL } });
@@ -33,24 +66,7 @@ async function main() {
     console.log(`Updated ${DANIEL_EMAIL} to SUPER_ADMIN.`);
   }
 
-  const demoAdminHash = await bcrypt.hash(DEMO_ADMIN_PASSWORD, 10);
-  await prisma.user.upsert({
-    where: { email: DEMO_ADMIN_EMAIL },
-    update: {
-      name: "Admin User",
-      passwordHash: demoAdminHash,
-      role: "EMPLOYEE",
-      approvalStatus: "APPROVED",
-    },
-    create: {
-      email: DEMO_ADMIN_EMAIL,
-      name: "Admin User",
-      passwordHash: demoAdminHash,
-      role: "EMPLOYEE",
-      approvalStatus: "APPROVED",
-    },
-  });
-  console.log(`Ensured ${DEMO_ADMIN_EMAIL} as EMPLOYEE (password: ${DEMO_ADMIN_PASSWORD}).`);
+  await removeAdminExampleUser();
 
   const deleted = await prisma.user.deleteMany({
     where: { email: "employee1@example.com" },
@@ -71,7 +87,6 @@ async function main() {
 
   console.log("Seed complete.");
   console.log(`Admin login: ${DANIEL_EMAIL}`);
-  console.log(`Demo employee (not admin): ${DEMO_ADMIN_EMAIL} / ${DEMO_ADMIN_PASSWORD}`);
 }
 
 main()
