@@ -7,11 +7,7 @@ const en: MessageTree = {
   },
   nav: {
     appTitle: "Project Tracker",
-    sectionWork: "Work",
-    sectionOperations: "Operations",
-    sectionHistory: "History",
-    sectionPersonal: "Personal",
-    sectionAdmin: "Administration",
+    footerAdmin: "Admin",
     dashboard: "Dashboard",
     issues: "Issues",
     customers: "Customers",
@@ -23,6 +19,8 @@ const en: MessageTree = {
     account: "Account",
     pendingRegistrations: "Pending registrations",
     adminRoles: "Admin roles",
+    pendingShort: "Pending",
+    adminRolesShort: "Roles",
   },
   language: {
     label: "Language",
@@ -404,11 +402,7 @@ const zh: MessageTree = {
   },
   nav: {
     appTitle: "项目跟踪",
-    sectionWork: "工作",
-    sectionOperations: "运营",
-    sectionHistory: "历史",
-    sectionPersonal: "个人",
-    sectionAdmin: "管理",
+    footerAdmin: "管理",
     dashboard: "工作台",
     issues: "问题",
     customers: "客户",
@@ -420,6 +414,8 @@ const zh: MessageTree = {
     account: "账户",
     pendingRegistrations: "待审核注册",
     adminRoles: "管理员角色",
+    pendingShort: "待审核",
+    adminRolesShort: "角色",
   },
   language: {
     label: "语言",
