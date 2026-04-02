@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 function parseWorkDate(value: unknown): Date | null {
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const isAdmin = session.user.role === "ADMIN";
+  const isAdmin = isPrivilegedAdmin(session.user.role);
   const { searchParams } = new URL(request.url);
   const forUserId = searchParams.get("forUserId");
 

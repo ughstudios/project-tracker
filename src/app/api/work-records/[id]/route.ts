@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 function parseWorkDate(value: unknown): Date | null {
@@ -10,7 +11,7 @@ function parseWorkDate(value: unknown): Date | null {
 }
 
 function canModify(session: { user: { id: string; role: string } }, recordUserId: string) {
-  if (session.user.role === "ADMIN") return true;
+  if (isPrivilegedAdmin(session.user.role)) return true;
   return recordUserId === session.user.id;
 }
 

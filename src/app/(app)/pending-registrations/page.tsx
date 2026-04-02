@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { getServerTranslator } from "@/i18n/server";
 import { prisma } from "@/lib/prisma";
 import { writeAuditLog } from "@/lib/audit";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 
@@ -9,7 +10,7 @@ async function approveRegistration(formData: FormData) {
   "use server";
 
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") {
+  if (!session?.user || !isPrivilegedAdmin(session.user.role)) {
     return;
   }
 
@@ -39,7 +40,7 @@ async function approveRegistration(formData: FormData) {
 export default async function PendingRegistrationsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  if (session.user.role !== "ADMIN") redirect("/dashboard");
+  if (!isPrivilegedAdmin(session.user.role)) redirect("/dashboard");
 
   const t = await getServerTranslator();
 

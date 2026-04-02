@@ -45,6 +45,14 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = user.id;
         token.role = (user as { role?: string }).role ?? "EMPLOYEE";
+      } else if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: String(token.id) },
+          select: { role: true, approvalStatus: true },
+        });
+        if (dbUser?.approvalStatus === "APPROVED") {
+          token.role = dbUser.role;
+        }
       }
       return token;
     },

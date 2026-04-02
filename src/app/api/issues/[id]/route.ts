@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -59,7 +60,7 @@ export async function PATCH(
   const body = (await request.json()) as Record<string, unknown>;
 
   if (body.archive === true) {
-    if (session.user.role !== "ADMIN") {
+    if (!isPrivilegedAdmin(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const archivedIssue = await prisma.issue.update({

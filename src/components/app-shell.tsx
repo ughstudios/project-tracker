@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/context";
 import { LanguageToggle } from "@/components/language-toggle";
+import { isPrivilegedAdmin, isSuperAdmin } from "@/lib/roles";
 
 type Props = {
   user: { name?: string | null; email?: string | null; role?: string | null };
@@ -29,7 +30,8 @@ function NavItem({ href, label, prefix }: { href: string; label: string; prefix?
 
 export function AppShell({ user, onLogout, children }: Props) {
   const { t } = useI18n();
-  const isAdmin = user.role === "ADMIN";
+  const staffAdmin = isPrivilegedAdmin(user.role);
+  const superAdmin = isSuperAdmin(user.role);
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -52,8 +54,11 @@ export function AppShell({ user, onLogout, children }: Props) {
               <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
               <NavItem href="/archive" label={t("nav.archive")} />
               <NavItem href="/account" label={t("nav.account")} />
-              {isAdmin ? (
+              {staffAdmin ? (
                 <NavItem href="/pending-registrations" label={t("nav.pendingRegistrations")} />
+              ) : null}
+              {superAdmin ? (
+                <NavItem href="/admin-roles" label={t("nav.adminRoles")} />
               ) : null}
             </nav>
             <div className="mt-auto border-t border-zinc-200 pt-4">

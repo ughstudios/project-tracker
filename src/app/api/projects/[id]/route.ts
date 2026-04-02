@@ -1,6 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 type ProcessorIn = { model?: string; firmware?: string; quantity?: number };
@@ -80,7 +81,7 @@ export async function PATCH(
   };
 
   if (body.archive === true) {
-    if (session.user.role !== "ADMIN") {
+    if (!isPrivilegedAdmin(session.user.role)) {
       return NextResponse.json({ error: "Forbidden" }, { status: 403 });
     }
     const archivedProject = await prisma.project.update({

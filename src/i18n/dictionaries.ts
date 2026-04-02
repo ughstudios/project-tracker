@@ -17,6 +17,7 @@ const en: MessageTree = {
     archive: "Archive",
     account: "Account",
     pendingRegistrations: "Pending Registrations",
+    adminRoles: "Admin roles",
   },
   language: {
     label: "Language",
@@ -258,6 +259,20 @@ const en: MessageTree = {
     couldNotAddNote: "Could not add note.",
     couldNotUpload: "Could not upload file.",
   },
+  adminRoles: {
+    title: "Admin roles",
+    subtitle:
+      "Super admins can grant or remove the regular Admin role. Another super admin’s role cannot be changed here; they may step down only if at least one other super admin exists.",
+    roleColumn: "Role",
+    roleEmployee: "Employee",
+    roleAdmin: "Admin",
+    roleSuperAdmin: "Super admin",
+    peerSuperLocked: "Super admin (locked)",
+    you: "you",
+    loading: "Loading…",
+    none: "No approved users.",
+    couldNotUpdate: "Could not update role.",
+  },
   inventory: {
     title: "Warehouse inventory",
     subtitle:
@@ -394,6 +409,7 @@ const zh: MessageTree = {
     archive: "归档",
     account: "账户",
     pendingRegistrations: "待审核注册",
+    adminRoles: "管理员角色",
   },
   language: {
     label: "语言",
@@ -631,6 +647,20 @@ const zh: MessageTree = {
     updated: "项目已更新。",
     couldNotAddNote: "无法添加备注。",
     couldNotUpload: "无法上传文件。",
+  },
+  adminRoles: {
+    title: "管理员角色",
+    subtitle:
+      "超级管理员可授予或取消普通管理员权限。其他超级管理员的角色不能在此修改；仅当仍存在另一名超级管理员时，本人可主动降级。",
+    roleColumn: "角色",
+    roleEmployee: "员工",
+    roleAdmin: "管理员",
+    roleSuperAdmin: "超级管理员",
+    peerSuperLocked: "超级管理员（不可改）",
+    you: "本人",
+    loading: "加载中…",
+    none: "暂无已通过用户。",
+    couldNotUpdate: "无法更新角色。",
   },
   inventory: {
     title: "仓库库存",

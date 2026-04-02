@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { useCallback, useEffect, useState } from "react";
 
 type WorkRecordRow = {
@@ -65,7 +66,7 @@ export default function WorkRecordsPage() {
       const meRes = await fetch("/api/me");
       if (meRes.ok) {
         const j = (await meRes.json()) as { role?: string };
-        setIsAdmin(j.role === "ADMIN");
+        setIsAdmin(isPrivilegedAdmin(j.role));
       }
     };
     void run();

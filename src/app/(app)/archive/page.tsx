@@ -2,13 +2,14 @@ import { auth } from "@/auth";
 import { getServerTranslator } from "@/i18n/server";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 async function unarchiveCustomer(formData: FormData) {
   "use server";
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") return;
+  if (!session?.user || !isPrivilegedAdmin(session.user.role)) return;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -31,7 +32,7 @@ async function unarchiveCustomer(formData: FormData) {
 async function unarchiveProject(formData: FormData) {
   "use server";
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") return;
+  if (!session?.user || !isPrivilegedAdmin(session.user.role)) return;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -54,7 +55,7 @@ async function unarchiveProject(formData: FormData) {
 async function unarchiveIssue(formData: FormData) {
   "use server";
   const session = await auth();
-  if (!session?.user || session.user.role !== "ADMIN") return;
+  if (!session?.user || !isPrivilegedAdmin(session.user.role)) return;
 
   const id = String(formData.get("id") ?? "");
   if (!id) return;
@@ -77,7 +78,7 @@ async function unarchiveIssue(formData: FormData) {
 export default async function ArchivePage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
-  const isAdmin = session.user.role === "ADMIN";
+  const staffAdmin = isPrivilegedAdmin(session.user.role);
   const t = await getServerTranslator();
 
   const [customers, projects, issues] = await Promise.all([
@@ -129,7 +130,7 @@ export default async function ArchivePage() {
                 <span>
                   {c.name} - {c.archivedAt ? new Date(c.archivedAt).toLocaleString() : ""}
                 </span>
-                {isAdmin ? (
+                {staffAdmin ? (
                   <form action={unarchiveCustomer}>
                     <input type="hidden" name="id" value={c.id} />
                     <button
@@ -158,7 +159,7 @@ export default async function ArchivePage() {
                   {p.name} ({p.product}) - {p.customer.name} -{" "}
                   {p.archivedAt ? new Date(p.archivedAt).toLocaleString() : ""}
                 </span>
-                {isAdmin ? (
+                {staffAdmin ? (
                   <form action={unarchiveProject}>
                     <input type="hidden" name="id" value={p.id} />
                     <button
@@ -190,7 +191,7 @@ export default async function ArchivePage() {
                   {" — "}
                   {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
                 </span>
-                {isAdmin ? (
+                {staffAdmin ? (
                   <form action={unarchiveIssue}>
                     <input type="hidden" name="id" value={i.id} />
                     <button

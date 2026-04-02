@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -95,7 +96,7 @@ export default function ProjectsPage() {
       const sessionRes = await fetch("/api/auth/session");
       if (sessionRes.ok) {
         const session = (await sessionRes.json()) as { user?: { role?: string } };
-        setIsAdmin(session.user?.role === "ADMIN");
+        setIsAdmin(isPrivilegedAdmin(session.user?.role));
       }
     };
     void run();

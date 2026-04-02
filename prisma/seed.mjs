@@ -18,7 +18,7 @@ async function main() {
         email: DANIEL_EMAIL,
         name: "Daniel Gleason",
         passwordHash,
-        role: "ADMIN",
+        role: "SUPER_ADMIN",
         approvalStatus: "APPROVED",
       },
     });
@@ -26,9 +26,9 @@ async function main() {
   } else {
     await prisma.user.update({
       where: { id: daniel.id },
-      data: { role: "ADMIN", approvalStatus: "APPROVED" },
+      data: { role: "SUPER_ADMIN", approvalStatus: "APPROVED" },
     });
-    console.log(`Updated ${DANIEL_EMAIL} to ADMIN.`);
+    console.log(`Updated ${DANIEL_EMAIL} to SUPER_ADMIN.`);
   }
 
   const demoAdminHash = await bcrypt.hash(DEMO_ADMIN_PASSWORD, 10);
