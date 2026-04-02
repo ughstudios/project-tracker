@@ -113,6 +113,30 @@ model ProjectOtherProductConfig {
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
 }
 
+enum WarehouseItemKind {
+  PROCESSOR
+  RECEIVER_CARD
+  OTHER
+}
+
+/// On-hand warehouse stock for processors, receiver cards, and other products (same dimensions as project wizard).
+model WarehouseStockLine {
+  id              String            @id @default(cuid())
+  kind            WarehouseItemKind
+  model           String
+  firmware        String            @default("")
+  receiverVersion String            @default("")
+  category        String            @default("")
+  quantity        Int
+  notes           String?
+  location        String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@unique([kind, model, firmware, receiverVersion, category])
+  @@index([kind])
+}
+
 model ProjectAttachment {
   id         String   @id @default(cuid())
   fileName   String
