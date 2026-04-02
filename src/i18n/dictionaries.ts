@@ -8,6 +8,10 @@ const en: MessageTree = {
   nav: {
     appTitle: "Project Tracker",
     footerAdmin: "Admin",
+    sectionOverview: "Overview",
+    sectionTracking: "Tracking",
+    sectionDirectory: "Directory",
+    sectionRecords: "Records",
     dashboard: "Dashboard",
     issues: "Issues",
     customers: "Customers",
@@ -403,6 +407,10 @@ const zh: MessageTree = {
   nav: {
     appTitle: "项目跟踪",
     footerAdmin: "管理",
+    sectionOverview: "总览",
+    sectionTracking: "跟踪",
+    sectionDirectory: "名录与库存",
+    sectionRecords: "记录与归档",
     dashboard: "工作台",
     issues: "问题",
     customers: "客户",
