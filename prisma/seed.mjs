@@ -22,7 +22,9 @@ async function main() {
         approvalStatus: "APPROVED",
       },
     });
-    console.log(`Created ${DANIEL_EMAIL} as ADMIN (password from SEED_ADMIN_PASSWORD or default "please-change-me").`);
+    console.log(
+      `Created ${DANIEL_EMAIL} as SUPER_ADMIN (password from SEED_ADMIN_PASSWORD or default "please-change-me").`,
+    );
   } else {
     await prisma.user.update({
       where: { id: daniel.id },
@@ -55,6 +57,16 @@ async function main() {
   });
   if (deleted.count > 0) {
     console.log("Removed demo user employee1@example.com.");
+  }
+
+  const promoted = await prisma.user.updateMany({
+    where: { role: "ADMIN" },
+    data: { role: "SUPER_ADMIN" },
+  });
+  if (promoted.count > 0) {
+    console.log(
+      `Promoted ${promoted.count} user(s) from Admin to Super admin (legacy ADMIN tier).`,
+    );
   }
 
   console.log("Seed complete.");
