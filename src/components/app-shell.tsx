@@ -31,7 +31,7 @@ function NavItem({
       href={href}
       title={titleAttr ?? label}
       className={[
-        "block rounded-lg px-2.5 py-2 text-sm transition-colors",
+        "block rounded-md px-2.5 py-1.5 text-xs leading-snug transition-colors",
         active
           ? "bg-zinc-100 font-semibold text-zinc-900 ring-1 ring-inset ring-zinc-200/80"
           : "font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
@@ -49,7 +49,7 @@ function NavRule() {
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-3 first:mt-0">
-      <p className="mb-1 px-2.5 text-[11px] font-medium text-zinc-400">{label}</p>
+      <p className="mb-1 px-2.5 text-xs font-semibold leading-snug text-zinc-500">{label}</p>
       <div className="flex flex-col gap-px">{children}</div>
     </div>
   );
@@ -108,7 +108,7 @@ export function AppShell({ user, onLogout, children }: Props) {
               {showAdminSection ? (
                 <>
                   <NavRule />
-                  <p className="mb-1 px-2.5 text-[11px] font-medium text-zinc-400">{t("nav.footerAdmin")}</p>
+                  <p className="mb-1 px-2.5 text-xs font-semibold leading-snug text-zinc-500">{t("nav.footerAdmin")}</p>
                   <div className="flex flex-col gap-px">
                     {staffAdmin ? (
                       <NavItem
