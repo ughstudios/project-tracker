@@ -31,10 +31,10 @@ function NavItem({
       href={href}
       title={titleAttr ?? label}
       className={[
-        "block rounded-md px-2.5 py-1.5 text-xs leading-snug transition-colors",
+        "block rounded-md border-l-2 border-transparent py-1.5 pl-2 pr-2 text-xs leading-snug transition-colors",
         active
-          ? "bg-zinc-100 font-semibold text-zinc-900 ring-1 ring-inset ring-zinc-200/80"
-          : "font-medium text-zinc-600 hover:bg-zinc-50 hover:text-zinc-900",
+          ? "border-l-zinc-700 bg-zinc-50/90 font-medium text-zinc-900"
+          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-zinc-50/60 hover:text-zinc-900",
       ].join(" ")}
     >
       {label}
@@ -48,9 +48,9 @@ function NavRule() {
 
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-3 first:mt-0">
-      <p className="mb-1 px-2.5 text-xs font-semibold leading-snug text-zinc-500">{label}</p>
-      <div className="flex flex-col gap-px">{children}</div>
+    <div className="mt-4 first:mt-0">
+      <p className="mb-1 text-sm font-semibold leading-tight tracking-tight text-zinc-800">{label}</p>
+      <div className="ml-0.5 flex flex-col gap-0.5 border-l border-zinc-200/90 pl-2.5">{children}</div>
     </div>
   );
 }
@@ -101,15 +101,14 @@ export function AppShell({ user, onLogout, children }: Props) {
 
               <NavRule />
 
-              <div className="flex flex-col gap-px">
+              <NavSection label={t("nav.sectionSettings")}>
                 <NavItem href="/account" label={t("nav.account")} />
-              </div>
+              </NavSection>
 
               {showAdminSection ? (
                 <>
                   <NavRule />
-                  <p className="mb-1 px-2.5 text-xs font-semibold leading-snug text-zinc-500">{t("nav.footerAdmin")}</p>
-                  <div className="flex flex-col gap-px">
+                  <NavSection label={t("nav.footerAdmin")}>
                     {staffAdmin ? (
                       <NavItem
                         href="/pending-registrations"
@@ -124,7 +123,7 @@ export function AppShell({ user, onLogout, children }: Props) {
                         title={t("nav.adminRoles")}
                       />
                     ) : null}
-                  </div>
+                  </NavSection>
                 </>
               ) : null}
             </nav>
