@@ -58,6 +58,7 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
+  const [customerFilterId, setCustomerFilterId] = useState("");
   const [form, setForm] = useState({ name: "", customerId: "" });
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [processors, setProcessors] = useState<ProcessorConfig[]>([
@@ -102,13 +103,22 @@ export default function ProjectsPage() {
     void run();
   }, []);
 
+  const customersSorted = useMemo(
+    () => [...customers].sort((a, b) => a.name.localeCompare(b.name)),
+    [customers],
+  );
+
   const filtered = useMemo(() => {
+    let list = projects;
+    if (customerFilterId) {
+      list = list.filter((p) => p.customer?.id === customerFilterId);
+    }
     const q = query.trim().toLowerCase();
-    if (!q) return projects;
-    return projects.filter((p) =>
+    if (!q) return list;
+    return list.filter((p) =>
       [p.name, p.product, p.customer?.name ?? ""].join(" ").toLowerCase().includes(q),
     );
-  }, [projects, query]);
+  }, [projects, query, customerFilterId]);
 
   const create = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -487,14 +497,35 @@ export default function ProjectsPage() {
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <h2 className="text-base font-semibold">{t("projects.listTitle")}</h2>
-          <input
-            className="input w-full md:w-80"
-            placeholder={t("projects.searchPh")}
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-          />
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-3">
+            <div className="flex min-w-0 flex-col gap-1 sm:min-w-[11rem]">
+              <label htmlFor="projects-customer-filter" className="text-xs font-medium text-zinc-600">
+                {t("projects.filterByCustomer")}
+              </label>
+              <select
+                id="projects-customer-filter"
+                className="input w-full"
+                value={customerFilterId}
+                onChange={(e) => setCustomerFilterId(e.target.value)}
+              >
+                <option value="">{t("projects.allCustomers")}</option>
+                {customersSorted.map((c) => (
+                  <option key={c.id} value={c.id}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <input
+              className="input w-full sm:min-w-[12rem] md:w-80"
+              placeholder={t("projects.searchPh")}
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              aria-label={t("projects.searchPh")}
+            />
+          </div>
         </div>
         {loading ? (
           <p className="mt-3 text-sm text-zinc-600">{t("common.loading")}</p>
