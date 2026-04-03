@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type User = { id: string; name: string | null; email: string | null };
 
@@ -16,11 +16,22 @@ type ProjectSummary = {
 
 type CustomerSummary = { id: string; name: string };
 
+type IssueFileAttachment = {
+  id: string;
+  fileName: string;
+  fileUrl: string;
+  fileType: string;
+  fileSize: number;
+  createdAt: string;
+  uploader: { id: string; name: string | null; email: string | null } | null;
+};
+
 type ThreadEntry = {
   id: string;
   content: string;
   createdAt: string;
   author: { id: string; name: string | null; email: string | null };
+  attachments: IssueFileAttachment[];
 };
 
 type IssueDetail = {
@@ -38,8 +49,37 @@ type IssueDetail = {
   customer: { id: string; name: string } | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
   reporter: { id: string; name: string | null };
+  attachments: IssueFileAttachment[];
   threadEntries: ThreadEntry[];
 };
+
+const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"]);
+const VIDEO_EXT = new Set(["mp4", "webm", "ogv", "mov", "m4v"]);
+
+function isImageExt(ext: string) {
+  return IMAGE_EXT.has(ext.toLowerCase());
+}
+
+function isVideoExt(ext: string) {
+  return VIDEO_EXT.has(ext.toLowerCase());
+}
+
+function formatBytes(n: number) {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function withAttachmentDefaults(data: IssueDetail): IssueDetail {
+  return {
+    ...data,
+    attachments: data.attachments ?? [],
+    threadEntries: (data.threadEntries ?? []).map((e) => ({
+      ...e,
+      attachments: e.attachments ?? [],
+    })),
+  };
+}
 
 const fetchInit: RequestInit = {
   credentials: "include",
@@ -69,7 +109,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [saving, setSaving] = useState(false);
 
   const [threadInput, setThreadInput] = useState("");
+  const [threadFiles, setThreadFiles] = useState<File[]>([]);
+  const threadFileInputRef = useRef<HTMLInputElement>(null);
   const [postingThread, setPostingThread] = useState(false);
+  const [uploadingIssueFiles, setUploadingIssueFiles] = useState(false);
+  const issueFileInputRef = useRef<HTMLInputElement>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [archiving, setArchiving] = useState(false);
 
@@ -123,7 +167,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           }
           return;
         }
-        const data = (await issueRes.json()) as IssueDetail;
+        const data = withAttachmentDefaults((await issueRes.json()) as IssueDetail);
         if (cancelled) return;
         if (data.id !== issueId) {
           setLoadError(t("issueDetail.mismatch"));
@@ -143,7 +187,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const refreshIssue = async () => {
     const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit);
     if (!res.ok) return;
-    const data = (await res.json()) as IssueDetail;
+    const data = withAttachmentDefaults((await res.json()) as IssueDetail);
     if (data.id !== issueId) return;
     setIssue(data);
   };
@@ -173,27 +217,87 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       alert(t("issueDetail.couldNotSave"));
       return;
     }
-    const data = (await res.json()) as IssueDetail;
+    const data = withAttachmentDefaults((await res.json()) as IssueDetail);
     setIssue(data);
     syncDraftFromIssue(data);
   };
 
+  const uploadIssueAttachments = async (fileList: FileList | File[]) => {
+    const files = Array.from(fileList);
+    if (files.length === 0) return;
+    setUploadingIssueFiles(true);
+    const fd = new FormData();
+    for (const f of files) fd.append("files", f);
+    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/attachments`, {
+      credentials: "include",
+      method: "POST",
+      body: fd,
+    });
+    setUploadingIssueFiles(false);
+    if (issueFileInputRef.current) issueFileInputRef.current.value = "";
+    if (!res.ok) {
+      alert(t("issueDetail.couldNotUpload"));
+      return;
+    }
+    await refreshIssue();
+  };
+
+  const deleteIssueAttachment = async (attachmentId: string) => {
+    if (!confirm(t("issueDetail.confirmRemoveAttachment"))) return;
+    const res = await fetch(
+      `/api/issues/${encodeURIComponent(issueId)}/attachments/${encodeURIComponent(attachmentId)}`,
+      { ...fetchInit, method: "DELETE" },
+    );
+    if (!res.ok) {
+      alert(t("issueDetail.couldNotUpload"));
+      return;
+    }
+    await refreshIssue();
+  };
+
+  const deleteThreadAttachment = async (entryId: string, attachmentId: string) => {
+    if (!confirm(t("issueDetail.confirmRemoveAttachment"))) return;
+    const res = await fetch(
+      `/api/issues/${encodeURIComponent(issueId)}/thread/${encodeURIComponent(entryId)}/attachments/${encodeURIComponent(attachmentId)}`,
+      { ...fetchInit, method: "DELETE" },
+    );
+    if (!res.ok) {
+      alert(t("issueDetail.couldNotUpload"));
+      return;
+    }
+    await refreshIssue();
+  };
+
   const postThread = async () => {
     const content = threadInput.trim();
-    if (!content) return;
+    if (!content && threadFiles.length === 0) return;
     setPostingThread(true);
-    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
-      ...fetchInit,
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content }),
-    });
+    let res: Response;
+    if (threadFiles.length > 0) {
+      const fd = new FormData();
+      fd.set("content", content);
+      for (const f of threadFiles) fd.append("files", f);
+      res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
+        credentials: "include",
+        method: "POST",
+        body: fd,
+      });
+    } else {
+      res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
+        ...fetchInit,
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ content }),
+      });
+    }
     setPostingThread(false);
     if (!res.ok) {
       alert(t("issueDetail.couldNotPost"));
       return;
     }
     setThreadInput("");
+    setThreadFiles([]);
+    if (threadFileInputRef.current) threadFileInputRef.current.value = "";
     await refreshIssue();
   };
 
@@ -409,23 +513,108 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       </form>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.attachmentsHelp")}</p>
+        <div className="mt-3 flex flex-wrap items-center gap-2">
+          <input
+            ref={issueFileInputRef}
+            type="file"
+            multiple
+            disabled={uploadingIssueFiles}
+            className="max-w-full text-sm text-zinc-700 file:mr-2 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-2 file:py-1"
+            onChange={(e) => {
+              const list = e.target.files;
+              if (list?.length) void uploadIssueAttachments(list);
+            }}
+          />
+          {uploadingIssueFiles ? (
+            <span className="text-sm text-zinc-600">{t("issueDetail.uploadingFiles")}</span>
+          ) : null}
+        </div>
+        <div className="mt-4 space-y-3">
+          {issue.attachments.length === 0 ? (
+            <p className="text-sm text-zinc-500">{t("issueDetail.noAttachments")}</p>
+          ) : (
+            issue.attachments.map((att) => (
+              <div key={att.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+                {isImageExt(att.fileType) ? (
+                  <a href={att.fileUrl} target="_blank" rel="noreferrer" className="block">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={att.fileUrl}
+                      alt=""
+                      className="max-h-48 w-auto max-w-full rounded object-contain"
+                    />
+                  </a>
+                ) : null}
+                {isVideoExt(att.fileType) ? (
+                  <video
+                    src={att.fileUrl}
+                    controls
+                    className="max-h-56 w-full max-w-lg rounded"
+                    preload="metadata"
+                  />
+                ) : null}
+                <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
+                  <a
+                    href={att.fileUrl}
+                    download={att.fileName}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-sm font-medium text-zinc-900 underline"
+                  >
+                    {att.fileName}
+                  </a>
+                  <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
+                  <button
+                    type="button"
+                    onClick={() => void deleteIssueAttachment(att.id)}
+                    className="text-xs font-medium text-red-700 underline"
+                  >
+                    {t("issueDetail.removeFile")}
+                  </button>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issueDetail.thread")}</h2>
         <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.threadHelp")}</p>
-        <div className="mt-3 flex gap-2">
+        <p className="mt-1 text-xs text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
+        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <textarea
             className="input min-h-[80px] flex-1"
             placeholder={t("issueDetail.threadPlaceholder")}
             value={threadInput}
             onChange={(e) => setThreadInput(e.target.value)}
           />
-          <button
-            type="button"
-            className="self-end rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
-            onClick={postThread}
-            disabled={postingThread}
-          >
-            {postingThread ? t("issueDetail.posting") : t("issueDetail.post")}
-          </button>
+          <div className="flex shrink-0 flex-col gap-2 sm:w-48">
+            <input
+              ref={threadFileInputRef}
+              type="file"
+              multiple
+              className="text-xs text-zinc-700 file:mr-1 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-1.5 file:py-0.5"
+              onChange={(e) => {
+                setThreadFiles(Array.from(e.target.files ?? []));
+              }}
+            />
+            {threadFiles.length > 0 ? (
+              <p className="text-xs text-zinc-600">
+                {threadFiles.map((f) => f.name).join(", ")}
+              </p>
+            ) : null}
+            <button
+              type="button"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+              onClick={() => void postThread()}
+              disabled={postingThread}
+            >
+              {postingThread ? t("issueDetail.posting") : t("issueDetail.post")}
+            </button>
+          </div>
         </div>
         <div className="mt-4 space-y-2">
           {issue.threadEntries.length === 0 ? (
@@ -433,8 +622,55 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           ) : (
             issue.threadEntries.map((entry) => (
               <div key={entry.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                <p className="whitespace-pre-wrap text-sm text-zinc-800">{entry.content}</p>
-                <p className="mt-1 text-xs text-zinc-500">
+                {entry.content ? (
+                  <p className="whitespace-pre-wrap text-sm text-zinc-800">{entry.content}</p>
+                ) : null}
+                {entry.attachments.length > 0 ? (
+                  <div className={entry.content ? "mt-3 space-y-3" : "space-y-3"}>
+                    {entry.attachments.map((att) => (
+                      <div key={att.id} className="rounded-md border border-zinc-200 bg-white p-2">
+                        {isImageExt(att.fileType) ? (
+                          <a href={att.fileUrl} target="_blank" rel="noreferrer" className="block">
+                            {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img
+                              src={att.fileUrl}
+                              alt=""
+                              className="max-h-40 w-auto max-w-full rounded object-contain"
+                            />
+                          </a>
+                        ) : null}
+                        {isVideoExt(att.fileType) ? (
+                          <video
+                            src={att.fileUrl}
+                            controls
+                            className="max-h-48 w-full max-w-md rounded"
+                            preload="metadata"
+                          />
+                        ) : null}
+                        <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <a
+                            href={att.fileUrl}
+                            download={att.fileName}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="text-sm font-medium text-zinc-900 underline"
+                          >
+                            {att.fileName}
+                          </a>
+                          <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
+                          <button
+                            type="button"
+                            onClick={() => void deleteThreadAttachment(entry.id, att.id)}
+                            className="text-xs font-medium text-red-700 underline"
+                          >
+                            {t("issueDetail.removeFile")}
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
+                <p className="mt-2 text-xs text-zinc-500">
                   {entry.author.name ?? entry.author.email ?? t("common.unknown")}
                   {entry.createdAt ? ` · ${new Date(entry.createdAt).toLocaleString()}` : ""}
                 </p>

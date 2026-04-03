@@ -28,6 +28,8 @@ model User {
   createdIssues  Issue[] @relation("IssueReporter")
   issueThreadEntries IssueThreadEntry[] @relation("IssueThreadAuthor")
   uploadedProjectAttachments ProjectAttachment[] @relation("ProjectAttachmentUploader")
+  uploadedIssueAttachments   IssueAttachment[]   @relation("IssueAttachmentUploader")
+  uploadedIssueThreadAttachments IssueThreadAttachment[] @relation("IssueThreadAttachmentUploader")
   projectNotes               ProjectNote[]       @relation("ProjectNoteAuthor")
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
   workRecords                WorkRecord[]
@@ -200,6 +202,7 @@ model Issue {
   assignee  User?   @relation("IssueAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   reporter  User    @relation("IssueReporter", fields: [reporterId], references: [id], onDelete: Restrict)
   threadEntries IssueThreadEntry[]
+  attachments   IssueAttachment[]
 }
 
 model IssueThreadEntry {
@@ -212,4 +215,39 @@ model IssueThreadEntry {
   issue    Issue  @relation(fields: [issueId], references: [id], onDelete: Cascade)
   authorId String
   author   User   @relation("IssueThreadAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+  attachments IssueThreadAttachment[]
+}
+
+model IssueAttachment {
+  id        String   @id @default(cuid())
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  issueId    String
+  issue      Issue @relation(fields: [issueId], references: [id], onDelete: Cascade)
+  uploaderId String?
+  uploader   User?  @relation("IssueAttachmentUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@index([issueId])
+}
+
+model IssueThreadAttachment {
+  id        String   @id @default(cuid())
+  fileName  String
+  fileUrl   String
+  fileType  String
+  fileSize  Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  threadEntryId String
+  threadEntry   IssueThreadEntry @relation(fields: [threadEntryId], references: [id], onDelete: Cascade)
+  uploaderId    String?
+  uploader      User?            @relation("IssueThreadAttachmentUploader", fields: [uploaderId], references: [id], onDelete: SetNull)
+
+  @@index([threadEntryId])
 }

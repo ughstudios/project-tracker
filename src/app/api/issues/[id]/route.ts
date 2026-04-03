@@ -15,6 +15,7 @@ export async function GET(
 
   const { id } = await params;
   try {
+    const attachmentUploader = { select: { id: true, name: true, email: true } as const };
     const issue = await prisma.issue.findUnique({
       where: { id },
       include: {
@@ -22,9 +23,19 @@ export async function GET(
         customer: { select: { id: true, name: true } },
         assignee: { select: { id: true, name: true, email: true } },
         reporter: { select: { id: true, name: true } },
+        attachments: {
+          orderBy: { createdAt: "asc" },
+          include: { uploader: attachmentUploader },
+        },
         threadEntries: {
           orderBy: { createdAt: "asc" },
-          include: { author: { select: { id: true, name: true, email: true } } },
+          include: {
+            author: attachmentUploader,
+            attachments: {
+              orderBy: { createdAt: "asc" },
+              include: { uploader: attachmentUploader },
+            },
+          },
         },
       },
     });
@@ -158,9 +169,19 @@ export async function PATCH(
       customer: { select: { id: true, name: true } },
       assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
+      attachments: {
+        orderBy: { createdAt: "asc" },
+        include: { uploader: { select: { id: true, name: true, email: true } } },
+      },
       threadEntries: {
         orderBy: { createdAt: "asc" },
-        include: { author: { select: { id: true, name: true, email: true } } },
+        include: {
+          author: { select: { id: true, name: true, email: true } },
+          attachments: {
+            orderBy: { createdAt: "asc" },
+            include: { uploader: { select: { id: true, name: true, email: true } } },
+          },
+        },
       },
     },
   });
