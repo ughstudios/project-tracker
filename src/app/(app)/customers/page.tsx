@@ -2,6 +2,7 @@
 
 import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
+import Link from "next/link";
 import { useEffect, useState } from "react";
 
 type Customer = { id: string; name: string; _count?: { projects: number } };
@@ -121,7 +122,13 @@ export default function CustomersPage() {
                   <tr key={c.id} className="odd:bg-white even:bg-zinc-50/50">
                     <td className="border border-zinc-200 px-2 py-2 font-medium">{c.name}</td>
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-700">
-                      {c._count?.projects ?? 0}
+                      <Link
+                        href={`/projects?customer=${encodeURIComponent(c.id)}`}
+                        className="tabular-nums font-medium text-blue-700 hover:underline"
+                        title={t("customers.viewProjectsFor", { name: c.name })}
+                      >
+                        {c._count?.projects ?? 0}
+                      </Link>
                     </td>
                     {isAdmin ? (
                       <td className="border border-zinc-200 px-2 py-2">

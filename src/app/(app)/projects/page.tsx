@@ -3,7 +3,8 @@
 import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 type Customer = { id: string; name: string };
 type ProcessorConfig = { model: string; firmware: string; quantity: number };
@@ -48,8 +49,22 @@ const receiverCardModels = [
   "5A-75B",
 ];
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const { t } = useI18n();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const customerFilterId = searchParams.get("customer")?.trim() ?? "";
+  const setCustomerFilter = useCallback(
+    (id: string) => {
+      const p = new URLSearchParams(searchParams.toString());
+      if (id) p.set("customer", id);
+      else p.delete("customer");
+      const qs = p.toString();
+      router.replace(qs ? `/projects?${qs}` : "/projects", { scroll: false });
+    },
+    [router, searchParams],
+  );
+
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [productGroups, setProductGroups] = useState<
@@ -58,7 +73,6 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [query, setQuery] = useState("");
-  const [customerFilterId, setCustomerFilterId] = useState("");
   const [form, setForm] = useState({ name: "", customerId: "" });
   const [wizardStep, setWizardStep] = useState<1 | 2 | 3 | 4>(1);
   const [processors, setProcessors] = useState<ProcessorConfig[]>([
@@ -508,7 +522,7 @@ export default function ProjectsPage() {
                 id="projects-customer-filter"
                 className="input w-full"
                 value={customerFilterId}
-                onChange={(e) => setCustomerFilterId(e.target.value)}
+                onChange={(e) => setCustomerFilter(e.target.value)}
               >
                 <option value="">{t("projects.allCustomers")}</option>
                 {customersSorted.map((c) => (
@@ -607,3 +621,16 @@ export default function ProjectsPage() {
   );
 }
 
+export default function ProjectsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <p className="text-sm text-zinc-600">Loading…</p>
+        </div>
+      }
+    >
+      <ProjectsPageContent />
+    </Suspense>
+  );
+}

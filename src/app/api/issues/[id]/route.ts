@@ -175,25 +175,3 @@ export async function PATCH(
 
   return NextResponse.json(issue);
 }
-
-export async function DELETE(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  const session = await auth();
-  if (!session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { id } = await params;
-  const existing = await prisma.issue.findUnique({ where: { id }, select: { title: true } });
-  await prisma.issue.delete({ where: { id } });
-  await writeAuditLog({
-    actorId: session.user.id,
-    entityType: "Issue",
-    entityId: id,
-    action: "DELETE",
-    description: `Issue "${existing?.title ?? id}" deleted.`,
-  });
-  return NextResponse.json({ ok: true });
-}

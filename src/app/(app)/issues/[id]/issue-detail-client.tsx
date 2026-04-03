@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -69,6 +70,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
   const [threadInput, setThreadInput] = useState("");
   const [postingThread, setPostingThread] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [archiving, setArchiving] = useState(false);
 
   const syncDraftFromIssue = useCallback((data: IssueDetail) => {
     setTitle(data.title);
@@ -91,13 +94,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       setLoadError(null);
       setIssue(null);
       try {
-        const [issueRes, usersRes, projectsRes, customersRes] = await Promise.all([
+        const [issueRes, usersRes, projectsRes, customersRes, sessionRes] = await Promise.all([
           fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
           fetch("/api/users", fetchInit),
           fetch("/api/projects", fetchInit),
           fetch("/api/customers", fetchInit),
+          fetch("/api/auth/session", fetchInit),
         ]);
         if (cancelled) return;
+        if (sessionRes.ok) {
+          const session = (await sessionRes.json()) as { user?: { role?: string } };
+          setIsAdmin(isPrivilegedAdmin(session.user?.role));
+        }
         if (usersRes.ok) setUsers((await usersRes.json()) as User[]);
         if (projectsRes.ok) setProjects((await projectsRes.json()) as ProjectSummary[]);
         if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
@@ -189,14 +197,19 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     await refreshIssue();
   };
 
-  const remove = async () => {
-    if (!issue || !confirm(t("issueDetail.deleteConfirm", { title: issue.title }))) return;
+  const archive = async () => {
+    if (!issue || !confirm(t("issues.archiveConfirm", { title: issue.title }))) return;
+    setArchiving(true);
     const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, {
       ...fetchInit,
-      method: "DELETE",
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archive: true }),
     });
+    setArchiving(false);
     if (!res.ok) {
-      alert(t("issueDetail.couldNotDelete"));
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("issues.couldNotArchive"));
       return;
     }
     router.push("/issues");
@@ -236,13 +249,16 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         <Link href="/issues" className="text-sm font-medium text-zinc-700 underline underline-offset-2">
           ← {t("nav.issues")}
         </Link>
-        <button
-          type="button"
-          onClick={remove}
-          className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-sm text-red-800 hover:bg-red-100"
-        >
-          {t("issueDetail.deleteIssue")}
-        </button>
+        {isAdmin ? (
+          <button
+            type="button"
+            onClick={() => void archive()}
+            disabled={archiving}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+          >
+            {archiving ? t("common.archiving") : t("issueDetail.archiveIssue")}
+          </button>
+        ) : null}
       </div>
 
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">

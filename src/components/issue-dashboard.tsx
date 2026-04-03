@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { useEffect, useMemo, useState } from "react";
 
 const FILTER_UNLINKED = "__unlinked__";
@@ -47,6 +48,8 @@ export function IssueDashboard() {
   const [statusFilter, setStatusFilter] = useState("");
   const [draggingIssueId, setDraggingIssueId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
 
   const loadData = async () => {
     setLoading(true);
@@ -66,6 +69,11 @@ export function IssueDashboard() {
   useEffect(() => {
     const run = async () => {
       await loadData();
+      const sessionRes = await fetch("/api/auth/session");
+      if (sessionRes.ok) {
+        const session = (await sessionRes.json()) as { user?: { role?: string } };
+        setIsAdmin(isPrivilegedAdmin(session.user?.role));
+      }
     };
     void run();
   }, []);
@@ -107,9 +115,20 @@ export function IssueDashboard() {
     loadData();
   };
 
-  const deleteIssue = async (id: string) => {
-    if (!confirm(t("dashboard.deleteConfirm"))) return;
-    await fetch(`/api/issues/${id}`, { method: "DELETE" });
+  const archiveIssue = async (id: string, title: string) => {
+    if (!confirm(t("issues.archiveConfirm", { title }))) return;
+    setArchivingIssueId(id);
+    const res = await fetch(`/api/issues/${id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ archive: true }),
+    });
+    setArchivingIssueId(null);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("issues.couldNotArchive"));
+      return;
+    }
     loadData();
   };
 
@@ -305,13 +324,18 @@ export function IssueDashboard() {
                                   </p>
                                 </div>
                               </details>
-                              <button
-                                type="button"
-                                onClick={() => deleteIssue(issue.id)}
-                                className="mt-3 rounded-md bg-red-50 px-2 py-1 text-xs font-semibold text-red-700 hover:bg-red-100"
-                              >
-                                {t("common.delete")}
-                              </button>
+                              {isAdmin ? (
+                                <button
+                                  type="button"
+                                  onClick={() => archiveIssue(issue.id, issue.title)}
+                                  disabled={archivingIssueId === issue.id}
+                                  className="mt-3 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50"
+                                >
+                                  {archivingIssueId === issue.id
+                                    ? t("common.archiving")
+                                    : t("common.archive")}
+                                </button>
+                              ) : null}
                             </article>
                           ))
                         )}
