@@ -4,7 +4,7 @@ import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type User = { id: string; name: string | null; email: string | null };
 
@@ -62,6 +62,8 @@ export default function IssuesPage() {
   const [formSolution, setFormSolution] = useState("");
   const [formRnd, setFormRnd] = useState("");
   const [formAssigneeId, setFormAssigneeId] = useState("");
+  const [formFiles, setFormFiles] = useState<File[]>([]);
+  const createFileInputRef = useRef<HTMLInputElement>(null);
   const [creating, setCreating] = useState(false);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -132,18 +134,35 @@ export default function IssuesPage() {
         assigneeId: formAssigneeId || null,
       }),
     });
-    setCreating(false);
     if (!res.ok) {
+      setCreating(false);
       alert(t("issues.couldNotCreate"));
       return;
     }
     const created = (await res.json()) as { id: string };
+
+    if (formFiles.length > 0) {
+      const fd = new FormData();
+      for (const f of formFiles) fd.append("files", f);
+      const up = await fetch(`/api/issues/${encodeURIComponent(created.id)}/attachments`, {
+        credentials: "include",
+        method: "POST",
+        body: fd,
+      });
+      if (!up.ok) {
+        alert(t("issueDetail.couldNotUpload"));
+      }
+    }
+
     setFormTitle("");
     setFormSymptom("");
     setFormCause("");
     setFormSolution("");
     setFormRnd("");
     setFormAssigneeId("");
+    setFormFiles([]);
+    if (createFileInputRef.current) createFileInputRef.current.value = "";
+    setCreating(false);
     await loadLists();
     router.push(`/issues/${created.id}`);
   };
@@ -263,6 +282,21 @@ export default function IssuesPage() {
               value={formRnd}
               onChange={(e) => setFormRnd(e.target.value)}
             />
+          </label>
+          <label className="block text-sm md:col-span-2">
+            <span className="text-zinc-600">{t("issues.attachmentsOptional")}</span>
+            <p className="mt-0.5 text-xs text-zinc-500">{t("issues.attachmentsOnCreateHelp")}</p>
+            <input
+              ref={createFileInputRef}
+              type="file"
+              multiple
+              disabled={creating}
+              className="mt-1 max-w-full text-sm text-zinc-700 file:mr-2 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-2 file:py-1"
+              onChange={(e) => setFormFiles(Array.from(e.target.files ?? []))}
+            />
+            {formFiles.length > 0 ? (
+              <p className="mt-1 text-xs text-zinc-600">{formFiles.map((f) => f.name).join(", ")}</p>
+            ) : null}
           </label>
           <div className="md:col-span-2">
             <button

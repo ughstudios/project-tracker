@@ -152,6 +152,9 @@ const en: MessageTree = {
     archiveConfirm: 'Archive issue "{title}"?',
     couldNotCreate: "Could not create issue.",
     couldNotArchive: "Could not archive issue.",
+    attachmentsOptional: "Attachments (optional)",
+    attachmentsOnCreateHelp:
+      "Add files now or later on the issue page. Max 50 MB per file; up to 20 files.",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -557,6 +560,8 @@ const zh: MessageTree = {
     archiveConfirm: '归档问题「{title}」？',
     couldNotCreate: "无法创建问题。",
     couldNotArchive: "无法归档问题。",
+    attachmentsOptional: "附件（可选）",
+    attachmentsOnCreateHelp: "可在此添加，或稍后在问题详情页上传。单个最大 50 MB，最多 20 个文件。",
   },
   issueDetail: {
     loading: "正在加载问题…",
