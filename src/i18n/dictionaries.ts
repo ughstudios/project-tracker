@@ -8,9 +8,7 @@ const en: MessageTree = {
   nav: {
     appTitle: "Project Tracker",
     footerAdmin: "Admin",
-    sectionWork: "Work",
-    sectionCustomersInventory: "Customers & inventory",
-    sectionHistory: "History",
+    mainMenuAria: "Main pages",
     sectionSettings: "Settings",
     dashboard: "Dashboard",
     issues: "Issues",
@@ -407,9 +405,7 @@ const zh: MessageTree = {
   nav: {
     appTitle: "项目跟踪",
     footerAdmin: "管理",
-    sectionWork: "工作",
-    sectionCustomersInventory: "客户与库存",
-    sectionHistory: "历史与归档",
+    mainMenuAria: "主要页面",
     sectionSettings: "设置",
     dashboard: "工作台",
     issues: "问题",

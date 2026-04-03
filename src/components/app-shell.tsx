@@ -33,8 +33,8 @@ function NavItem({
       className={[
         "block rounded-md border-l-2 border-transparent py-1.5 pl-2 pr-1.5 text-sm leading-snug transition-colors",
         active
-          ? "border-l-zinc-700 bg-white/95 font-medium text-zinc-900"
-          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-white/60 hover:text-zinc-900",
+          ? "border-l-zinc-700 bg-zinc-100 font-medium text-zinc-900"
+          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-zinc-50 hover:text-zinc-900",
       ].join(" ")}
     >
       {label}
@@ -79,22 +79,16 @@ export function AppShell({ user, onLogout, children }: Props) {
               </div>
             </div>
 
-            <nav className="flex min-h-0 flex-1 flex-col">
-              <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-2">
-                <NavSection label={t("nav.sectionWork")}>
-                  <NavItem href="/dashboard" label={t("nav.dashboard")} />
-                  <NavItem href="/issues" label={t("nav.issues")} prefix />
-                  <NavItem href="/projects" label={t("nav.projects")} />
-                  <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
-                </NavSection>
-                <NavSection label={t("nav.sectionCustomersInventory")}>
-                  <NavItem href="/customers" label={t("nav.customers")} />
-                  <NavItem href="/inventory" label={t("nav.inventory")} />
-                </NavSection>
-                <NavSection label={t("nav.sectionHistory")}>
-                  <NavItem href="/logs" label={t("nav.logs")} />
-                  <NavItem href="/archive" label={t("nav.archive")} />
-                </NavSection>
+            <nav className="flex min-h-0 flex-1 flex-col" aria-label={t("nav.mainMenuAria")}>
+              <div className="flex flex-col gap-px">
+                <NavItem href="/dashboard" label={t("nav.dashboard")} />
+                <NavItem href="/issues" label={t("nav.issues")} prefix />
+                <NavItem href="/projects" label={t("nav.projects")} />
+                <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
+                <NavItem href="/customers" label={t("nav.customers")} />
+                <NavItem href="/inventory" label={t("nav.inventory")} />
+                <NavItem href="/logs" label={t("nav.logs")} />
+                <NavItem href="/archive" label={t("nav.archive")} />
               </div>
 
               <NavRule />
