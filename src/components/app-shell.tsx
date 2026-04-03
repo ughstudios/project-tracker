@@ -31,10 +31,10 @@ function NavItem({
       href={href}
       title={titleAttr ?? label}
       className={[
-        "block rounded-md border-l-2 border-transparent py-1.5 pl-2 pr-2 text-xs leading-snug transition-colors",
+        "block rounded-md border-l-2 border-transparent py-1.5 pl-2 pr-1.5 text-sm leading-snug transition-colors",
         active
-          ? "border-l-zinc-700 bg-zinc-50/90 font-medium text-zinc-900"
-          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-zinc-50/60 hover:text-zinc-900",
+          ? "border-l-zinc-700 bg-white/95 font-medium text-zinc-900"
+          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-white/60 hover:text-zinc-900",
       ].join(" ")}
     >
       {label}
@@ -48,9 +48,9 @@ function NavRule() {
 
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="mt-4 first:mt-0">
-      <p className="mb-1 text-sm font-semibold leading-tight tracking-tight text-zinc-800">{label}</p>
-      <div className="ml-0.5 flex flex-col gap-0.5 border-l border-zinc-200/90 pl-2.5">{children}</div>
+    <div className="mt-3 first:mt-0">
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+      <div className="flex flex-col gap-px pl-0.5">{children}</div>
     </div>
   );
 }
@@ -80,20 +80,18 @@ export function AppShell({ user, onLogout, children }: Props) {
             </div>
 
             <nav className="flex min-h-0 flex-1 flex-col">
-              <div className="flex flex-col">
-                <NavSection label={t("nav.sectionOverview")}>
+              <div className="rounded-lg border border-zinc-200/80 bg-zinc-50/60 p-2">
+                <NavSection label={t("nav.sectionWork")}>
                   <NavItem href="/dashboard" label={t("nav.dashboard")} />
-                </NavSection>
-                <NavSection label={t("nav.sectionTracking")}>
                   <NavItem href="/issues" label={t("nav.issues")} prefix />
                   <NavItem href="/projects" label={t("nav.projects")} />
                   <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
                 </NavSection>
-                <NavSection label={t("nav.sectionDirectory")}>
+                <NavSection label={t("nav.sectionCustomersInventory")}>
                   <NavItem href="/customers" label={t("nav.customers")} />
                   <NavItem href="/inventory" label={t("nav.inventory")} />
                 </NavSection>
-                <NavSection label={t("nav.sectionRecords")}>
+                <NavSection label={t("nav.sectionHistory")}>
                   <NavItem href="/logs" label={t("nav.logs")} />
                   <NavItem href="/archive" label={t("nav.archive")} />
                 </NavSection>
