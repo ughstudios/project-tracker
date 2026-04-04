@@ -42,3 +42,77 @@ html[lang="zh-CN"] body {
 .input:focus {
   border-color: #71717a;
 }
+
+/* File inputs: obvious browse control + clear drop target (all browsers). */
+.input-file-zone {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  border: 2px dashed #a1a1aa;
+  border-radius: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: #fafafa;
+  transition:
+    border-color 0.15s ease,
+    background-color 0.15s ease;
+}
+
+.input-file-zone:hover {
+  border-color: #52525b;
+  background: #f4f4f5;
+}
+
+.input-file {
+  width: 100%;
+  max-width: 100%;
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #3f3f46;
+}
+
+.input-file:focus {
+  outline: none;
+}
+
+.input-file:focus-visible {
+  outline: 2px solid #18181b;
+  outline-offset: 3px;
+  border-radius: 0.25rem;
+}
+
+.input-file::file-selector-button {
+  margin-right: 0.75rem;
+  margin-bottom: 0.35rem;
+  cursor: pointer;
+  border-radius: 0.5rem;
+  border: 2px solid #18181b;
+  background: #18181b;
+  color: #fafafa;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: inherit;
+}
+
+.input-file:hover::file-selector-button {
+  background: #27272a;
+  border-color: #27272a;
+}
+
+.input-file:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.input-file:disabled::file-selector-button {
+  cursor: not-allowed;
+}
+
+/* Smaller browse chip in tight layouts (e.g. thread sidebar). */
+.input-file--sm::file-selector-button {
+  padding: 0.375rem 0.65rem;
+  font-size: 0.75rem;
+}

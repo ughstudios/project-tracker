@@ -515,20 +515,22 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.attachmentsHelp")}</p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
-          <input
-            ref={issueFileInputRef}
-            type="file"
-            multiple
-            disabled={uploadingIssueFiles}
-            className="max-w-full text-sm text-zinc-700 file:mr-2 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-2 file:py-1"
-            onChange={(e) => {
-              const list = e.target.files;
-              if (list?.length) void uploadIssueAttachments(list);
-            }}
-          />
+        <div className="mt-3 flex flex-wrap items-start gap-3">
+          <div className="input-file-zone max-w-xl flex-1 min-w-[min(100%,18rem)]">
+            <input
+              ref={issueFileInputRef}
+              type="file"
+              multiple
+              disabled={uploadingIssueFiles}
+              className="input-file"
+              onChange={(e) => {
+                const list = e.target.files;
+                if (list?.length) void uploadIssueAttachments(list);
+              }}
+            />
+          </div>
           {uploadingIssueFiles ? (
-            <span className="text-sm text-zinc-600">{t("issueDetail.uploadingFiles")}</span>
+            <span className="self-center text-sm text-zinc-600">{t("issueDetail.uploadingFiles")}</span>
           ) : null}
         </div>
         <div className="mt-4 space-y-3">
@@ -592,16 +594,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             value={threadInput}
             onChange={(e) => setThreadInput(e.target.value)}
           />
-          <div className="flex shrink-0 flex-col gap-2 sm:w-48">
-            <input
-              ref={threadFileInputRef}
-              type="file"
-              multiple
-              className="text-xs text-zinc-700 file:mr-1 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-1.5 file:py-0.5"
-              onChange={(e) => {
-                setThreadFiles(Array.from(e.target.files ?? []));
-              }}
-            />
+          <div className="flex w-full min-w-0 shrink-0 flex-col gap-2 sm:w-56">
+            <div className="input-file-zone">
+              <input
+                ref={threadFileInputRef}
+                type="file"
+                multiple
+                className="input-file input-file--sm"
+                onChange={(e) => {
+                  setThreadFiles(Array.from(e.target.files ?? []));
+                }}
+              />
+            </div>
             {threadFiles.length > 0 ? (
               <p className="text-xs text-zinc-600">
                 {threadFiles.map((f) => f.name).join(", ")}

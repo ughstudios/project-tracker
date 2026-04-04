@@ -286,14 +286,16 @@ export default function IssuesPage() {
           <label className="block text-sm md:col-span-2">
             <span className="text-zinc-600">{t("issues.attachmentsOptional")}</span>
             <p className="mt-0.5 text-xs text-zinc-500">{t("issues.attachmentsOnCreateHelp")}</p>
-            <input
-              ref={createFileInputRef}
-              type="file"
-              multiple
-              disabled={creating}
-              className="mt-1 max-w-full text-sm text-zinc-700 file:mr-2 file:rounded file:border file:border-zinc-300 file:bg-zinc-50 file:px-2 file:py-1"
-              onChange={(e) => setFormFiles(Array.from(e.target.files ?? []))}
-            />
+            <div className="input-file-zone mt-1 max-w-xl">
+              <input
+                ref={createFileInputRef}
+                type="file"
+                multiple
+                disabled={creating}
+                className="input-file"
+                onChange={(e) => setFormFiles(Array.from(e.target.files ?? []))}
+              />
+            </div>
             {formFiles.length > 0 ? (
               <p className="mt-1 text-xs text-zinc-600">{formFiles.map((f) => f.name).join(", ")}</p>
             ) : null}
