@@ -586,7 +586,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         <p className="mt-1 text-xs text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
         <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
           <textarea
-            className="input min-h-[80px] flex-1"
+            className="input min-h-[120px] w-full flex-1 resize-y"
+            rows={5}
             placeholder={t("issueDetail.threadPlaceholder")}
             value={threadInput}
             onChange={(e) => setThreadInput(e.target.value)}

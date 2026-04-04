@@ -334,16 +334,17 @@ export default function ProjectDetailsPage() {
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.notesTitle")}</h2>
-          <div className="flex gap-2">
-            <input
-              className="input"
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+            <textarea
+              className="input min-h-[120px] w-full flex-1 resize-y sm:min-h-[100px]"
+              rows={5}
               placeholder={t("projectDetail.notePlaceholder")}
               value={noteInput}
               onChange={(e) => setNoteInput(e.target.value)}
             />
             <button
               type="button"
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
               onClick={addNote}
               disabled={addingNote}
             >
@@ -353,7 +354,7 @@ export default function ProjectDetailsPage() {
           <ul className="space-y-1">
             {notes.map((n) => (
               <li key={n.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm">
-                <div>{n.content}</div>
+                <div className="whitespace-pre-wrap">{n.content}</div>
                 <div className="text-[11px] text-zinc-500">
                   {n.author?.name ?? n.author?.email ?? t("common.unknown")}{" "}
                   {n.createdAt ? `• ${new Date(n.createdAt).toLocaleString()}` : ""}
