@@ -27,16 +27,6 @@ export async function GET(
           orderBy: { createdAt: "asc" },
           include: { uploader: attachmentUploader },
         },
-        threadEntries: {
-          orderBy: { createdAt: "asc" },
-          include: {
-            author: attachmentUploader,
-            attachments: {
-              orderBy: { createdAt: "asc" },
-              include: { uploader: attachmentUploader },
-            },
-          },
-        },
       },
     });
 
@@ -172,16 +162,6 @@ export async function PATCH(
       attachments: {
         orderBy: { createdAt: "asc" },
         include: { uploader: { select: { id: true, name: true, email: true } } },
-      },
-      threadEntries: {
-        orderBy: { createdAt: "asc" },
-        include: {
-          author: { select: { id: true, name: true, email: true } },
-          attachments: {
-            orderBy: { createdAt: "asc" },
-            include: { uploader: { select: { id: true, name: true, email: true } } },
-          },
-        },
       },
     },
   });

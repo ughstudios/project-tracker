@@ -50,7 +50,6 @@ type IssueDetail = {
   assignee: { id: string; name: string | null; email: string | null } | null;
   reporter: { id: string; name: string | null };
   attachments: IssueFileAttachment[];
-  threadEntries: ThreadEntry[];
 };
 
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"]);
@@ -74,12 +73,10 @@ function withAttachmentDefaults(data: IssueDetail): IssueDetail {
   return {
     ...data,
     attachments: data.attachments ?? [],
-    threadEntries: (data.threadEntries ?? []).map((e) => ({
-      ...e,
-      attachments: e.attachments ?? [],
-    })),
   };
 }
+
+const THREAD_PAGE_SIZE = 10;
 
 const fetchInit: RequestInit = {
   credentials: "include",
@@ -116,6 +113,41 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const issueFileInputRef = useRef<HTMLInputElement>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [archiving, setArchiving] = useState(false);
+  const [threadEntries, setThreadEntries] = useState<ThreadEntry[]>([]);
+  const [threadPage, setThreadPage] = useState(1);
+  const [threadTotal, setThreadTotal] = useState(0);
+  const [threadListLoading, setThreadListLoading] = useState(false);
+
+  const loadThreadPage = useCallback(
+    async (page: number | "last") => {
+      setThreadListLoading(true);
+      try {
+        const q = page === "last" ? "page=last" : `page=${page}`;
+        const res = await fetch(
+          `/api/issues/${encodeURIComponent(issueId)}/thread?${q}&pageSize=${THREAD_PAGE_SIZE}`,
+          fetchInit,
+        );
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          entries: ThreadEntry[];
+          total: number;
+          page: number;
+          totalPages: number;
+        };
+        setThreadEntries(
+          data.entries.map((e) => ({
+            ...e,
+            attachments: e.attachments ?? [],
+          })),
+        );
+        setThreadPage(data.page);
+        setThreadTotal(data.total);
+      } finally {
+        setThreadListLoading(false);
+      }
+    },
+    [issueId],
+  );
 
   const syncDraftFromIssue = useCallback((data: IssueDetail) => {
     setTitle(data.title);
@@ -137,14 +169,22 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       setLoading(true);
       setLoadError(null);
       setIssue(null);
+      setThreadEntries([]);
+      setThreadPage(1);
+      setThreadTotal(0);
       try {
-        const [issueRes, usersRes, projectsRes, customersRes, sessionRes] = await Promise.all([
-          fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
-          fetch("/api/users", fetchInit),
-          fetch("/api/projects", fetchInit),
-          fetch("/api/customers", fetchInit),
-          fetch("/api/auth/session", fetchInit),
-        ]);
+        const [issueRes, threadRes, usersRes, projectsRes, customersRes, sessionRes] =
+          await Promise.all([
+            fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
+            fetch(
+              `/api/issues/${encodeURIComponent(issueId)}/thread?page=1&pageSize=${THREAD_PAGE_SIZE}`,
+              fetchInit,
+            ),
+            fetch("/api/users", fetchInit),
+            fetch("/api/projects", fetchInit),
+            fetch("/api/customers", fetchInit),
+            fetch("/api/auth/session", fetchInit),
+          ]);
         if (cancelled) return;
         if (sessionRes.ok) {
           const session = (await sessionRes.json()) as { user?: { role?: string } };
@@ -175,6 +215,23 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         }
         setIssue(data);
         syncDraftFromIssue(data);
+        if (threadRes.ok) {
+          const td = (await threadRes.json()) as {
+            entries: ThreadEntry[];
+            total: number;
+            page: number;
+          };
+          if (!cancelled) {
+            setThreadEntries(
+              td.entries.map((e) => ({
+                ...e,
+                attachments: e.attachments ?? [],
+              })),
+            );
+            setThreadPage(td.page);
+            setThreadTotal(td.total);
+          }
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -265,7 +322,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       alert(t("issueDetail.couldNotUpload"));
       return;
     }
-    await refreshIssue();
+    await loadThreadPage(threadPage);
   };
 
   const postThread = async () => {
@@ -298,7 +355,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setThreadInput("");
     setThreadFiles([]);
     if (threadFileInputRef.current) threadFileInputRef.current.value = "";
-    await refreshIssue();
+    await loadThreadPage("last");
   };
 
   const archive = async () => {
@@ -346,6 +403,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
   const p = issue.project;
   const c = issue.customer;
+  const threadTotalPages = Math.max(1, Math.ceil(threadTotal / THREAD_PAGE_SIZE));
 
   return (
     <div className="space-y-4">
@@ -621,11 +679,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </button>
           </div>
         </div>
-        <div className="mt-4 space-y-2">
-          {issue.threadEntries.length === 0 ? (
+        <div
+          className={`mt-4 space-y-2 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
+        >
+          {threadListLoading && threadEntries.length === 0 ? (
+            <p className="text-sm text-zinc-600">{t("common.loading")}</p>
+          ) : threadEntries.length === 0 ? (
             <p className="text-sm text-zinc-500">{t("issueDetail.noReplies")}</p>
           ) : (
-            issue.threadEntries.map((entry) => (
+            threadEntries.map((entry) => (
               <div key={entry.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 {entry.content ? (
                   <p className="whitespace-pre-wrap text-sm text-zinc-800">{entry.content}</p>
@@ -683,6 +745,35 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             ))
           )}
         </div>
+        {threadTotal > 0 && threadTotalPages > 1 ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3">
+            <p className="text-xs text-zinc-500">
+              {t("issueDetail.threadPageSummary", {
+                page: String(threadPage),
+                totalPages: String(threadTotalPages),
+                total: String(threadTotal),
+              })}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={threadPage <= 1 || threadListLoading}
+                onClick={() => void loadThreadPage(threadPage - 1)}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {t("common.previous")}
+              </button>
+              <button
+                type="button"
+                disabled={threadPage >= threadTotalPages || threadListLoading}
+                onClick={() => void loadThreadPage(threadPage + 1)}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {t("common.next")}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </div>
   );
