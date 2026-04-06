@@ -25,6 +25,8 @@ function toDateInputValue(iso: string): string {
   return `${y}-${m}-${day}`;
 }
 
+const WORK_RECORDS_PAGE_SIZE = 10;
+
 export default function WorkRecordsPage() {
   const { t } = useI18n();
   const [records, setRecords] = useState<WorkRecordRow[]>([]);
@@ -33,6 +35,8 @@ export default function WorkRecordsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [filterUserId, setFilterUserId] = useState<string>("");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
 
   const [formDate, setFormDate] = useState(() => toDateInputValue(new Date().toISOString()));
   const [formTitle, setFormTitle] = useState("");
@@ -45,21 +49,35 @@ export default function WorkRecordsPage() {
   const [editContent, setEditContent] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
 
-  const loadRecords = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    const qs =
-      isAdmin && filterUserId ? `?forUserId=${encodeURIComponent(filterUserId)}` : "";
-    const res = await fetch(`/api/work-records${qs}`);
-    if (!res.ok) {
-      setError(t("workRecords.couldNotLoad"));
-      setRecords([]);
+  const fetchPage = useCallback(
+    async (forPage: number | "last") => {
+      setLoading(true);
+      setError(null);
+      const params = new URLSearchParams();
+      params.set("page", forPage === "last" ? "last" : String(forPage));
+      params.set("pageSize", String(WORK_RECORDS_PAGE_SIZE));
+      if (isAdmin && filterUserId) params.set("forUserId", filterUserId);
+      const res = await fetch(`/api/work-records?${params}`);
+      if (!res.ok) {
+        setError(t("workRecords.couldNotLoad"));
+        setRecords([]);
+        setTotal(0);
+        setLoading(false);
+        return;
+      }
+      const data = (await res.json()) as {
+        records: WorkRecordRow[];
+        total: number;
+        page: number;
+        totalPages: number;
+      };
+      setRecords(data.records);
+      setTotal(data.total);
+      setPage(data.page);
       setLoading(false);
-      return;
-    }
-    setRecords(await res.json());
-    setLoading(false);
-  }, [filterUserId, isAdmin, t]);
+    },
+    [filterUserId, isAdmin, t],
+  );
 
   useEffect(() => {
     const run = async () => {
@@ -82,8 +100,8 @@ export default function WorkRecordsPage() {
   }, [isAdmin]);
 
   useEffect(() => {
-    void loadRecords();
-  }, [loadRecords]);
+    void fetchPage(page);
+  }, [page, filterUserId, isAdmin, fetchPage]);
 
   async function onCreate(e: React.FormEvent) {
     e.preventDefault();
@@ -106,7 +124,7 @@ export default function WorkRecordsPage() {
     }
     setFormTitle("");
     setFormContent("");
-    void loadRecords();
+    void fetchPage(1);
   }
 
   function startEdit(row: WorkRecordRow) {
@@ -142,7 +160,7 @@ export default function WorkRecordsPage() {
       return;
     }
     cancelEdit();
-    void loadRecords();
+    void fetchPage(page);
   }
 
   async function onDelete(id: string) {
@@ -153,8 +171,10 @@ export default function WorkRecordsPage() {
       setError(t("workRecords.couldNotDelete"));
       return;
     }
-    void loadRecords();
+    void fetchPage(page);
   }
+
+  const totalPages = Math.max(1, Math.ceil(total / WORK_RECORDS_PAGE_SIZE));
 
   return (
     <div className="space-y-4">
@@ -169,7 +189,10 @@ export default function WorkRecordsPage() {
             <span className="font-medium text-zinc-700">{t("workRecords.adminFilter")}</span>
             <select
               value={filterUserId}
-              onChange={(e) => setFilterUserId(e.target.value)}
+              onChange={(e) => {
+                setFilterUserId(e.target.value);
+                setPage(1);
+              }}
               className="rounded-md border border-zinc-300 bg-white px-2 py-1.5 text-sm"
             >
               <option value="">{t("workRecords.everyone")}</option>
@@ -336,6 +359,35 @@ export default function WorkRecordsPage() {
             </table>
           </div>
         )}
+        {!loading && total > 0 && totalPages > 1 ? (
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3">
+            <p className="text-xs text-zinc-500">
+              {t("workRecords.pageSummary", {
+                page: String(page),
+                totalPages: String(totalPages),
+                total: String(total),
+              })}
+            </p>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {t("common.previous")}
+              </button>
+              <button
+                type="button"
+                disabled={page >= totalPages || loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+              >
+                {t("common.next")}
+              </button>
+            </div>
+          </div>
+        ) : null}
       </section>
     </div>
   );

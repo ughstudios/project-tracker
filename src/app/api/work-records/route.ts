@@ -27,15 +27,34 @@ export async function GET(request: Request) {
     where = { userId: session.user.id };
   }
 
+  const rawPage = searchParams.get("page");
+  const parsedSize = parseInt(searchParams.get("pageSize") ?? "10", 10);
+  const pageSize = Math.min(Math.max(Number.isFinite(parsedSize) ? parsedSize : 10, 1), 50);
+
   try {
+    const total = await prisma.workRecord.count({ where });
+    const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+    let page = 1;
+    if (rawPage === "last") {
+      page = totalPages;
+    } else {
+      const p = parseInt(rawPage ?? "1", 10);
+      page = Number.isFinite(p) && p >= 1 ? Math.min(p, totalPages) : 1;
+    }
+
+    const skip = (page - 1) * pageSize;
+
     const records = await prisma.workRecord.findMany({
       where,
       orderBy: [{ workDate: "desc" }, { createdAt: "desc" }],
+      skip,
+      take: pageSize,
       include: {
         user: { select: { id: true, name: true, email: true } },
       },
     });
-    return NextResponse.json(records);
+    return NextResponse.json({ records, total, page, pageSize, totalPages });
   } catch {
     return NextResponse.json({ error: "Failed to load work records." }, { status: 500 });
   }

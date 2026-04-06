@@ -351,6 +351,7 @@ const en: MessageTree = {
     couldNotCreate: "Could not create work record.",
     couldNotSave: "Could not save work record.",
     couldNotDelete: "Could not delete work record.",
+    pageSummary: "Page {page} of {totalPages} · {total} records",
   },
   archive: {
     title: "Archive",
@@ -757,6 +758,7 @@ const zh: MessageTree = {
     couldNotCreate: "无法创建工作记录。",
     couldNotSave: "无法保存工作记录。",
     couldNotDelete: "无法删除工作记录。",
+    pageSummary: "第 {page} / {totalPages} 页 · 共 {total} 条",
   },
   archive: {
     title: "归档",
