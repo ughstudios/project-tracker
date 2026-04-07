@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
 import { prisma } from "@/lib/prisma";
-import { parseIssueCols, parseReportQuery, parseUserCols, parseWorkCols } from "@/lib/report-params";
+import { parseIssueCols, parseUserCols, parseWorkCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
@@ -16,7 +16,6 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const { format } = parseReportQuery(searchParams);
   const issueCols = parseIssueCols(searchParams);
   const workCols = parseWorkCols(searchParams);
   const userCols = parseUserCols(searchParams);
@@ -60,9 +59,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       files: {
-        "issues-all.csv": issuesToCsv(issues, format, issueCols),
-        "work-records-all.csv": workRecordsToCsv(workRecords, format, workCols),
-        "users-approved.csv": usersToCsv(users, format, userCols),
+        "issues-all.csv": issuesToCsv(issues, issueCols),
+        "work-records-all.csv": workRecordsToCsv(workRecords, workCols),
+        "users-approved.csv": usersToCsv(users, userCols),
       },
     });
   } catch {

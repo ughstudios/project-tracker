@@ -1,9 +1,15 @@
 "use client";
 
 import {
+  DEFAULT_ISSUE_COLUMNS,
+  DEFAULT_USER_COLUMNS,
+  DEFAULT_WORK_COLUMNS,
   ISSUE_COLUMN_KEYS,
+  ISSUE_ID_KEYS,
   USER_COLUMN_KEYS,
+  USER_ID_KEYS,
   WORK_COLUMN_KEYS,
+  WORK_ID_KEYS,
   type IssueColumnKey,
   type UserColumnKey,
   type WorkColumnKey,
@@ -13,8 +19,6 @@ import { isPrivilegedAdmin } from "@/lib/roles";
 import { useCallback, useEffect, useState } from "react";
 
 type UserOption = { id: string; name: string; email: string; role: string };
-
-type CsvFormat = "human" | "technical";
 
 function currentYearMonth(): string {
   const d = new Date();
@@ -60,6 +64,7 @@ function ColumnGroup<T extends string>({
   selected,
   onChange,
   labelPrefix,
+  excludeFromBulkAll,
   t,
 }: {
   title: string;
@@ -67,6 +72,8 @@ function ColumnGroup<T extends string>({
   selected: T[];
   onChange: (next: T[]) => void;
   labelPrefix: "reports.columnsIssue" | "reports.columnsWork" | "reports.columnsUser";
+  /** Omitted when using “select all recommended” (e.g. internal IDs). */
+  excludeFromBulkAll?: Set<string>;
   t: (k: string) => string;
 }) {
   return (
@@ -75,7 +82,9 @@ function ColumnGroup<T extends string>({
         <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</h3>
         <button
           type="button"
-          onClick={() => onChange([...canonical])}
+          onClick={() =>
+            onChange(canonical.filter((k) => !excludeFromBulkAll?.has(k)) as T[])
+          }
           className="text-xs font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
         >
           {t("reports.selectAllCols")}
@@ -118,10 +127,9 @@ export default function ReportsPage() {
   const [wrFrom, setWrFrom] = useState(monthRangeDefaults().from);
   const [wrTo, setWrTo] = useState(monthRangeDefaults().to);
   const [wrForUserId, setWrForUserId] = useState("");
-  const [csvFormat, setCsvFormat] = useState<CsvFormat>("human");
-  const [issueCols, setIssueCols] = useState<IssueColumnKey[]>(() => [...ISSUE_COLUMN_KEYS]);
-  const [workCols, setWorkCols] = useState<WorkColumnKey[]>(() => [...WORK_COLUMN_KEYS]);
-  const [userCols, setUserCols] = useState<UserColumnKey[]>(() => [...USER_COLUMN_KEYS]);
+  const [issueCols, setIssueCols] = useState<IssueColumnKey[]>(() => [...DEFAULT_ISSUE_COLUMNS]);
+  const [workCols, setWorkCols] = useState<WorkColumnKey[]>(() => [...DEFAULT_WORK_COLUMNS]);
+  const [userCols, setUserCols] = useState<UserColumnKey[]>(() => [...DEFAULT_USER_COLUMNS]);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -166,7 +174,6 @@ export default function ReportsPage() {
     try {
       const q = new URLSearchParams({
         month: outstandingMonth,
-        format: csvFormat,
         issueCols: issueCols.join(","),
       });
       const res = await fetch(`/api/reports/outstanding-issues?${q}`);
@@ -184,7 +191,7 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [outstandingMonth, csvFormat, issueCols, t]);
+  }, [outstandingMonth, issueCols, t]);
 
   const downloadWorkRecords = useCallback(async () => {
     if (workCols.length === 0) {
@@ -197,7 +204,6 @@ export default function ReportsPage() {
       const params = new URLSearchParams({
         from: wrFrom,
         to: wrTo,
-        format: csvFormat,
         workCols: workCols.join(","),
       });
       if (isAdmin === true && wrForUserId) params.set("forUserId", wrForUserId);
@@ -212,7 +218,7 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [wrFrom, wrTo, wrForUserId, isAdmin, csvFormat, workCols, t]);
+  }, [wrFrom, wrTo, wrForUserId, isAdmin, workCols, t]);
 
   const downloadExportAll = useCallback(async () => {
     if (issueCols.length === 0 || workCols.length === 0 || userCols.length === 0) {
@@ -223,7 +229,6 @@ export default function ReportsPage() {
     setBusy("exportAll");
     try {
       const q = new URLSearchParams({
-        format: csvFormat,
         issueCols: issueCols.join(","),
         workCols: workCols.join(","),
         userCols: userCols.join(","),
@@ -254,7 +259,7 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [csvFormat, issueCols, workCols, userCols, t]);
+  }, [issueCols, workCols, userCols, t]);
 
   return (
     <div className="min-w-0 space-y-8">
@@ -284,20 +289,7 @@ export default function ReportsPage() {
               ? t("reports.csvOptionsHelp")
               : t("reports.csvOptionsHelpEmployee")}
         </p>
-        <div className="mt-4 max-w-md">
-          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
-            {t("reports.formatLabel")}
-            <select
-              value={csvFormat}
-              onChange={(e) => setCsvFormat(e.target.value as CsvFormat)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
-            >
-              <option value="human">{t("reports.formatHuman")}</option>
-              <option value="technical">{t("reports.formatTechnical")}</option>
-            </select>
-          </label>
-          <p className="mt-2 text-xs text-zinc-500">{t("reports.formatTechnicalNote")}</p>
-        </div>
+        <p className="mt-3 text-xs text-zinc-500">{t("reports.idColumnsHint")}</p>
 
         <div className="mt-6 flex flex-col gap-6 border-t border-zinc-100 pt-6">
           {isAdmin === true ? (
@@ -307,6 +299,7 @@ export default function ReportsPage() {
               selected={issueCols}
               onChange={(next) => setIssueCols(next as IssueColumnKey[])}
               labelPrefix="reports.columnsIssue"
+              excludeFromBulkAll={ISSUE_ID_KEYS}
               t={t}
             />
           ) : null}
@@ -316,6 +309,7 @@ export default function ReportsPage() {
             selected={workCols}
             onChange={(next) => setWorkCols(next as WorkColumnKey[])}
             labelPrefix="reports.columnsWork"
+            excludeFromBulkAll={WORK_ID_KEYS}
             t={t}
           />
           {isAdmin === true ? (
@@ -325,6 +319,7 @@ export default function ReportsPage() {
               selected={userCols}
               onChange={(next) => setUserCols(next as UserColumnKey[])}
               labelPrefix="reports.columnsUser"
+              excludeFromBulkAll={USER_ID_KEYS}
               t={t}
             />
           ) : null}

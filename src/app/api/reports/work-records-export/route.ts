@@ -3,7 +3,7 @@ import { workRecordsToCsv } from "@/lib/report-column-defs";
 import { withBomUtf8 } from "@/lib/csv";
 import { prisma } from "@/lib/prisma";
 import { parseDateUtcDay } from "@/lib/report-dates";
-import { parseReportQuery, parseWorkCols } from "@/lib/report-params";
+import { parseWorkCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
@@ -21,7 +21,6 @@ export async function GET(request: Request) {
 
   const isAdmin = isPrivilegedAdmin(session.user.role);
   const { searchParams } = new URL(request.url);
-  const { format } = parseReportQuery(searchParams);
   const workCols = parseWorkCols(searchParams);
   if (workCols.length === 0) {
     return NextResponse.json({ error: "At least one work-record column is required (workCols)." }, { status: 400 });
@@ -63,7 +62,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const csv = workRecordsToCsv(records, format, workCols);
+    const csv = workRecordsToCsv(records, workCols);
     const slug = `${fromStr.trim()}_to_${toStr.trim()}`.replace(/[^\d_-]/g, "");
     return new NextResponse(withBomUtf8(csv), {
       status: 200,

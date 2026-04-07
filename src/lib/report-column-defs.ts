@@ -1,7 +1,6 @@
 import type { Customer, Issue, Project, User, WorkRecord } from "@/generated/prisma";
 import { csvRow } from "@/lib/csv";
 import { formatDateTimeUtc, formatDateUtc } from "@/lib/report-dates";
-import type { ReportFormat } from "@/lib/report-params";
 
 export type IssueWithRelations = Issue & {
   project: Pick<Project, "name"> | null;
@@ -16,15 +15,10 @@ export type WorkRecordWithUser = WorkRecord & {
 
 export type UserExport = Pick<User, "id" | "name" | "email" | "role" | "createdAt" | "approvalStatus">;
 
-function fmtDate(d: Date | null | undefined, format: ReportFormat): string {
-  if (d == null) return "";
-  return format === "technical" ? d.toISOString() : formatDateUtc(d);
-}
-
-function fmtDateTime(d: Date | null | undefined, format: ReportFormat): string {
-  if (d == null) return "";
-  return format === "technical" ? d.toISOString() : formatDateTimeUtc(d);
-}
+/** Keys treated as internal IDs: off by default; not selected by “select all (recommended)”. */
+export const ISSUE_ID_KEYS = new Set<string>(["id"]);
+export const WORK_ID_KEYS = new Set<string>(["id", "userId"]);
+export const USER_ID_KEYS = new Set<string>(["id"]);
 
 export const ISSUE_COLUMN_KEYS = [
   "id",
@@ -48,67 +42,31 @@ export const ISSUE_COLUMN_KEYS = [
 
 export type IssueColumnKey = (typeof ISSUE_COLUMN_KEYS)[number];
 
+export const DEFAULT_ISSUE_COLUMNS: IssueColumnKey[] = ISSUE_COLUMN_KEYS.filter(
+  (k) => !ISSUE_ID_KEYS.has(k),
+) as IssueColumnKey[];
+
 const ISSUE_COLS: Record<
   IssueColumnKey,
-  { humanHeader: string; technicalHeader: string; cell: (i: IssueWithRelations, f: ReportFormat) => string }
+  { header: string; cell: (i: IssueWithRelations) => string }
 > = {
-  id: { humanHeader: "ID", technicalHeader: "id", cell: (i) => i.id },
-  title: { humanHeader: "Title", technicalHeader: "title", cell: (i) => i.title },
-  status: { humanHeader: "Status", technicalHeader: "status", cell: (i) => i.status },
-  symptom: { humanHeader: "Symptom", technicalHeader: "symptom", cell: (i) => i.symptom },
-  cause: { humanHeader: "Cause", technicalHeader: "cause", cell: (i) => i.cause },
-  solution: { humanHeader: "Solution", technicalHeader: "solution", cell: (i) => i.solution },
-  rndContact: { humanHeader: "R&D contact", technicalHeader: "rndContact", cell: (i) => i.rndContact },
-  projectName: {
-    humanHeader: "Project",
-    technicalHeader: "projectName",
-    cell: (i) => i.project?.name ?? "",
-  },
-  customerName: {
-    humanHeader: "Customer",
-    technicalHeader: "customerName",
-    cell: (i) => i.customer?.name ?? "",
-  },
-  assigneeName: {
-    humanHeader: "Assignee",
-    technicalHeader: "assigneeName",
-    cell: (i) => i.assignee?.name ?? "",
-  },
-  assigneeEmail: {
-    humanHeader: "Assignee email",
-    technicalHeader: "assigneeEmail",
-    cell: (i) => i.assignee?.email ?? "",
-  },
-  reporterName: {
-    humanHeader: "Reporter",
-    technicalHeader: "reporterName",
-    cell: (i) => i.reporter.name,
-  },
-  reporterEmail: {
-    humanHeader: "Reporter email",
-    technicalHeader: "reporterEmail",
-    cell: (i) => i.reporter.email,
-  },
-  createdAt: {
-    humanHeader: "Opened",
-    technicalHeader: "createdAt",
-    cell: (i, f) => fmtDate(i.createdAt, f),
-  },
-  updatedAt: {
-    humanHeader: "Last updated",
-    technicalHeader: "updatedAt",
-    cell: (i, f) => fmtDateTime(i.updatedAt, f),
-  },
-  doneAt: {
-    humanHeader: "Completed",
-    technicalHeader: "doneAt",
-    cell: (i, f) => fmtDate(i.doneAt, f),
-  },
-  archivedAt: {
-    humanHeader: "Archived",
-    technicalHeader: "archivedAt",
-    cell: (i, f) => fmtDate(i.archivedAt, f),
-  },
+  id: { header: "ID", cell: (i) => i.id },
+  title: { header: "Title", cell: (i) => i.title },
+  status: { header: "Status", cell: (i) => i.status },
+  symptom: { header: "Symptom", cell: (i) => i.symptom },
+  cause: { header: "Cause", cell: (i) => i.cause },
+  solution: { header: "Solution", cell: (i) => i.solution },
+  rndContact: { header: "R&D contact", cell: (i) => i.rndContact },
+  projectName: { header: "Project", cell: (i) => i.project?.name ?? "" },
+  customerName: { header: "Customer", cell: (i) => i.customer?.name ?? "" },
+  assigneeName: { header: "Assignee", cell: (i) => i.assignee?.name ?? "" },
+  assigneeEmail: { header: "Assignee email", cell: (i) => i.assignee?.email ?? "" },
+  reporterName: { header: "Reporter", cell: (i) => i.reporter.name },
+  reporterEmail: { header: "Reporter email", cell: (i) => i.reporter.email },
+  createdAt: { header: "Opened", cell: (i) => formatDateUtc(i.createdAt) },
+  updatedAt: { header: "Last updated", cell: (i) => formatDateTimeUtc(i.updatedAt) },
+  doneAt: { header: "Completed", cell: (i) => (i.doneAt ? formatDateUtc(i.doneAt) : "") },
+  archivedAt: { header: "Archived", cell: (i) => (i.archivedAt ? formatDateUtc(i.archivedAt) : "") },
 };
 
 export const WORK_COLUMN_KEYS = [
@@ -125,97 +83,63 @@ export const WORK_COLUMN_KEYS = [
 
 export type WorkColumnKey = (typeof WORK_COLUMN_KEYS)[number];
 
-const WORK_COLS: Record<
-  WorkColumnKey,
-  { humanHeader: string; technicalHeader: string; cell: (r: WorkRecordWithUser, f: ReportFormat) => string }
-> = {
-  id: { humanHeader: "Record ID", technicalHeader: "id", cell: (r) => r.id },
-  userId: { humanHeader: "User ID", technicalHeader: "userId", cell: (r) => r.userId },
-  userName: { humanHeader: "Person", technicalHeader: "userName", cell: (r) => r.user.name },
-  userEmail: { humanHeader: "Email", technicalHeader: "userEmail", cell: (r) => r.user.email },
-  workDate: {
-    humanHeader: "Work date",
-    technicalHeader: "workDate",
-    cell: (r, f) => (f === "technical" ? r.workDate.toISOString() : formatDateUtc(r.workDate)),
-  },
-  title: { humanHeader: "Title", technicalHeader: "title", cell: (r) => r.title },
-  content: { humanHeader: "What you did", technicalHeader: "content", cell: (r) => r.content },
-  createdAt: {
-    humanHeader: "First saved",
-    technicalHeader: "createdAt",
-    cell: (r, f) => fmtDateTime(r.createdAt, f),
-  },
-  updatedAt: {
-    humanHeader: "Last updated",
-    technicalHeader: "updatedAt",
-    cell: (r, f) => fmtDateTime(r.updatedAt, f),
-  },
-};
+export const DEFAULT_WORK_COLUMNS: WorkColumnKey[] = WORK_COLUMN_KEYS.filter(
+  (k) => !WORK_ID_KEYS.has(k),
+) as WorkColumnKey[];
+
+const WORK_COLS: Record<WorkColumnKey, { header: string; cell: (r: WorkRecordWithUser) => string }> =
+  {
+    id: { header: "Record ID", cell: (r) => r.id },
+    userId: { header: "User ID", cell: (r) => r.userId },
+    userName: { header: "Person", cell: (r) => r.user.name },
+    userEmail: { header: "Email", cell: (r) => r.user.email },
+    workDate: { header: "Work date", cell: (r) => formatDateUtc(r.workDate) },
+    title: { header: "Title", cell: (r) => r.title },
+    content: { header: "What you did", cell: (r) => r.content },
+    createdAt: { header: "First saved", cell: (r) => formatDateTimeUtc(r.createdAt) },
+    updatedAt: { header: "Last updated", cell: (r) => formatDateTimeUtc(r.updatedAt) },
+  };
 
 export const USER_COLUMN_KEYS = ["id", "name", "email", "role", "approvalStatus", "createdAt"] as const;
 
 export type UserColumnKey = (typeof USER_COLUMN_KEYS)[number];
 
-const USER_COLS: Record<
-  UserColumnKey,
-  { humanHeader: string; technicalHeader: string; cell: (u: UserExport, f: ReportFormat) => string }
-> = {
-  id: { humanHeader: "ID", technicalHeader: "id", cell: (u) => u.id },
-  name: { humanHeader: "Name", technicalHeader: "name", cell: (u) => u.name },
-  email: { humanHeader: "Email", technicalHeader: "email", cell: (u) => u.email },
-  role: { humanHeader: "Role", technicalHeader: "role", cell: (u) => u.role },
-  approvalStatus: {
-    humanHeader: "Status",
-    technicalHeader: "approvalStatus",
-    cell: (u) => u.approvalStatus,
-  },
-  createdAt: {
-    humanHeader: "Joined",
-    technicalHeader: "createdAt",
-    cell: (u, f) => (f === "technical" ? u.createdAt.toISOString() : formatDateUtc(u.createdAt)),
-  },
+export const DEFAULT_USER_COLUMNS: UserColumnKey[] = USER_COLUMN_KEYS.filter(
+  (k) => !USER_ID_KEYS.has(k),
+) as UserColumnKey[];
+
+const USER_COLS: Record<UserColumnKey, { header: string; cell: (u: UserExport) => string }> = {
+  id: { header: "ID", cell: (u) => u.id },
+  name: { header: "Name", cell: (u) => u.name },
+  email: { header: "Email", cell: (u) => u.email },
+  role: { header: "Role", cell: (u) => u.role },
+  approvalStatus: { header: "Status", cell: (u) => u.approvalStatus },
+  createdAt: { header: "Joined", cell: (u) => formatDateUtc(u.createdAt) },
 };
 
-export function issuesToCsv(
-  issues: IssueWithRelations[],
-  format: ReportFormat,
-  columns: IssueColumnKey[],
-): string {
+export function issuesToCsv(issues: IssueWithRelations[], columns: IssueColumnKey[]): string {
   if (columns.length === 0) return "";
-  const header = columns.map((k) =>
-    format === "technical" ? ISSUE_COLS[k].technicalHeader : ISSUE_COLS[k].humanHeader,
-  );
-  const lines = [csvRow(header)];
+  const lines = [csvRow(columns.map((k) => ISSUE_COLS[k].header))];
   for (const row of issues) {
-    lines.push(csvRow(columns.map((k) => ISSUE_COLS[k].cell(row, format))));
+    lines.push(csvRow(columns.map((k) => ISSUE_COLS[k].cell(row))));
   }
   return lines.join("");
 }
 
-export function workRecordsToCsv(
-  records: WorkRecordWithUser[],
-  format: ReportFormat,
-  columns: WorkColumnKey[],
-): string {
+export function workRecordsToCsv(records: WorkRecordWithUser[], columns: WorkColumnKey[]): string {
   if (columns.length === 0) return "";
-  const header = columns.map((k) =>
-    format === "technical" ? WORK_COLS[k].technicalHeader : WORK_COLS[k].humanHeader,
-  );
-  const lines = [csvRow(header)];
+  const lines = [csvRow(columns.map((k) => WORK_COLS[k].header))];
   for (const row of records) {
-    lines.push(csvRow(columns.map((k) => WORK_COLS[k].cell(row, format))));
+    lines.push(csvRow(columns.map((k) => WORK_COLS[k].cell(row))));
   }
   return lines.join("");
 }
 
-export function usersToCsv(users: UserExport[], format: ReportFormat, columns: UserColumnKey[]): string {
+export function usersToCsv(users: UserExport[], columns: UserColumnKey[]): string {
   if (columns.length === 0) return "";
-  const header = columns.map((k) =>
-    format === "technical" ? USER_COLS[k].technicalHeader : USER_COLS[k].humanHeader,
-  );
-  const lines = [csvRow(header)];
+  const lines = [csvRow(columns.map((k) => USER_COLS[k].header))];
   for (const row of users) {
-    lines.push(csvRow(columns.map((k) => USER_COLS[k].cell(row, format))));
+    lines.push(csvRow(columns.map((k) => USER_COLS[k].cell(row))));
   }
   return lines.join("");
 }

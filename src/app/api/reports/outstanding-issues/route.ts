@@ -3,7 +3,7 @@ import { issuesToCsv } from "@/lib/report-column-defs";
 import { withBomUtf8 } from "@/lib/csv";
 import { prisma } from "@/lib/prisma";
 import { parseYearMonth } from "@/lib/report-dates";
-import { parseIssueCols, parseReportQuery } from "@/lib/report-params";
+import { parseIssueCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
@@ -28,7 +28,6 @@ export async function GET(request: Request) {
   }
   const { end } = parsed;
 
-  const { format } = parseReportQuery(searchParams);
   const issueCols = parseIssueCols(searchParams);
   if (issueCols.length === 0) {
     return NextResponse.json({ error: "At least one issue column is required (issueCols)." }, { status: 400 });
@@ -52,7 +51,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const csv = issuesToCsv(issues, format, issueCols);
+    const csv = issuesToCsv(issues, issueCols);
     const safeMonth = month.trim().replace(/[^\d-]/g, "") || "report";
     return new NextResponse(withBomUtf8(csv), {
       status: 200,

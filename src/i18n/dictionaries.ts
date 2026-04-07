@@ -336,18 +336,15 @@ const en: MessageTree = {
     subtitleEmployee: "Download a CSV of your own work records only. Pick columns and a date range (UTC). Issue reports are admin-only.",
     csvOptionsTitle: "CSV options",
     csvOptionsHelp:
-      "Choose which columns appear in each file (order matches the list below). Readable format uses friendly headers and plain dates (UTC). Technical uses database-style headers and ISO-8601.",
-    csvOptionsHelpEmployee:
-      "Choose file format and work-record columns. Column order in the CSV matches the list below. Dates use UTC.",
+      "Choose which columns appear in each file (order matches the list below). Exports use readable headers and plain dates (UTC).",
+    csvOptionsHelpEmployee: "Choose work-record columns. Column order in the CSV matches the list below. Dates use UTC.",
+    idColumnsHint:
+      "Internal ID columns stay off by default and are left out when you click “All”. Turn them on manually only if you need them.",
     adminOnlyIssues: "Only administrators can download issue reports.",
-    formatLabel: "File format",
-    formatHuman: "Readable",
-    formatTechnical: "Technical (ISO dates)",
-    formatTechnicalNote: "Technical only changes headers and date formatting. You still choose columns.",
     pickIssueCols: "Issue columns",
     pickWorkCols: "Work record columns",
     pickUserCols: "User columns (admin export)",
-    selectAllCols: "All",
+    selectAllCols: "All (no ID columns)",
     clearCols: "None",
     needOneColumn: "Select at least one column in each group you use.",
     columnsIssue: {
@@ -829,18 +826,15 @@ const zh: MessageTree = {
     subtitleEmployee:
       "仅可下载本人工作记录的 CSV，自选列与日期范围（UTC）。问题类报表仅管理员可用。",
     csvOptionsTitle: "CSV 选项",
-    csvOptionsHelp:
-      "选择每个文件中要包含的列（顺序与下列一致）。可读格式为易读表头与日期（UTC）；技术格式为库表头与 ISO-8601。",
-    csvOptionsHelpEmployee: "选择文件格式与工作记录列。CSV 列顺序与下方列表一致。日期为 UTC。",
+    csvOptionsHelp: "选择每个文件中要包含的列（顺序与下列一致）。导出为易读表头与日期（UTC）。",
+    csvOptionsHelpEmployee: "选择工作记录列。CSV 列顺序与下方列表一致。日期为 UTC。",
+    idColumnsHint:
+      "内部 ID 类列默认不选；点「全选」时也会跳过。仅在需要对接系统时再手动勾选。",
     adminOnlyIssues: "仅管理员可下载问题类报表。",
-    formatLabel: "文件格式",
-    formatHuman: "可读",
-    formatTechnical: "技术（ISO 日期）",
-    formatTechnicalNote: "技术格式只改变表头与日期格式，列仍由您勾选。",
     pickIssueCols: "问题列",
     pickWorkCols: "工作记录列",
     pickUserCols: "用户列（管理员导出）",
-    selectAllCols: "全选",
+    selectAllCols: "全选（不含 ID 列）",
     clearCols: "全不选",
     needOneColumn: "请至少为要下载的内容勾选一列。",
     columnsIssue: {
