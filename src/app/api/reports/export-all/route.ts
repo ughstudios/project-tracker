@@ -1,11 +1,12 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-csv-builders";
+import { parseDetail, parseReportQuery } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 /** Admin-only: all issues, all work records, approved users — CSV strings for multiple downloads. */
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -13,6 +14,11 @@ export async function GET() {
   if (!isPrivilegedAdmin(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
+
+  const { searchParams } = new URL(request.url);
+  const { format } = parseReportQuery(searchParams);
+  const issueDetail = parseDetail(searchParams, "issueDetail", "extended");
+  const workDetail = parseDetail(searchParams, "workDetail", "standard");
 
   try {
     const [issues, workRecords, users] = await Promise.all([
@@ -47,9 +53,9 @@ export async function GET() {
 
     return NextResponse.json({
       files: {
-        "issues-all.csv": issuesToCsv(issues),
-        "work-records-all.csv": workRecordsToCsv(workRecords),
-        "users-approved.csv": usersToCsv(users),
+        "issues-all.csv": issuesToCsv(issues, { format, detail: issueDetail }),
+        "work-records-all.csv": workRecordsToCsv(workRecords, { format, detail: workDetail }),
+        "users-approved.csv": usersToCsv(users, { format, detail: "standard" }),
       },
     });
   } catch {

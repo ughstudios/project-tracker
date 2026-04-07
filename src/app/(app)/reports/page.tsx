@@ -6,6 +6,9 @@ import { useCallback, useEffect, useState } from "react";
 
 type UserOption = { id: string; name: string; email: string; role: string };
 
+type CsvFormat = "human" | "technical";
+type ColumnDetail = "standard" | "extended";
+
 function currentYearMonth(): string {
   const d = new Date();
   const y = d.getFullYear();
@@ -45,6 +48,9 @@ export default function ReportsPage() {
   const [wrFrom, setWrFrom] = useState(monthRangeDefaults().from);
   const [wrTo, setWrTo] = useState(monthRangeDefaults().to);
   const [wrForUserId, setWrForUserId] = useState("");
+  const [csvFormat, setCsvFormat] = useState<CsvFormat>("human");
+  const [issueColumns, setIssueColumns] = useState<ColumnDetail>("extended");
+  const [workColumns, setWorkColumns] = useState<ColumnDetail>("standard");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -79,9 +85,12 @@ export default function ReportsPage() {
     setError(null);
     setBusy("outstanding");
     try {
-      const res = await fetch(
-        `/api/reports/outstanding-issues?month=${encodeURIComponent(outstandingMonth)}`,
-      );
+      const q = new URLSearchParams({
+        month: outstandingMonth,
+        format: csvFormat,
+        issueDetail: issueColumns,
+      });
+      const res = await fetch(`/api/reports/outstanding-issues?${q}`);
       if (!res.ok) {
         setError(t("reports.downloadFailed"));
         return;
@@ -92,13 +101,18 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [outstandingMonth, t]);
+  }, [outstandingMonth, csvFormat, issueColumns, t]);
 
   const downloadWorkRecords = useCallback(async () => {
     setError(null);
     setBusy("workRecords");
     try {
-      const params = new URLSearchParams({ from: wrFrom, to: wrTo });
+      const params = new URLSearchParams({
+        from: wrFrom,
+        to: wrTo,
+        format: csvFormat,
+        workDetail: workColumns,
+      });
       if (isAdmin && wrForUserId) params.set("forUserId", wrForUserId);
       const res = await fetch(`/api/reports/work-records-export?${params}`);
       if (!res.ok) {
@@ -111,13 +125,18 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [wrFrom, wrTo, wrForUserId, isAdmin, t]);
+  }, [wrFrom, wrTo, wrForUserId, isAdmin, csvFormat, workColumns, t]);
 
   const downloadExportAll = useCallback(async () => {
     setError(null);
     setBusy("exportAll");
     try {
-      const res = await fetch("/api/reports/export-all");
+      const q = new URLSearchParams({
+        format: csvFormat,
+        issueDetail: issueColumns,
+        workDetail: workColumns,
+      });
+      const res = await fetch(`/api/reports/export-all?${q}`);
       if (res.status === 403) {
         setError(t("reports.forbidden"));
         return;
@@ -143,7 +162,7 @@ export default function ReportsPage() {
     } finally {
       setBusy(null);
     }
-  }, [t]);
+  }, [csvFormat, issueColumns, workColumns, t]);
 
   return (
     <div className="min-w-0 space-y-8">
@@ -157,6 +176,55 @@ export default function ReportsPage() {
           {error}
         </p>
       ) : null}
+
+      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900">{t("reports.csvOptionsTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600">{t("reports.csvOptionsHelp")}</p>
+        <div className="mt-4 flex flex-wrap gap-4">
+          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+            {t("reports.formatLabel")}
+            <select
+              value={csvFormat}
+              onChange={(e) => setCsvFormat(e.target.value as CsvFormat)}
+              className="min-w-[11rem] rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+            >
+              <option value="human">{t("reports.formatHuman")}</option>
+              <option value="technical">{t("reports.formatTechnical")}</option>
+            </select>
+          </label>
+          <label
+            className={`flex flex-col gap-1 text-xs font-medium text-zinc-600 ${csvFormat === "technical" ? "opacity-50" : ""}`}
+          >
+            {t("reports.issueColumnsLabel")}
+            <select
+              value={issueColumns}
+              disabled={csvFormat === "technical"}
+              onChange={(e) => setIssueColumns(e.target.value as ColumnDetail)}
+              className="min-w-[14rem] rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900 disabled:cursor-not-allowed"
+            >
+              <option value="standard">{t("reports.issueColumnsStandard")}</option>
+              <option value="extended">{t("reports.issueColumnsExtended")}</option>
+            </select>
+          </label>
+          <label
+            className={`flex flex-col gap-1 text-xs font-medium text-zinc-600 ${csvFormat === "technical" ? "opacity-50" : ""}`}
+          >
+            {t("reports.workColumnsLabel")}
+            <select
+              value={workColumns}
+              disabled={csvFormat === "technical"}
+              onChange={(e) => setWorkColumns(e.target.value as ColumnDetail)}
+              className="min-w-[14rem] rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900 disabled:cursor-not-allowed"
+            >
+              <option value="standard">{t("reports.workColumnsStandard")}</option>
+              <option value="extended">{t("reports.workColumnsExtended")}</option>
+            </select>
+          </label>
+        </div>
+        {csvFormat === "technical" ? (
+          <p className="mt-2 text-xs text-zinc-500">{t("reports.formatTechnicalNote")}</p>
+        ) : null}
+      </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-zinc-900">{t("reports.outstandingTitle")}</h2>

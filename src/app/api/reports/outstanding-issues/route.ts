@@ -3,6 +3,7 @@ import { withBomUtf8 } from "@/lib/csv";
 import { prisma } from "@/lib/prisma";
 import { issuesToCsv } from "@/lib/report-csv-builders";
 import { parseYearMonth } from "@/lib/report-dates";
+import { parseDetail, parseReportQuery } from "@/lib/report-params";
 import { NextResponse } from "next/server";
 
 /**
@@ -41,7 +42,9 @@ export async function GET(request: Request) {
       },
     });
 
-    const csv = issuesToCsv(issues);
+    const { format } = parseReportQuery(searchParams);
+    const detail = parseDetail(searchParams, "issueDetail", "extended");
+    const csv = issuesToCsv(issues, { format, detail });
     const safeMonth = month.trim().replace(/[^\d-]/g, "") || "report";
     return new NextResponse(withBomUtf8(csv), {
       status: 200,
