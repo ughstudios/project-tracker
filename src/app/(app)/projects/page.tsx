@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { bumpProjectsListVersion } from "@/lib/project-list-sync";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
@@ -49,6 +50,8 @@ const receiverCardModels = [
   "5A-75B",
 ];
 
+const fetchFresh: RequestInit = { credentials: "include", cache: "no-store" };
+
 function ProjectsPageContent() {
   const { t } = useI18n();
   const router = useRouter();
@@ -90,9 +93,9 @@ function ProjectsPageContent() {
   const load = async () => {
     setLoading(true);
     const [cRes, pRes, prodRes] = await Promise.all([
-      fetch("/api/customers"),
-      fetch("/api/projects"),
-      fetch("/api/products"),
+      fetch("/api/customers", fetchFresh),
+      fetch("/api/projects", fetchFresh),
+      fetch("/api/products", fetchFresh),
     ]);
     if (cRes.ok) setCustomers(await cRes.json());
     if (pRes.ok) setProjects(await pRes.json());
@@ -108,7 +111,7 @@ function ProjectsPageContent() {
   useEffect(() => {
     const run = async () => {
       await load();
-      const sessionRes = await fetch("/api/auth/session");
+      const sessionRes = await fetch("/api/auth/session", fetchFresh);
       if (sessionRes.ok) {
         const session = (await sessionRes.json()) as { user?: { role?: string } };
         setIsAdmin(isPrivilegedAdmin(session.user?.role));
@@ -145,6 +148,7 @@ function ProjectsPageContent() {
     setSaving(true);
     const res = await fetch("/api/projects", {
       method: "POST",
+      ...fetchFresh,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         ...form,
@@ -163,6 +167,7 @@ function ProjectsPageContent() {
     setReceiverCards([{ model: "", version: "", quantity: 1 }]);
     setOtherProducts([{ category: "", model: "", quantity: 1 }]);
     setWizardStep(1);
+    bumpProjectsListVersion();
     await load();
   };
 
@@ -172,6 +177,7 @@ function ProjectsPageContent() {
     setArchivingProjectId(projectId);
     const res = await fetch(`/api/projects/${projectId}`, {
       method: "PATCH",
+      ...fetchFresh,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archive: true }),
     });
@@ -181,6 +187,7 @@ function ProjectsPageContent() {
       alert(data.error ?? t("projects.couldNotArchive"));
       return;
     }
+    bumpProjectsListVersion();
     await load();
   };
 

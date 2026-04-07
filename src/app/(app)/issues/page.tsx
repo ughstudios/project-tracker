@@ -1,9 +1,10 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type User = { id: string; name: string | null; email: string | null };
@@ -12,6 +13,7 @@ type ProjectSummary = {
   id: string;
   name: string;
   product: string;
+  customer?: { id: string; name: string };
 };
 
 type CustomerSummary = { id: string; name: string };
@@ -42,9 +44,12 @@ function statusLabel(t: (k: string) => string, status: string) {
   return translated === key ? status : translated;
 }
 
+const fetchFresh: RequestInit = { credentials: "include", cache: "no-store" };
+
 export default function IssuesPage() {
   const { t } = useI18n();
   const router = useRouter();
+  const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
@@ -70,10 +75,10 @@ export default function IssuesPage() {
 
   const loadLists = useCallback(async () => {
     const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
-      fetch("/api/users"),
-      fetch("/api/issues"),
-      fetch("/api/projects"),
-      fetch("/api/customers"),
+      fetch("/api/users", fetchFresh),
+      fetch("/api/issues", fetchFresh),
+      fetch("/api/projects", fetchFresh),
+      fetch("/api/customers", fetchFresh),
     ]);
     if (usersRes.ok) setUsers((await usersRes.json()) as User[]);
     if (issuesRes.ok) setIssues((await issuesRes.json()) as IssueListItem[]);
@@ -86,15 +91,25 @@ export default function IssuesPage() {
   }, []);
 
   useEffect(() => {
+    if (pathname !== "/issues") return;
     void (async () => {
       await loadLists();
-      const sessionRes = await fetch("/api/auth/session");
+      const sessionRes = await fetch("/api/auth/session", fetchFresh);
       if (sessionRes.ok) {
         const session = (await sessionRes.json()) as { user?: { role?: string } };
         setIsAdmin(isPrivilegedAdmin(session.user?.role));
       }
     })();
-  }, [loadLists]);
+  }, [pathname, loadLists]);
+
+  useEffect(() => {
+    if (pathname !== "/issues") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PROJECTS_LIST_VERSION_KEY) void loadLists();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [pathname, loadLists]);
 
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
@@ -122,6 +137,7 @@ export default function IssuesPage() {
     setCreating(true);
     const res = await fetch("/api/issues", {
       method: "POST",
+      ...fetchFresh,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         title: formTitle.trim(),
@@ -145,7 +161,7 @@ export default function IssuesPage() {
       const fd = new FormData();
       for (const f of formFiles) fd.append("files", f);
       const up = await fetch(`/api/issues/${encodeURIComponent(created.id)}/attachments`, {
-        credentials: "include",
+        ...fetchFresh,
         method: "POST",
         body: fd,
       });
@@ -173,6 +189,7 @@ export default function IssuesPage() {
     setArchivingIssueId(issueId);
     const res = await fetch(`/api/issues/${issueId}`, {
       method: "PATCH",
+      ...fetchFresh,
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archive: true }),
     });
@@ -215,7 +232,9 @@ export default function IssuesPage() {
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
                 <option key={proj.id} value={proj.id}>
-                  {proj.name} — {proj.product}
+                  {proj.customer
+                    ? `${proj.name} (${proj.customer.name}) — ${proj.product}`
+                    : `${proj.name} — ${proj.product}`}
                 </option>
               ))}
             </select>
@@ -333,7 +352,7 @@ export default function IssuesPage() {
             <optgroup label={t("common.projects")}>
               {projects.map((proj) => (
                 <option key={proj.id} value={`p:${proj.id}`}>
-                  {proj.name}
+                  {proj.customer ? `${proj.name} (${proj.customer.name})` : proj.name}
                 </option>
               ))}
             </optgroup>

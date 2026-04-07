@@ -1,8 +1,12 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
 import { isPrivilegedAdmin } from "@/lib/roles";
-import { useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
+
+const fetchFresh: RequestInit = { credentials: "include", cache: "no-store" };
 
 const FILTER_UNLINKED = "__unlinked__";
 
@@ -11,6 +15,7 @@ type Project = {
   id: string;
   name: string;
   product: string;
+  customer?: { id: string; name: string };
   _count?: { issues: number };
 };
 type Customer = { id: string; name: string };
@@ -38,6 +43,7 @@ function matchesLinkFilter(issue: Issue, filter: string) {
 
 export function IssueDashboard() {
   const { t } = useI18n();
+  const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -51,32 +57,42 @@ export function IssueDashboard() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
 
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
-      fetch("/api/users"),
-      fetch("/api/issues"),
-      fetch("/api/projects"),
-      fetch("/api/customers"),
+      fetch("/api/users", fetchFresh),
+      fetch("/api/issues", fetchFresh),
+      fetch("/api/projects", fetchFresh),
+      fetch("/api/customers", fetchFresh),
     ]);
     if (usersRes.ok) setUsers(await usersRes.json());
     if (issuesRes.ok) setIssues(await issuesRes.json());
     if (projectsRes.ok) setProjects(await projectsRes.json());
     if (customersRes.ok) setCustomers(await customersRes.json());
     setLoading(false);
-  };
+  }, []);
 
   useEffect(() => {
+    if (pathname !== "/dashboard") return;
     const run = async () => {
       await loadData();
-      const sessionRes = await fetch("/api/auth/session");
+      const sessionRes = await fetch("/api/auth/session", fetchFresh);
       if (sessionRes.ok) {
         const session = (await sessionRes.json()) as { user?: { role?: string } };
         setIsAdmin(isPrivilegedAdmin(session.user?.role));
       }
     };
     void run();
-  }, []);
+  }, [pathname, loadData]);
+
+  useEffect(() => {
+    if (pathname !== "/dashboard") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key === PROJECTS_LIST_VERSION_KEY) void loadData();
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [pathname, loadData]);
 
   const filteredIssues = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -109,6 +125,8 @@ export function IssueDashboard() {
   const updateIssue = async (id: string, payload: { status?: string; assigneeId?: string }) => {
     await fetch(`/api/issues/${id}`, {
       method: "PATCH",
+      credentials: "include",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     });
@@ -120,6 +138,8 @@ export function IssueDashboard() {
     setArchivingIssueId(id);
     const res = await fetch(`/api/issues/${id}`, {
       method: "PATCH",
+      credentials: "include",
+      cache: "no-store",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ archive: true }),
     });
@@ -187,7 +207,9 @@ export function IssueDashboard() {
             <optgroup label={t("common.projects")}>
               {projects.map((project) => (
                 <option key={project.id} value={`p:${project.id}`}>
-                  {project.name}
+                  {project.customer
+                    ? `${project.name} (${project.customer.name})`
+                    : project.name}
                 </option>
               ))}
             </optgroup>
