@@ -41,8 +41,9 @@ export async function GET(request: Request) {
   const from = fromDay;
   const to = endOfUtcDay(toDay);
 
-  const forUserId = searchParams.get("forUserId")?.trim() ?? "";
-  const allUsers = forUserId === "__all__";
+  const forUserIdRaw = isAdmin ? (searchParams.get("forUserId")?.trim() ?? "") : "";
+  const allUsers = forUserIdRaw === "__all__";
+  const forUserId = forUserIdRaw && forUserIdRaw !== "__all__" ? forUserIdRaw : "";
 
   let where: { userId?: string; workDate: { gte: Date; lte: Date } };
   if (isAdmin && allUsers) {

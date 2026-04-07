@@ -331,10 +331,15 @@ const en: MessageTree = {
   },
   reports: {
     title: "Reports",
-    subtitle: "Download CSV summaries for outstanding issues, work records, and (admins) full exports.",
+    subtitle:
+      "As an administrator: monthly outstanding-issue CSVs, optional full exports, and work records for any user or everyone.",
+    subtitleEmployee: "Download a CSV of your own work records only. Pick columns and a date range (UTC). Issue reports are admin-only.",
     csvOptionsTitle: "CSV options",
     csvOptionsHelp:
       "Choose which columns appear in each file (order matches the list below). Readable format uses friendly headers and plain dates (UTC). Technical uses database-style headers and ISO-8601.",
+    csvOptionsHelpEmployee:
+      "Choose file format and work-record columns. Column order in the CSV matches the list below. Dates use UTC.",
+    adminOnlyIssues: "Only administrators can download issue reports.",
     formatLabel: "File format",
     formatHuman: "Readable",
     formatTechnical: "Technical (ISO dates)",
@@ -819,10 +824,15 @@ const zh: MessageTree = {
   },
   reports: {
     title: "报表",
-    subtitle: "下载未结问题月度快照、工作记录 CSV，以及管理员可用的全量导出。",
+    subtitle:
+      "管理员可导出：未结问题月度 CSV、可选全量导出，以及任意成员或全体成员的工作记录。",
+    subtitleEmployee:
+      "仅可下载本人工作记录的 CSV，自选列与日期范围（UTC）。问题类报表仅管理员可用。",
     csvOptionsTitle: "CSV 选项",
     csvOptionsHelp:
       "选择每个文件中要包含的列（顺序与下列一致）。可读格式为易读表头与日期（UTC）；技术格式为库表头与 ISO-8601。",
+    csvOptionsHelpEmployee: "选择文件格式与工作记录列。CSV 列顺序与下方列表一致。日期为 UTC。",
+    adminOnlyIssues: "仅管理员可下载问题类报表。",
     formatLabel: "文件格式",
     formatHuman: "可读",
     formatTechnical: "技术（ISO 日期）",

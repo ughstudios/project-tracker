@@ -112,7 +112,7 @@ function ColumnGroup<T extends string>({
 
 export default function ReportsPage() {
   const { t } = useI18n();
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [users, setUsers] = useState<UserOption[]>([]);
   const [outstandingMonth, setOutstandingMonth] = useState(currentYearMonth);
   const [wrFrom, setWrFrom] = useState(monthRangeDefaults().from);
@@ -125,7 +125,9 @@ export default function ReportsPage() {
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const colsOk = issueCols.length > 0 && workCols.length > 0 && (!isAdmin || userCols.length > 0);
+  const showColsWarning =
+    workCols.length === 0 ||
+    (isAdmin === true && (issueCols.length === 0 || userCols.length === 0));
 
   useEffect(() => {
     let cancelled = false;
@@ -141,7 +143,7 @@ export default function ReportsPage() {
   }, []);
 
   useEffect(() => {
-    if (!isAdmin) return;
+    if (isAdmin !== true) return;
     let cancelled = false;
     (async () => {
       const res = await fetch("/api/users");
@@ -168,6 +170,10 @@ export default function ReportsPage() {
         issueCols: issueCols.join(","),
       });
       const res = await fetch(`/api/reports/outstanding-issues?${q}`);
+      if (res.status === 403) {
+        setError(t("reports.adminOnlyIssues"));
+        return;
+      }
       if (!res.ok) {
         setError(t("reports.downloadFailed"));
         return;
@@ -194,7 +200,7 @@ export default function ReportsPage() {
         format: csvFormat,
         workCols: workCols.join(","),
       });
-      if (isAdmin && wrForUserId) params.set("forUserId", wrForUserId);
+      if (isAdmin === true && wrForUserId) params.set("forUserId", wrForUserId);
       const res = await fetch(`/api/reports/work-records-export?${params}`);
       if (!res.ok) {
         setError(t("reports.downloadFailed"));
@@ -254,7 +260,13 @@ export default function ReportsPage() {
     <div className="min-w-0 space-y-8">
       <div>
         <h1 className="text-xl font-semibold tracking-tight text-zinc-900">{t("reports.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("reports.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600">
+          {isAdmin === null
+            ? t("common.loading")
+            : isAdmin
+              ? t("reports.subtitle")
+              : t("reports.subtitleEmployee")}
+        </p>
       </div>
 
       {error ? (
@@ -265,7 +277,13 @@ export default function ReportsPage() {
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-zinc-900">{t("reports.csvOptionsTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("reports.csvOptionsHelp")}</p>
+        <p className="mt-1 text-sm text-zinc-600">
+          {isAdmin === null
+            ? t("common.loading")
+            : isAdmin
+              ? t("reports.csvOptionsHelp")
+              : t("reports.csvOptionsHelpEmployee")}
+        </p>
         <div className="mt-4 max-w-md">
           <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
             {t("reports.formatLabel")}
@@ -282,14 +300,16 @@ export default function ReportsPage() {
         </div>
 
         <div className="mt-6 flex flex-col gap-6 border-t border-zinc-100 pt-6">
-          <ColumnGroup
-            title={t("reports.pickIssueCols")}
-            canonical={ISSUE_COLUMN_KEYS}
-            selected={issueCols}
-            onChange={(next) => setIssueCols(next as IssueColumnKey[])}
-            labelPrefix="reports.columnsIssue"
-            t={t}
-          />
+          {isAdmin === true ? (
+            <ColumnGroup
+              title={t("reports.pickIssueCols")}
+              canonical={ISSUE_COLUMN_KEYS}
+              selected={issueCols}
+              onChange={(next) => setIssueCols(next as IssueColumnKey[])}
+              labelPrefix="reports.columnsIssue"
+              t={t}
+            />
+          ) : null}
           <ColumnGroup
             title={t("reports.pickWorkCols")}
             canonical={WORK_COLUMN_KEYS}
@@ -298,7 +318,7 @@ export default function ReportsPage() {
             labelPrefix="reports.columnsWork"
             t={t}
           />
-          {isAdmin ? (
+          {isAdmin === true ? (
             <ColumnGroup
               title={t("reports.pickUserCols")}
               canonical={USER_COLUMN_KEYS}
@@ -309,34 +329,36 @@ export default function ReportsPage() {
             />
           ) : null}
         </div>
-        {!colsOk ? (
+        {showColsWarning ? (
           <p className="mt-4 text-sm text-amber-800">{t("reports.needOneColumn")}</p>
         ) : null}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900">{t("reports.outstandingTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("reports.outstandingHelp")}</p>
-        <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
-            {t("reports.month")}
-            <input
-              type="month"
-              value={outstandingMonth}
-              onChange={(e) => setOutstandingMonth(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
-            />
-          </label>
-          <button
-            type="button"
-            onClick={() => void downloadOutstanding()}
-            disabled={busy !== null || issueCols.length === 0}
-            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
-          >
-            {busy === "outstanding" ? t("reports.preparing") : t("reports.downloadCsv")}
-          </button>
-        </div>
-      </section>
+      {isAdmin === true ? (
+        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-zinc-900">{t("reports.outstandingTitle")}</h2>
+          <p className="mt-1 text-sm text-zinc-600">{t("reports.outstandingHelp")}</p>
+          <div className="mt-4 flex flex-wrap items-end gap-3">
+            <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+              {t("reports.month")}
+              <input
+                type="month"
+                value={outstandingMonth}
+                onChange={(e) => setOutstandingMonth(e.target.value)}
+                className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+              />
+            </label>
+            <button
+              type="button"
+              onClick={() => void downloadOutstanding()}
+              disabled={busy !== null || issueCols.length === 0}
+              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            >
+              {busy === "outstanding" ? t("reports.preparing") : t("reports.downloadCsv")}
+            </button>
+          </div>
+        </section>
+      ) : null}
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-sm font-semibold text-zinc-900">{t("reports.workRecordsTitle")}</h2>
@@ -360,7 +382,7 @@ export default function ReportsPage() {
               className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
             />
           </label>
-          {isAdmin ? (
+          {isAdmin === true ? (
             <label className="flex min-w-[200px] flex-col gap-1 text-xs font-medium text-zinc-600">
               {t("reports.personOptional")}
               <select
@@ -388,16 +410,16 @@ export default function ReportsPage() {
           </button>
         </div>
         <p className="mt-3 text-xs text-zinc-500">
-          {!isAdmin ? t("reports.workRecordsSelfNote") : null}
-          {isAdmin && wrForUserId === "" ? t("reports.workRecordsAdminSelfNote") : null}
-          {isAdmin && wrForUserId === "__all__" ? t("reports.workRecordsAdminAllNote") : null}
-          {isAdmin && wrForUserId !== "" && wrForUserId !== "__all__"
+          {isAdmin === false ? t("reports.workRecordsSelfNote") : null}
+          {isAdmin === true && wrForUserId === "" ? t("reports.workRecordsAdminSelfNote") : null}
+          {isAdmin === true && wrForUserId === "__all__" ? t("reports.workRecordsAdminAllNote") : null}
+          {isAdmin === true && wrForUserId !== "" && wrForUserId !== "__all__"
             ? t("reports.workRecordsAdminOtherNote")
             : null}
         </p>
       </section>
 
-      {isAdmin ? (
+      {isAdmin === true ? (
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
           <h2 className="text-sm font-semibold text-zinc-900">{t("reports.exportAllTitle")}</h2>
           <p className="mt-1 text-sm text-zinc-600">{t("reports.exportAllHelp")}</p>
