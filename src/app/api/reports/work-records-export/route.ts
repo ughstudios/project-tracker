@@ -1,9 +1,9 @@
 import { auth } from "@/auth";
+import { workRecordsToCsv } from "@/lib/report-column-defs";
 import { withBomUtf8 } from "@/lib/csv";
 import { prisma } from "@/lib/prisma";
-import { workRecordsToCsv } from "@/lib/report-csv-builders";
 import { parseDateUtcDay } from "@/lib/report-dates";
-import { parseDetail, parseReportQuery } from "@/lib/report-params";
+import { parseReportQuery, parseWorkCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
@@ -22,7 +22,11 @@ export async function GET(request: Request) {
   const isAdmin = isPrivilegedAdmin(session.user.role);
   const { searchParams } = new URL(request.url);
   const { format } = parseReportQuery(searchParams);
-  const detail = parseDetail(searchParams, "workDetail", "standard");
+  const workCols = parseWorkCols(searchParams);
+  if (workCols.length === 0) {
+    return NextResponse.json({ error: "At least one work-record column is required (workCols)." }, { status: 400 });
+  }
+
   const fromStr = searchParams.get("from") ?? "";
   const toStr = searchParams.get("to") ?? "";
   const fromDay = parseDateUtcDay(fromStr);
@@ -58,7 +62,7 @@ export async function GET(request: Request) {
       },
     });
 
-    const csv = workRecordsToCsv(records, { format, detail });
+    const csv = workRecordsToCsv(records, format, workCols);
     const slug = `${fromStr.trim()}_to_${toStr.trim()}`.replace(/[^\d_-]/g, "");
     return new NextResponse(withBomUtf8(csv), {
       status: 200,

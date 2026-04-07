@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
+import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
 import { prisma } from "@/lib/prisma";
-import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-csv-builders";
-import { parseDetail, parseReportQuery } from "@/lib/report-params";
+import { parseIssueCols, parseReportQuery, parseUserCols, parseWorkCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
@@ -17,8 +17,15 @@ export async function GET(request: Request) {
 
   const { searchParams } = new URL(request.url);
   const { format } = parseReportQuery(searchParams);
-  const issueDetail = parseDetail(searchParams, "issueDetail", "extended");
-  const workDetail = parseDetail(searchParams, "workDetail", "standard");
+  const issueCols = parseIssueCols(searchParams);
+  const workCols = parseWorkCols(searchParams);
+  const userCols = parseUserCols(searchParams);
+  if (issueCols.length === 0 || workCols.length === 0 || userCols.length === 0) {
+    return NextResponse.json(
+      { error: "issueCols, workCols, and userCols must each list at least one valid column." },
+      { status: 400 },
+    );
+  }
 
   try {
     const [issues, workRecords, users] = await Promise.all([
@@ -53,9 +60,9 @@ export async function GET(request: Request) {
 
     return NextResponse.json({
       files: {
-        "issues-all.csv": issuesToCsv(issues, { format, detail: issueDetail }),
-        "work-records-all.csv": workRecordsToCsv(workRecords, { format, detail: workDetail }),
-        "users-approved.csv": usersToCsv(users, { format, detail: "standard" }),
+        "issues-all.csv": issuesToCsv(issues, format, issueCols),
+        "work-records-all.csv": workRecordsToCsv(workRecords, format, workCols),
+        "users-approved.csv": usersToCsv(users, format, userCols),
       },
     });
   } catch {
