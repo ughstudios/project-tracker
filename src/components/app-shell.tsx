@@ -85,6 +85,7 @@ export function AppShell({ user, onLogout, children }: Props) {
                 <NavItem href="/issues" label={t("nav.issues")} prefix />
                 <NavItem href="/projects" label={t("nav.projects")} />
                 <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
+                <NavItem href="/reports" label={t("nav.reports")} />
                 <NavItem href="/customers" label={t("nav.customers")} />
                 <NavItem href="/inventory" label={t("nav.inventory")} />
                 <NavItem href="/logs" label={t("nav.logs")} />
