@@ -11,6 +11,7 @@ const en: MessageTree = {
     mainMenuAria: "Main pages",
     sectionSettings: "Settings",
     dashboard: "Dashboard",
+    kanban: "Kanban",
     issues: "Issues",
     customers: "Customers",
     projects: "Projects",
@@ -114,7 +115,7 @@ const en: MessageTree = {
   },
   dashboard: {
     title: "Dashboard",
-    subtitle: "Track issues by status and assign them to employees.",
+    subtitle: "Overview of active issues, projects, and workload.",
     filters: "Filters",
     searchPlaceholder: "Search by title, symptom, cause, solution, contact…",
     allUsers: "All users",
@@ -144,6 +145,10 @@ const en: MessageTree = {
     chartByProjectHint: "Projects with the most active issues (up to 12).",
     axisIssues: "Issues",
     chartUnassigned: "Unassigned",
+  },
+  kanban: {
+    title: "Kanban",
+    subtitle: "Drag cards between columns, change assignee and status, and filter the board.",
   },
   issues: {
     title: "Issues",
@@ -487,7 +492,12 @@ const en: MessageTree = {
   },
   account: {
     title: "Account",
-    subtitle: "Update your sign-in email or password.",
+    subtitle: "Update your profile, sign-in email, or password.",
+    changeName: "Display name",
+    nameHelp: "This name appears in the app sidebar and wherever your activity is shown.",
+    displayName: "Name",
+    updateName: "Save name",
+    nameOk: "Name updated.",
     changePassword: "Change password",
     passwordHelp: "Use a strong password you do not use elsewhere.",
     currentPassword: "Current password",
@@ -515,6 +525,8 @@ const en: MessageTree = {
     },
     account: {
       mustSignIn: "You must be signed in.",
+      nameRequired: "Enter a name.",
+      nameTooLong: "Name is too long (max 200 characters).",
       passwordsRequired: "Current and new passwords are required.",
       newPasswordShort: "New password must be at least 8 characters.",
       passwordsMismatch: "New passwords do not match.",
@@ -1009,7 +1021,12 @@ const zh: MessageTree = {
   },
   account: {
     title: "账户",
-    subtitle: "更新登录邮箱或密码。",
+    subtitle: "更新资料、登录邮箱或密码。",
+    changeName: "显示名称",
+    nameHelp: "该名称会显示在侧栏及您的活动记录旁。",
+    displayName: "姓名",
+    updateName: "保存名称",
+    nameOk: "名称已更新。",
     changePassword: "修改密码",
     passwordHelp: "请使用强密码且勿与其他网站重复。",
     currentPassword: "当前密码",
@@ -1036,6 +1053,8 @@ const zh: MessageTree = {
     },
     account: {
       mustSignIn: "请先登录。",
+      nameRequired: "请填写姓名。",
+      nameTooLong: "名称过长（最多 200 个字符）。",
       passwordsRequired: "请填写当前密码和新密码。",
       newPasswordShort: "新密码至少 8 位。",
       passwordsMismatch: "两次输入的新密码不一致。",

@@ -15,7 +15,10 @@ export default async function AccountPage() {
         <h1 className="text-2xl font-semibold">{t("account.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600">{t("account.subtitle")}</p>
       </div>
-      <AccountSettingsForms currentEmail={session.user.email} />
+      <AccountSettingsForms
+        currentName={session.user.name ?? ""}
+        currentEmail={session.user.email ?? ""}
+      />
     </div>
   );
 }

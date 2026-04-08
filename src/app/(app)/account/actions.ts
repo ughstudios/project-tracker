@@ -7,6 +7,40 @@ import { prisma } from "@/lib/prisma";
 
 type PasswordState = { error?: string; ok?: boolean };
 type EmailState = { error?: string; ok?: boolean };
+type NameState = { error?: string; ok?: boolean };
+
+const NAME_MAX_LEN = 200;
+
+export async function updateNameAction(_prevState: NameState, formData: FormData): Promise<NameState> {
+  const t = await getServerTranslator();
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { error: t("errors.account.mustSignIn") };
+  }
+
+  const name = String(formData.get("name") ?? "").trim();
+  if (!name) {
+    return { error: t("errors.account.nameRequired") };
+  }
+  if (name.length > NAME_MAX_LEN) {
+    return { error: t("errors.account.nameTooLong") };
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true },
+  });
+  if (!user) {
+    return { error: t("errors.account.accountNotFound") };
+  }
+
+  await prisma.user.update({
+    where: { id: session.user.id },
+    data: { name },
+  });
+
+  return { ok: true };
+}
 
 export async function updatePasswordAction(
   _prevState: PasswordState,
