@@ -669,7 +669,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 ) : null}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <a
-                    href={attachmentBlobHref(att.fileUrl)}
+                    href={attachmentBlobHref(att.fileUrl, { asDownload: true })}
                     download={att.fileName}
                     target="_blank"
                     rel="noreferrer"
@@ -820,7 +820,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                         ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <a
-                            href={attachmentBlobHref(att.fileUrl)}
+                            href={attachmentBlobHref(att.fileUrl, { asDownload: true })}
                             download={att.fileName}
                             target="_blank"
                             rel="noreferrer"

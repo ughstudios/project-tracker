@@ -336,7 +336,7 @@ export default function ProjectDetailsPage() {
                 {attachments.map((a) => (
                   <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                     <a
-                      href={attachmentBlobHref(a.fileUrl)}
+                      href={attachmentBlobHref(a.fileUrl, { asDownload: true })}
                       target="_blank"
                       rel="noreferrer"
                       className="min-w-0 truncate text-blue-700 hover:underline"
