@@ -2,6 +2,8 @@
 
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import { uploadFilesViaBlobClient, validateFilesBeforeMultipartUpload } from "@/lib/blob-client-upload";
+import { useDirectBlobUpload } from "@/lib/hooks/use-direct-blob-upload";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
 import { isPrivilegedAdmin } from "@/lib/roles";
@@ -75,6 +77,7 @@ export default function IssuesPage() {
   const [createAttachmentProgress, setCreateAttachmentProgress] = useState<number | null>(null);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const blobDirect = useDirectBlobUpload();
 
   const loadLists = useCallback(async () => {
     const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
@@ -161,18 +164,35 @@ export default function IssuesPage() {
     const created = (await res.json()) as { id: string };
 
     if (formFiles.length > 0) {
-      const fd = new FormData();
-      for (const f of formFiles) fd.append("files", f);
       setCreateAttachmentProgress(0);
       try {
-        const up = await postFormDataWithProgress(
-          `/api/issues/${encodeURIComponent(created.id)}/attachments`,
-          fd,
-          (p) => setCreateAttachmentProgress(p === null ? -1 : p),
-        );
-        if (!up.ok) {
-          const data = await up.json<{ error?: string }>();
-          alert(data.error ?? t("issueDetail.couldNotUpload"));
+        if (blobDirect) {
+          const up = await uploadFilesViaBlobClient({
+            files: formFiles,
+            tokenExtras: { scope: "issue", issueId: created.id },
+            completeUrl: `/api/issues/${encodeURIComponent(created.id)}/attachments/complete`,
+            onProgress: (p) => setCreateAttachmentProgress(p === null ? -1 : p),
+          });
+          if (!up.ok) {
+            alert(up.error ?? t("issueDetail.couldNotUpload"));
+          }
+        } else {
+          const pre = validateFilesBeforeMultipartUpload(formFiles);
+          if (pre) {
+            alert(pre);
+          } else {
+            const fd = new FormData();
+            for (const f of formFiles) fd.append("files", f);
+            const up = await postFormDataWithProgress(
+              `/api/issues/${encodeURIComponent(created.id)}/attachments`,
+              fd,
+              (p) => setCreateAttachmentProgress(p === null ? -1 : p),
+            );
+            if (!up.ok) {
+              const data = await up.json<{ error?: string }>();
+              alert(data.error ?? t("issueDetail.couldNotUpload"));
+            }
+          }
         }
       } finally {
         setCreateAttachmentProgress(null);

@@ -192,9 +192,9 @@ export async function POST(
     return NextResponse.json(withAttachments, { status: 201 });
   }
 
-  const body = (await request.json()) as { content?: string };
+  const body = (await request.json()) as { content?: string; clientBlobAttachments?: boolean };
   const content = body.content?.trim() ?? "";
-  if (!content) {
+  if (!content && !body.clientBlobAttachments) {
     return NextResponse.json({ error: "Message is required." }, { status: 400 });
   }
 

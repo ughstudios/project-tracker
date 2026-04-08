@@ -16,12 +16,8 @@ export const VERCEL_SERVER_MULTIPART_BUDGET_BYTES = 4 * 1024 * 1024;
  * Read/write token Vercel injects when a Blob store is **connected to this project**.
  * No store ID or region is configured in code—the token selects the store (e.g. IAD1).
  */
-function getBlobReadWriteToken(): string | undefined {
-  const primary = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (primary) return primary;
-  const legacy = process.env.VERCEL_BLOB_READ_WRITE_TOKEN?.trim();
-  if (legacy) return legacy;
-  return undefined;
+export function getBlobReadWriteToken(): string | undefined {
+  return process.env.BLOB_READ_WRITE_TOKEN?.trim() || undefined;
 }
 
 export function isBlobStorageEnabled(): boolean {
