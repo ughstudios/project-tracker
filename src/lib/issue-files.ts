@@ -1,9 +1,21 @@
-import { deleteBlobUrlIfPresent, shouldSkipLocalDelete } from "@/lib/file-storage";
+import {
+  VERCEL_SERVER_MULTIPART_BUDGET_BYTES,
+  deleteBlobUrlIfPresent,
+  shouldSkipLocalDelete,
+} from "@/lib/file-storage";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
 export const ISSUE_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
 export const ISSUE_UPLOAD_MAX_FILES_PER_POST = 20;
+
+/** Per-file cap: on Vercel, single request body limit applies (see VERCEL_SERVER_MULTIPART_BUDGET_BYTES). */
+export function maxIssueUploadBytesForRuntime(): number {
+  if (process.env.VERCEL === "1") {
+    return Math.min(ISSUE_UPLOAD_MAX_BYTES, VERCEL_SERVER_MULTIPART_BUDGET_BYTES);
+  }
+  return ISSUE_UPLOAD_MAX_BYTES;
+}
 
 export function storedFileName(originalName: string): string {
   const ext = path.extname(originalName).toLowerCase();

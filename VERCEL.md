@@ -100,8 +100,18 @@ Seed promotes `daniel.gleason@lednets.com` to **SUPER_ADMIN** (new installs: `SE
 
 ## 6. File uploads
 
-On **Vercel**, set **`BLOB_READ_WRITE_TOKEN`** (see table above). Uploads are stored in **Vercel Blob** and URLs saved in the database point at `*.public.blob.vercel-storage.com`.
+### Vercel Blob (production)
 
-**Local development** (no `VERCEL=1`): if the token is unset, files still write to `public/uploads` as before.
+1. Add **`BLOB_READ_WRITE_TOKEN`** (see environment table): **Storage → Blob** → create/connect a store for this project.
+2. Objects are uploaded with **`put(..., { access: 'public' })`** so stored URLs work directly in the UI (`<img>`, `<a href>`, `<video src>`). Vercel’s snippets often use `access: 'private'`; **private** blobs need signed URLs or a download proxy, which this app does not implement.
+3. **Request size:** Server-side uploads run in Serverless Functions with a **~4.5 MB** body limit. On Vercel (`VERCEL=1`), total file bytes per request (plus thread message text for multipart replies) must stay under **4 MB** so the request is accepted. **Local** dev without Blob still allows up to **50 MB** per file under `public/uploads`.
 
-If you deploy to Vercel without Blob configured, upload API routes return **503** with a short message instead of failing with `ENOENT` on `mkdir`.
+For files **larger than ~4 MB** in production, plan **[client-side uploads](https://vercel.com/docs/storage/vercel-blob/client-upload)** (not in this repo yet).
+
+### Local env from Vercel
+
+After **`vercel link`**, run **`vercel env pull`** to write `.env.local` with `BLOB_READ_WRITE_TOKEN` and the rest of your project variables.
+
+### Without Blob on Vercel
+
+Upload routes return **503** with setup instructions instead of failing with `ENOENT` on `mkdir`.

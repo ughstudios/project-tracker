@@ -3,8 +3,34 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
+/**
+ * Vercel Serverless request bodies are capped (~4.5 MB including multipart overhead).
+ * Files go through the route handler first, so total payload must stay under this budget.
+ *
+ * We use `access: 'public'` on `put()` so `<img>`, `<a href>`, and `<video src>` work with
+ * the URL stored in Postgres. `access: 'private'` would require signed URLs or a download proxy.
+ */
+export const VERCEL_SERVER_MULTIPART_BUDGET_BYTES = 4 * 1024 * 1024;
+
 export function isBlobStorageEnabled(): boolean {
   return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+}
+
+/** Total file bytes (+ optional UTF-8 text field) too large for one serverless invocation on Vercel. */
+export function vercelMultipartPayloadTooLargeResponse(
+  files: { size: number }[],
+  extraUtf8Bytes = 0,
+): NextResponse | null {
+  if (process.env.VERCEL !== "1") return null;
+  const filesSum = files.reduce((a, f) => a + f.size, 0);
+  if (filesSum + extraUtf8Bytes <= VERCEL_SERVER_MULTIPART_BUDGET_BYTES) return null;
+  return NextResponse.json(
+    {
+      error:
+        "Total size for this upload is too large for Vercel server-side uploads (about 4 MB per request, including all files). Send fewer or smaller files, or split into multiple uploads.",
+    },
+    { status: 413 },
+  );
 }
 
 /** Vercel serverless has a read-only filesystem under /var/task; uploads must use Blob. */
@@ -54,9 +80,10 @@ export async function writeUploadedFile(
   opts: WriteUploadedFileOptions,
 ): Promise<{ fileUrl: string }> {
   if (isBlobStorageEnabled()) {
+    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
     const blob = await put(opts.blobPathname, opts.buffer, {
       access: "public",
-      token: process.env.BLOB_READ_WRITE_TOKEN,
+      ...(token ? { token } : {}),
       contentType: opts.contentType || "application/octet-stream",
       addRandomSuffix: false,
     });

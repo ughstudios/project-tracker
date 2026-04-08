@@ -1,9 +1,14 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
-import { contentTypeForUpload, vercelUploadsNotReadyResponse, writeUploadedFile } from "@/lib/file-storage";
 import {
-  ISSUE_UPLOAD_MAX_BYTES,
+  contentTypeForUpload,
+  vercelMultipartPayloadTooLargeResponse,
+  vercelUploadsNotReadyResponse,
+  writeUploadedFile,
+} from "@/lib/file-storage";
+import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
+  maxIssueUploadBytesForRuntime,
   storedFileName,
 } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
@@ -103,11 +108,17 @@ export async function POST(
         { status: 400 },
       );
     }
+    const maxBytes = maxIssueUploadBytesForRuntime();
     for (const f of files) {
-      if (f.size > ISSUE_UPLOAD_MAX_BYTES) {
+      if (f.size > maxBytes) {
         return NextResponse.json({ error: "One or more files are too large." }, { status: 400 });
       }
     }
+    const tooLarge = vercelMultipartPayloadTooLargeResponse(
+      files,
+      Buffer.byteLength(content, "utf8"),
+    );
+    if (tooLarge) return tooLarge;
     if (!content && files.length === 0) {
       return NextResponse.json(
         { error: "Message or at least one file is required." },
