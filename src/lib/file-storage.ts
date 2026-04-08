@@ -13,9 +13,8 @@ import { NextResponse } from "next/server";
 /**
  * Files go through the route handler first, so total payload must stay under this budget.
  *
- * `access` follows `NEXT_PUBLIC_BLOB_STORE_ACCESS` / `BLOB_STORE_ACCESS` (must match the
- * Blob store in Vercel). Private stores → set `private` and use `/api/blob/media` for viewing
- * (`attachmentBlobHref`).
+ * `access` follows `getBlobStoreAccess()` (defaults **private**; set env to `public` only for a
+ * public Blob store). Private → `/api/blob/media` for viewing (`attachmentBlobHref`).
  */
 export { VERCEL_SERVER_MULTIPART_BUDGET_BYTES };
 

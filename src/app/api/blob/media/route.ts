@@ -29,7 +29,7 @@ export async function GET(request: Request): Promise<Response> {
 
   if (getBlobStoreAccess() !== "private") {
     return NextResponse.json(
-      { error: "Media proxy is only used when NEXT_PUBLIC_BLOB_STORE_ACCESS=private." },
+      { error: "Media proxy is disabled when blob access is public (use direct blob URLs)." },
       { status: 404 },
     );
   }
