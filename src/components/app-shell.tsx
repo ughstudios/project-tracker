@@ -82,6 +82,7 @@ export function AppShell({ user, onLogout, children }: Props) {
             <nav className="flex min-h-0 flex-1 flex-col" aria-label={t("nav.mainMenuAria")}>
               <div className="flex flex-col gap-px">
                 <NavItem href="/dashboard" label={t("nav.dashboard")} />
+                <NavItem href="/kanban" label={t("nav.kanban")} />
                 <NavItem href="/issues" label={t("nav.issues")} prefix />
                 <NavItem href="/projects" label={t("nav.projects")} />
                 <NavItem href="/work-records" label={t("nav.workRecords")} prefix />

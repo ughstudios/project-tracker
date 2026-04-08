@@ -146,10 +146,6 @@ const en: MessageTree = {
     axisIssues: "Issues",
     chartUnassigned: "Unassigned",
   },
-  kanban: {
-    title: "Kanban",
-    subtitle: "Drag cards between columns, change assignee and status, and filter the board.",
-  },
   issues: {
     title: "Issues",
     subtitle: "Create an issue, then open it to edit details and use the thread for updates.",
@@ -551,6 +547,7 @@ const zh: MessageTree = {
     mainMenuAria: "主要页面",
     sectionSettings: "设置",
     dashboard: "工作台",
+    kanban: "看板",
     issues: "问题",
     customers: "客户",
     projects: "项目",
@@ -653,7 +650,7 @@ const zh: MessageTree = {
   },
   dashboard: {
     title: "工作台",
-    subtitle: "按状态跟踪问题并分配给成员。",
+    subtitle: "进行中问题、项目与工作量的概览。",
     filters: "筛选",
     searchPlaceholder: "按标题、现象、原因、方案、联系人搜索…",
     allUsers: "全部用户",
@@ -683,6 +680,10 @@ const zh: MessageTree = {
     chartByProjectHint: "进行中问题最多的项目（最多 12 个）。",
     axisIssues: "问题数",
     chartUnassigned: "未分配",
+  },
+  kanban: {
+    title: "看板",
+    subtitle: "在列之间拖拽卡片，调整负责人与状态，并使用筛选。",
   },
   issues: {
     title: "问题",
