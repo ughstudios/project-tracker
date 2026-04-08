@@ -1,17 +1,19 @@
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   isBrowserOnVercelDeployment,
-  isHostedVercelProductionOrPreview,
   maxClientBlobUploadBytes,
   multipartTooLargeHint,
   perFileExceedsBlobProductLimitMessage,
   vercelBlobRequiredMessage,
-  vercelLargeFileBlockedOnCustomDomainMessage,
 } from "@/lib/issue-upload-limits";
 import { storedFileName } from "@/lib/stored-file-name";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
 const CLIENT_UPLOAD_HANDLE_URL = "/api/blob/client-upload";
+
+/** Short, neutral copy — no CORS or hosting lectures. */
+const UPLOAD_FAILED_GENERIC =
+  "Couldn’t upload the file. Check your connection and try again.";
 
 export async function isBlobClientUploadEnabled(): Promise<boolean> {
   try {
@@ -54,23 +56,28 @@ export function validateFilesBeforeMultipartUpload(files: File[]): string | null
   return null;
 }
 
-function payloadExceedsServerlessMultipartBudget(files: File[]): boolean {
-  const sum = files.reduce((s, f) => s + f.size, 0);
-  return (
-    sum > VERCEL_SERVER_MULTIPART_BUDGET_BYTES ||
-    files.some((f) => f.size > VERCEL_SERVER_MULTIPART_BUDGET_BYTES)
-  );
-}
-
-/** Vercel’s browser Blob API allows `*.vercel.app` origins; custom domains get CORS-blocked for large bodies. */
-export function hostnameAllowsVercelBlobBrowserPut(): boolean {
-  if (typeof window === "undefined") return true;
-  return window.location.hostname.endsWith(".vercel.app");
+function userFacingUploadError(e: unknown): string {
+  const raw = (e instanceof Error ? e.message : String(e)).trim();
+  if (!raw || raw === "undefined") return UPLOAD_FAILED_GENERIC;
+  const lo = raw.toLowerCase();
+  if (lo.includes("not authenticated") || lo.includes("unauthorized")) {
+    return "Your session may have expired. Sign in again, then retry the upload.";
+  }
+  if (lo.includes("not allowed") || lo.includes("content-type")) {
+    return "This file type can’t be uploaded here.";
+  }
+  if (lo.includes("too large") || lo.includes("maximum")) {
+    return perFileExceedsBlobProductLimitMessage();
+  }
+  if (lo.includes("could not save") || lo.includes("invalid file url")) {
+    return UPLOAD_FAILED_GENERIC;
+  }
+  return UPLOAD_FAILED_GENERIC;
 }
 
 /**
- * Ensures Vercel Blob client uploads can run (token exchange + browser → Blob).
- * File bytes never go through our API routes except for the small `handleUpload` JSON exchange.
+ * Ensures Vercel Blob is configured and files are within product limits.
+ * Does not block uploads based on hostname — we try the real upload and only surface short errors if it fails.
  */
 export async function assertClientBlobUploadsReady(
   files: File[],
@@ -80,13 +87,6 @@ export async function assertClientBlobUploadsReady(
   }
   const pre = validateFilesBeforeUpload(files);
   if (pre) return { error: pre };
-  if (
-    isHostedVercelProductionOrPreview() &&
-    payloadExceedsServerlessMultipartBudget(files) &&
-    !hostnameAllowsVercelBlobBrowserPut()
-  ) {
-    return { error: vercelLargeFileBlockedOnCustomDomainMessage() };
-  }
   return { ok: true };
 }
 
@@ -132,7 +132,7 @@ async function completeRegistration(
   });
   const raw = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) {
-    return { ok: false, error: raw.error ?? "Could not save attachment." };
+    return { ok: false, error: raw.error ?? UPLOAD_FAILED_GENERIC };
   }
   return { ok: true };
 }
@@ -168,19 +168,6 @@ function isTransientBlobNetworkError(e: unknown): boolean {
     msg.includes("connection") ||
     /\b50[234]\b/.test(msg) ||
     msg.includes("408")
-  );
-}
-
-function isLikelyCorsOrBlockedBlobError(e: unknown): boolean {
-  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
-  return msg.includes("cors") || msg.includes("access-control") || msg.includes("network");
-}
-
-/** Shown when browser → Vercel Blob fails on some custom domains (Vercel CORS policy). */
-export function vercelBlobClientCorsHint(): string {
-  return (
-    " If you are on a custom domain, try the .vercel.app deployment URL for large uploads, " +
-    "or keep each request under about 4 MB. (The file bytes must go to Vercel Blob in the browser, not through our API.)"
   );
 }
 
@@ -231,13 +218,7 @@ export async function uploadFilesViaBlobClient(options: {
       } catch (e) {
         const retryable = isTransientBlobNetworkError(e) && attempt < BLOB_UPLOAD_MAX_ATTEMPTS;
         if (!retryable) {
-          const msg = e instanceof Error ? e.message : String(e);
-          const base =
-            msg && msg !== "undefined"
-              ? `Upload failed: ${msg}`
-              : "Upload failed. Check your connection and try again.";
-          const hint = isLikelyCorsOrBlockedBlobError(e) ? vercelBlobClientCorsHint() : "";
-          return { ok: false, error: base + hint };
+          return { ok: false, error: userFacingUploadError(e) };
         }
         options.onProgress(null);
         const waitMs = Math.min(
@@ -249,12 +230,7 @@ export async function uploadFilesViaBlobClient(options: {
     }
 
     if (!blobUrl) {
-      return {
-        ok: false,
-        error:
-          "Upload failed after several retries. Your connection may be unstable—try again on Wi‑Fi or wait a moment." +
-          vercelBlobClientCorsHint(),
-      };
+      return { ok: false, error: UPLOAD_FAILED_GENERIC };
     }
 
     const reg = await completeRegistration(completeUrl, {
@@ -263,7 +239,7 @@ export async function uploadFilesViaBlobClient(options: {
       fileUrl: blobUrl,
       fileSize: file.size,
     });
-    if (!reg.ok) return { ok: false, error: reg.error };
+    if (!reg.ok) return { ok: false, error: reg.error ?? UPLOAD_FAILED_GENERIC };
 
     doneBytes += file.size;
     options.onProgress(Math.min(100, Math.round((doneBytes / totalBytes) * 100)));
