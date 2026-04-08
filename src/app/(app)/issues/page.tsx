@@ -3,7 +3,7 @@
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
-  isBlobClientUploadEnabled,
+  resolveBlobVsMultipartUpload,
   uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
 } from "@/lib/blob-client-upload";
@@ -167,7 +167,10 @@ export default function IssuesPage() {
     if (formFiles.length > 0) {
       setCreateAttachmentProgress(0);
       try {
-        if (await isBlobClientUploadEnabled()) {
+        const strategy = await resolveBlobVsMultipartUpload();
+        if ("error" in strategy) {
+          alert(strategy.error);
+        } else if (strategy.useBlob) {
           const up = await uploadFilesViaBlobClient({
             files: formFiles,
             tokenExtras: { scope: "issue", issueId: created.id },

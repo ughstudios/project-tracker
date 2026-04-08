@@ -28,3 +28,13 @@ export function maxIssueUploadBytesForRuntime(): number {
 export function multipartTooLargeHint(): string {
   return `Files over about ${Math.floor(VERCEL_SERVER_MULTIPART_BUDGET_BYTES / (1024 * 1024))} MB must upload via Vercel Blob on this deployment. In Vercel: Project → Storage → connect a Blob store so BLOB_READ_WRITE_TOKEN is set, then redeploy.`;
 }
+
+/** Production or Preview on Vercel (not `vercel dev`’s `development`). */
+export function isHostedVercelProductionOrPreview(): boolean {
+  const e = process.env.NEXT_PUBLIC_VERCEL_ENV;
+  return e === "production" || e === "preview";
+}
+
+export function vercelBlobRequiredMessage(): string {
+  return "This deployment requires Vercel Blob for file uploads. In Vercel: Project → Storage → connect a Blob store, add BLOB_READ_WRITE_TOKEN for Production (and Preview if you use it), then redeploy.";
+}

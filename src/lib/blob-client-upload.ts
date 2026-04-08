@@ -1,9 +1,11 @@
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   isBrowserOnVercelDeployment,
+  isHostedVercelProductionOrPreview,
   maxClientBlobUploadBytes,
   maxIssueUploadBytesForRuntime,
   multipartTooLargeHint,
+  vercelBlobRequiredMessage,
 } from "@/lib/issue-upload-limits";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
@@ -61,12 +63,28 @@ export function validateFilesBeforeMultipartUpload(files: File[]): string | null
     return `At most ${ISSUE_UPLOAD_MAX_FILES_PER_POST} files per upload.`;
   }
   const cap = maxIssueUploadBytesForRuntime();
+  const sum = files.reduce((s, f) => s + f.size, 0);
+  /** Server checks total body size (`vercelMultipartPayloadTooLargeResponse`); mirror that on the client. */
+  if (cap <= VERCEL_SERVER_MULTIPART_BUDGET_BYTES && sum > VERCEL_SERVER_MULTIPART_BUDGET_BYTES) {
+    return isBrowserOnVercelDeployment() ? multipartTooLargeHint() : "Total upload size is too large for one request.";
+  }
   for (const f of files) {
     if (f.size > cap) {
       return isBrowserOnVercelDeployment() ? multipartTooLargeHint() : "One or more files are too large.";
     }
   }
   return null;
+}
+
+/**
+ * Blob when configured; never use fragile multipart on hosted prod/preview without Blob.
+ */
+export async function resolveBlobVsMultipartUpload(): Promise<
+  { useBlob: true } | { useBlob: false } | { error: string }
+> {
+  if (await isBlobClientUploadEnabled()) return { useBlob: true };
+  if (isHostedVercelProductionOrPreview()) return { error: vercelBlobRequiredMessage() };
+  return { useBlob: false };
 }
 
 type TokenResponse = { clientToken: string; pathname: string };

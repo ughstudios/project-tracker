@@ -3,7 +3,7 @@
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
-  isBlobClientUploadEnabled,
+  resolveBlobVsMultipartUpload,
   uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
 } from "@/lib/blob-client-upload";
@@ -21,10 +21,15 @@ type CustomerAttachment = {
 
 const apiFetch: RequestInit = { credentials: "include", cache: "no-store" };
 
+function routeSegmentId(value: string | string[] | undefined): string {
+  if (value == null) return "";
+  return typeof value === "string" ? value : value[0] ?? "";
+}
+
 export default function CustomerDetailPage() {
   const { t } = useI18n();
-  const params = useParams<{ id: string }>();
-  const customerId = params.id;
+  const params = useParams<{ id: string | string[] }>();
+  const customerId = routeSegmentId(params.id);
 
   const [loading, setLoading] = useState(true);
   const [missing, setMissing] = useState(false);
@@ -64,12 +69,17 @@ export default function CustomerDetailPage() {
   }, [load]);
 
   const uploadAttachments = async (fileList: FileList | null) => {
-    if (!fileList?.length) return;
+    if (!fileList?.length || !customerId) return;
     const files = Array.from(fileList);
     setUploading(true);
     setUploadProgress(0);
     try {
-      if (await isBlobClientUploadEnabled()) {
+      const strategy = await resolveBlobVsMultipartUpload();
+      if ("error" in strategy) {
+        alert(strategy.error);
+        return;
+      }
+      if (strategy.useBlob) {
         const up = await uploadFilesViaBlobClient({
           files,
           tokenExtras: { scope: "customer", customerId },
