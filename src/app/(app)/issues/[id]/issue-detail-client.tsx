@@ -358,6 +358,21 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     await loadThreadPage("last");
   };
 
+  const removeThreadFile = (index: number) => {
+    setThreadFiles((prev) => {
+      const next = prev.filter((_, i) => i !== index);
+      if (next.length === 0 && threadFileInputRef.current) {
+        threadFileInputRef.current.value = "";
+      }
+      return next;
+    });
+  };
+
+  const clearThreadFiles = () => {
+    setThreadFiles([]);
+    if (threadFileInputRef.current) threadFileInputRef.current.value = "";
+  };
+
   const archive = async () => {
     if (!issue || !confirm(t("issues.archiveConfirm", { title: issue.title }))) return;
     setArchiving(true);
@@ -640,38 +655,78 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">{t("issueDetail.thread")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.threadHelp")}</p>
-        <p className="mt-1 text-xs text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-end">
+      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+        <div className="flex flex-col gap-1">
+          <h2 className="text-base font-semibold text-zinc-900">{t("issueDetail.thread")}</h2>
+          <p className="text-sm text-zinc-600">{t("issueDetail.threadHelp")}</p>
+          <p className="text-sm text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
+        </div>
+
+        <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 shadow-inner">
           <textarea
-            className="input min-h-[120px] w-full flex-1 resize-y"
+            className="input min-h-[140px] w-full resize-y text-[15px] leading-relaxed"
             rows={5}
             placeholder={t("issueDetail.threadPlaceholder")}
             value={threadInput}
             onChange={(e) => setThreadInput(e.target.value)}
           />
-          <div className="flex w-full min-w-0 shrink-0 flex-col gap-2 sm:w-56">
-            <div className="input-file-zone">
+
+          {threadFiles.length > 0 ? (
+            <ul className="mt-3 flex flex-wrap gap-2" aria-label={t("issueDetail.threadPendingUploads")}>
+              {threadFiles.map((f, i) => (
+                <li
+                  key={`${f.name}-${i}-${f.size}`}
+                  className="flex max-w-full items-center gap-1 rounded-full border border-zinc-200 bg-white py-1 pl-3 pr-1 text-xs text-zinc-800 shadow-sm"
+                >
+                  <span className="max-w-[220px] truncate font-medium" title={f.name}>
+                    {f.name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => removeThreadFile(i)}
+                    className="rounded-full p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                    aria-label={t("issueDetail.threadRemoveFileAria", { name: f.name })}
+                  >
+                    <span aria-hidden className="block text-sm leading-none">
+                      ×
+                    </span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          <div className="mt-4 flex flex-col gap-3 border-t border-zinc-200/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="flex flex-wrap items-center gap-2">
               <input
+                id={`thread-attach-${issueId}`}
                 ref={threadFileInputRef}
                 type="file"
                 multiple
-                className="input-file input-file--sm"
+                className="sr-only"
                 onChange={(e) => {
                   setThreadFiles(Array.from(e.target.files ?? []));
                 }}
               />
+              <label
+                htmlFor={`thread-attach-${issueId}`}
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50"
+              >
+                {t("issueDetail.chooseFiles")}
+              </label>
+              {threadFiles.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={clearThreadFiles}
+                  className="text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800"
+                >
+                  {t("common.clear")}
+                </button>
+              ) : null}
             </div>
-            {threadFiles.length > 0 ? (
-              <p className="text-xs text-zinc-600">
-                {threadFiles.map((f) => f.name).join(", ")}
-              </p>
-            ) : null}
             <button
               type="button"
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 disabled:border-zinc-300 disabled:bg-zinc-300 disabled:text-zinc-600 sm:w-auto"
               onClick={() => void postThread()}
               disabled={postingThread}
             >
@@ -680,12 +735,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           </div>
         </div>
         <div
-          className={`mt-4 space-y-2 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
+          className={`mt-6 space-y-3 border-t border-zinc-100 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
         >
           {threadListLoading && threadEntries.length === 0 ? (
             <p className="text-sm text-zinc-600">{t("common.loading")}</p>
           ) : threadEntries.length === 0 ? (
-            <p className="text-sm text-zinc-500">{t("issueDetail.noReplies")}</p>
+            <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 px-4 py-6 text-center text-sm text-zinc-500">
+              {t("issueDetail.noReplies")}
+            </p>
           ) : (
             threadEntries.map((entry) => (
               <div key={entry.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
