@@ -4,7 +4,6 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
   resolveBlobVsMultipartUpload,
-  uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
 } from "@/lib/blob-client-upload";
 import { isPrivilegedAdmin } from "@/lib/roles";
@@ -298,37 +297,23 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         alert(strategy.error);
         return;
       }
-      if (strategy.useBlob) {
-        const up = await uploadFilesViaBlobClient({
-          files,
-          tokenExtras: { scope: "issue", issueId },
-          completeUrl: `/api/issues/${encodeURIComponent(issueId)}/attachments/complete`,
-          onProgress: (p) => setIssueUploadProgress(p === null ? -1 : p),
-        });
-        if (issueFileInputRef.current) issueFileInputRef.current.value = "";
-        if (!up.ok) {
-          alert(up.error ?? t("issueDetail.couldNotUpload"));
-          return;
-        }
-      } else {
-        const pre = validateFilesBeforeMultipartUpload(files);
-        if (pre) {
-          alert(pre);
-          return;
-        }
-        const fd = new FormData();
-        for (const f of files) fd.append("files", f);
-        const res = await postFormDataWithProgress(
-          `/api/issues/${encodeURIComponent(issueId)}/attachments`,
-          fd,
-          (p) => setIssueUploadProgress(p === null ? -1 : p),
-        );
-        if (issueFileInputRef.current) issueFileInputRef.current.value = "";
-        if (!res.ok) {
-          const data = await res.json<{ error?: string }>();
-          alert(data.error ?? t("issueDetail.couldNotUpload"));
-          return;
-        }
+      const pre = validateFilesBeforeMultipartUpload(files);
+      if (pre) {
+        alert(pre);
+        return;
+      }
+      const fd = new FormData();
+      for (const f of files) fd.append("files", f);
+      const res = await postFormDataWithProgress(
+        `/api/issues/${encodeURIComponent(issueId)}/attachments`,
+        fd,
+        (p) => setIssueUploadProgress(p === null ? -1 : p),
+      );
+      if (issueFileInputRef.current) issueFileInputRef.current.value = "";
+      if (!res.ok) {
+        const data = await res.json<{ error?: string }>();
+        alert(data.error ?? t("issueDetail.couldNotUpload"));
+        return;
       }
       await refreshIssue();
     } finally {
@@ -374,58 +359,28 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           alert(strategy.error);
           return;
         }
-        if (strategy.useBlob) {
-          const createRes = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
-            ...fetchInit,
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ content, clientBlobAttachments: true }),
-          });
-          if (!createRes.ok) {
-            const data = (await createRes.json().catch(() => ({}))) as { error?: string };
+        const pre = validateFilesBeforeMultipartUpload(threadFiles);
+        if (pre) {
+          alert(pre);
+          return;
+        }
+        const fd = new FormData();
+        fd.set("content", content);
+        for (const f of threadFiles) fd.append("files", f);
+        setThreadUploadProgress(0);
+        try {
+          const res = await postFormDataWithProgress(
+            `/api/issues/${encodeURIComponent(issueId)}/thread`,
+            fd,
+            (p) => setThreadUploadProgress(p === null ? -1 : p),
+          );
+          if (!res.ok) {
+            const data = await res.json<{ error?: string }>();
             alert(data.error ?? t("issueDetail.couldNotPost"));
             return;
           }
-          const entry = (await createRes.json()) as ThreadEntry;
-          setThreadUploadProgress(0);
-          try {
-            const up = await uploadFilesViaBlobClient({
-              files: threadFiles,
-              tokenExtras: { scope: "thread", issueId, threadEntryId: entry.id },
-              completeUrl: `/api/issues/${encodeURIComponent(issueId)}/thread/${encodeURIComponent(entry.id)}/attachments/complete`,
-              onProgress: (p) => setThreadUploadProgress(p === null ? -1 : p),
-            });
-            if (!up.ok) {
-              alert(up.error ?? t("issueDetail.couldNotPost"));
-              return;
-            }
-          } finally {
-            setThreadUploadProgress(null);
-          }
-        } else {
-          const pre = validateFilesBeforeMultipartUpload(threadFiles);
-          if (pre) {
-            alert(pre);
-            return;
-          }
-          const fd = new FormData();
-          fd.set("content", content);
-          for (const f of threadFiles) fd.append("files", f);
-          setThreadUploadProgress(0);
-          try {
-            const res = await postFormDataWithProgress(
-              `/api/issues/${encodeURIComponent(issueId)}/thread`,
-              fd,
-              (p) => setThreadUploadProgress(p === null ? -1 : p),
-            );
-            if (!res.ok) {
-              const data = await res.json<{ error?: string }>();
-              alert(data.error ?? t("issueDetail.couldNotPost"));
-              return;
-            }
-          } finally {
-            setThreadUploadProgress(null);
-          }
+        } finally {
+          setThreadUploadProgress(null);
         }
       } else {
         const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {

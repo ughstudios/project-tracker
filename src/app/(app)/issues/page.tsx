@@ -4,7 +4,6 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
   resolveBlobVsMultipartUpload,
-  uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
 } from "@/lib/blob-client-upload";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
@@ -170,16 +169,6 @@ export default function IssuesPage() {
         const strategy = await resolveBlobVsMultipartUpload();
         if ("error" in strategy) {
           alert(strategy.error);
-        } else if (strategy.useBlob) {
-          const up = await uploadFilesViaBlobClient({
-            files: formFiles,
-            tokenExtras: { scope: "issue", issueId: created.id },
-            completeUrl: `/api/issues/${encodeURIComponent(created.id)}/attachments/complete`,
-            onProgress: (p) => setCreateAttachmentProgress(p === null ? -1 : p),
-          });
-          if (!up.ok) {
-            alert(up.error ?? t("issueDetail.couldNotUpload"));
-          }
         } else {
           const pre = validateFilesBeforeMultipartUpload(formFiles);
           if (pre) {

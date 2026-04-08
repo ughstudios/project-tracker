@@ -4,7 +4,6 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
   resolveBlobVsMultipartUpload,
-  uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
 } from "@/lib/blob-client-upload";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
@@ -79,37 +78,24 @@ export default function CustomerDetailPage() {
         alert(strategy.error);
         return;
       }
-      if (strategy.useBlob) {
-        const up = await uploadFilesViaBlobClient({
-          files,
-          tokenExtras: { scope: "customer", customerId },
-          completeUrl: `/api/customers/${customerId}/attachments/complete`,
-          onProgress: (p) => setUploadProgress(p === null ? -1 : p),
-        });
-        if (!up.ok) {
-          alert(up.error ?? t("customerDetail.couldNotUpload"));
-          return;
-        }
-      } else {
-        const pre = validateFilesBeforeMultipartUpload(files);
-        if (pre) {
-          alert(pre);
-          return;
-        }
-        const formData = new FormData();
-        for (const f of files) {
-          formData.append("files", f);
-        }
-        const res = await postFormDataWithProgress(
-          `/api/customers/${customerId}/attachments`,
-          formData,
-          (p) => setUploadProgress(p === null ? -1 : p),
-        );
-        if (!res.ok) {
-          const data = await res.json<{ error?: string }>();
-          alert(data.error ?? t("customerDetail.couldNotUpload"));
-          return;
-        }
+      const pre = validateFilesBeforeMultipartUpload(files);
+      if (pre) {
+        alert(pre);
+        return;
+      }
+      const formData = new FormData();
+      for (const f of files) {
+        formData.append("files", f);
+      }
+      const res = await postFormDataWithProgress(
+        `/api/customers/${customerId}/attachments`,
+        formData,
+        (p) => setUploadProgress(p === null ? -1 : p),
+      );
+      if (!res.ok) {
+        const data = await res.json<{ error?: string }>();
+        alert(data.error ?? t("customerDetail.couldNotUpload"));
+        return;
       }
       await load();
     } finally {
