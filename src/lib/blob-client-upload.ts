@@ -8,6 +8,7 @@ import {
   perFileExceedsBlobProductLimitMessage,
   perFileExceedsMultipartRouteLimitMessage,
   vercelBlobRequiredMessage,
+  vercelLargeFileBlockedOnCustomDomainMessage,
 } from "@/lib/issue-upload-limits";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
@@ -60,12 +61,15 @@ function payloadExceedsServerlessMultipartBudget(files: File[]): boolean {
   );
 }
 
+/** Vercel’s browser Blob API allows `*.vercel.app` origins; custom domains get CORS-blocked. */
+export function hostnameAllowsVercelBlobBrowserPut(): boolean {
+  if (typeof window === "undefined") return true;
+  return window.location.hostname.endsWith(".vercel.app");
+}
+
 /**
- * On hosted Vercel, payloads over ~4 MB cannot go through API routes (serverless body limit).
- * Use `@vercel/blob/client` put() so bytes go to Vercel Blob, not through our functions.
- *
- * Note: the SDK talks to `vercel.com/api/blob` (or `NEXT_PUBLIC_VERCEL_BLOB_API_URL`). Custom
- * domains are sometimes blocked by CORS; `*.vercel.app` is the most reliable host for this path.
+ * On hosted Vercel, payloads over ~4 MB cannot use API routes (serverless body ~4.5 MB cap).
+ * Client `put()` sends bytes to `vercel.com/api/blob`, which is only usable from `*.vercel.app` due to CORS.
  */
 export async function resolveBlobVsMultipartUpload(
   files: File[],
@@ -75,6 +79,9 @@ export async function resolveBlobVsMultipartUpload(
       return { error: vercelBlobRequiredMessage() };
     }
     if (payloadExceedsServerlessMultipartBudget(files)) {
+      if (!hostnameAllowsVercelBlobBrowserPut()) {
+        return { error: vercelLargeFileBlockedOnCustomDomainMessage() };
+      }
       return { useBlob: true };
     }
     return { useBlob: false };

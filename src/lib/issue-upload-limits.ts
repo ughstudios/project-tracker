@@ -54,6 +54,24 @@ export function multipartTooLargeHint(): string {
   return VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE;
 }
 
+/**
+ * Shown when a file is too large for multipart **and** the page is not on `*.vercel.app`.
+ * Browsers call `https://vercel.com/api/blob` for client uploads; that response omits
+ * `Access-Control-Allow-Origin` for arbitrary custom domains, so the upload cannot succeed from there.
+ */
+export function vercelLargeFileBlockedOnCustomDomainMessage(): string {
+  const mb = Math.max(1, Math.floor(VERCEL_SERVER_MULTIPART_BUDGET_BYTES / MB));
+  const origin = process.env.NEXT_PUBLIC_VERCEL_APP_ORIGIN?.trim();
+  const mirror = origin
+    ? ` If login works for you on both URLs, try this deployment at ${origin} for larger files.`
+    : ` If your team also uses the project’s *.vercel.app URL and sign-in works there, use that for larger files.`;
+  return (
+    `This file is over about ${mb} MB. From a custom domain the browser cannot finish Vercel Blob client uploads: the request goes to vercel.com, which does not allow your site’s origin in CORS (browser security; not configurable in this repo).` +
+    mirror +
+    ` Or use files under about ${mb} MB, or split into smaller parts. Long-term options: storage with CORS for your domain (e.g. S3/R2), or host the app only on *.vercel.app until Vercel changes Blob CORS.`
+  );
+}
+
 /** Production or Preview on Vercel (not `vercel dev`’s `development`). */
 export function isHostedVercelProductionOrPreview(): boolean {
   const e = process.env.NEXT_PUBLIC_VERCEL_ENV;
