@@ -58,7 +58,9 @@ export async function GET(
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 
-  return NextResponse.json(project);
+  return NextResponse.json(project, {
+    headers: { "Cache-Control": "private, no-store, must-revalidate" },
+  });
 }
 
 export async function PATCH(

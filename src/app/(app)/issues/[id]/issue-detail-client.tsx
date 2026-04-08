@@ -128,7 +128,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       try {
         const q = page === "last" ? "page=last" : `page=${page}`;
         const res = await fetch(
-          `/api/issues/${encodeURIComponent(issueId)}/thread?${q}&pageSize=${THREAD_PAGE_SIZE}`,
+          `/api/issues/${encodeURIComponent(issueId)}/thread?${q}&pageSize=${THREAD_PAGE_SIZE}&_=${Date.now()}`,
           fetchInit,
         );
         if (!res.ok) return;
@@ -181,7 +181,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           await Promise.all([
             fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
             fetch(
-              `/api/issues/${encodeURIComponent(issueId)}/thread?page=1&pageSize=${THREAD_PAGE_SIZE}`,
+              `/api/issues/${encodeURIComponent(issueId)}/thread?page=1&pageSize=${THREAD_PAGE_SIZE}&_=${Date.now()}`,
               fetchInit,
             ),
             fetch("/api/users", fetchInit),
@@ -246,7 +246,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   }, [issueId, syncDraftFromIssue, t]);
 
   const refreshIssue = async () => {
-    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit);
+    const res = await fetch(
+      `/api/issues/${encodeURIComponent(issueId)}?_${Date.now()}`,
+      fetchInit,
+    );
     if (!res.ok) return;
     const data = withAttachmentDefaults((await res.json()) as IssueDetail);
     if (data.id !== issueId) return;
@@ -317,7 +320,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       alert(t("issueDetail.couldNotUpload"));
       return;
     }
+    setIssue((prev) =>
+      prev
+        ? { ...prev, attachments: prev.attachments.filter((a) => a.id !== attachmentId) }
+        : prev,
+    );
     await refreshIssue();
+    router.refresh();
   };
 
   const deleteThreadAttachment = async (entryId: string, attachmentId: string) => {
@@ -330,7 +339,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       alert(t("issueDetail.couldNotUpload"));
       return;
     }
+    setThreadEntries((prev) =>
+      prev.map((e) =>
+        e.id === entryId
+          ? { ...e, attachments: e.attachments.filter((a) => a.id !== attachmentId) }
+          : e,
+      ),
+    );
     await loadThreadPage(threadPage);
+    router.refresh();
   };
 
   const postThread = async () => {

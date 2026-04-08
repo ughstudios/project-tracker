@@ -55,7 +55,10 @@ export async function GET(
     },
   });
 
-  return NextResponse.json({ entries, total, page, pageSize, totalPages });
+  return NextResponse.json(
+    { entries, total, page, pageSize, totalPages },
+    { headers: { "Cache-Control": "private, no-store, must-revalidate" } },
+  );
 }
 
 export async function POST(

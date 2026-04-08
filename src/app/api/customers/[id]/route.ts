@@ -26,7 +26,9 @@ export async function GET(
     return NextResponse.json({ error: "Customer not found." }, { status: 404 });
   }
 
-  return NextResponse.json(customer);
+  return NextResponse.json(customer, {
+    headers: { "Cache-Control": "private, no-store, must-revalidate" },
+  });
 }
 
 export async function PATCH(

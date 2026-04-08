@@ -34,16 +34,20 @@ export default function CustomerDetailPage() {
   const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const load = useCallback(async () => {
-    setLoading(true);
-    setMissing(false);
-    const res = await fetch(`/api/customers/${customerId}`, apiFetch);
+  const load = useCallback(async (mode: "full" | "customerOnly" = "full") => {
+    if (mode === "full") {
+      setLoading(true);
+      setMissing(false);
+    }
+    const res = await fetch(`/api/customers/${encodeURIComponent(customerId)}?_${Date.now()}`, apiFetch);
     if (!res.ok) {
-      setLoading(false);
-      setMissing(true);
-      setName("");
-      setAttachments([]);
-      setProjectCount(0);
+      if (mode === "full") {
+        setLoading(false);
+        setMissing(true);
+        setName("");
+        setAttachments([]);
+        setProjectCount(0);
+      }
       return;
     }
     const data = (await res.json()) as {
@@ -54,7 +58,7 @@ export default function CustomerDetailPage() {
     setName(data.name ?? "");
     setAttachments(data.attachments ?? []);
     setProjectCount(data._count?.projects ?? 0);
-    setLoading(false);
+    if (mode === "full") setLoading(false);
   }, [customerId]);
 
   useEffect(() => {
@@ -98,7 +102,8 @@ export default function CustomerDetailPage() {
       alert(data.error ?? t("common.attachmentRemoveFailed"));
       return;
     }
-    await load();
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+    await load("customerOnly");
   };
 
   if (loading) {

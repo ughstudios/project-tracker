@@ -73,27 +73,19 @@ export default function ProjectDetailsPage() {
   const [addingNote, setAddingNote] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const load = useCallback(async () => {
-    setLoading(true);
-    const [projectRes, customersRes, productsRes] = await Promise.all([
-      fetch(`/api/projects/${projectId}`, apiFetch),
-      fetch("/api/customers", apiFetch),
-      fetch("/api/products", apiFetch),
-    ]);
-    if (!projectRes.ok) {
-      setLoading(false);
-      return;
-    }
-    const project = (await projectRes.json()) as {
-      name: string;
-      customerId: string;
-      processorConfigs: ProcessorConfig[];
-      receiverCardConfigs: ReceiverCardConfig[];
-      otherProductConfigs: OtherProductConfig[];
-      notes?: ProjectNote[];
-      attachments?: ProjectAttachment[];
-      issues?: ProjectIssue[];
-    };
+
+  type ProjectPayload = {
+    name: string;
+    customerId: string;
+    processorConfigs: ProcessorConfig[];
+    receiverCardConfigs: ReceiverCardConfig[];
+    otherProductConfigs: OtherProductConfig[];
+    notes?: ProjectNote[];
+    attachments?: ProjectAttachment[];
+    issues?: ProjectIssue[];
+  };
+
+  const applyProjectPayload = useCallback((project: ProjectPayload) => {
     setName(project.name ?? "");
     setCustomerId(project.customerId ?? "");
     setProcessors(project.processorConfigs?.length ? project.processorConfigs : [{ model: "", firmware: "", quantity: 1 }]);
@@ -110,16 +102,45 @@ export default function ProjectDetailsPage() {
     setNotes(project.notes ?? []);
     setAttachments(project.attachments ?? []);
     setIssues(project.issues ?? []);
+  }, []);
 
-    if (customersRes.ok) setCustomers(await customersRes.json());
-    if (productsRes.ok) {
-      const data = (await productsRes.json()) as {
-        groups?: Array<{ group: string; items: string[] }>;
-      };
-      setProductGroups(data.groups ?? []);
-    }
-    setLoading(false);
-  }, [projectId]);
+  const load = useCallback(
+    async (mode: "full" | "projectOnly" = "full") => {
+      if (mode === "full") setLoading(true);
+
+      if (mode === "projectOnly") {
+        const projectRes = await fetch(
+          `/api/projects/${encodeURIComponent(projectId)}?_${Date.now()}`,
+          apiFetch,
+        );
+        if (projectRes.ok) {
+          applyProjectPayload((await projectRes.json()) as ProjectPayload);
+        }
+        return;
+      }
+
+      const [projectRes, customersRes, productsRes] = await Promise.all([
+        fetch(`/api/projects/${encodeURIComponent(projectId)}?_${Date.now()}`, apiFetch),
+        fetch("/api/customers", apiFetch),
+        fetch("/api/products", apiFetch),
+      ]);
+      if (!projectRes.ok) {
+        setLoading(false);
+        return;
+      }
+      applyProjectPayload((await projectRes.json()) as ProjectPayload);
+
+      if (customersRes.ok) setCustomers(await customersRes.json());
+      if (productsRes.ok) {
+        const data = (await productsRes.json()) as {
+          groups?: Array<{ group: string; items: string[] }>;
+        };
+        setProductGroups(data.groups ?? []);
+      }
+      setLoading(false);
+    },
+    [projectId, applyProjectPayload],
+  );
 
   useEffect(() => {
     const run = async () => {
@@ -205,7 +226,8 @@ export default function ProjectDetailsPage() {
       alert(data.error ?? t("common.attachmentRemoveFailed"));
       return;
     }
-    await load();
+    setAttachments((prev) => prev.filter((a) => a.id !== attachmentId));
+    await load("projectOnly");
   };
 
   const processorGroups = new Set([

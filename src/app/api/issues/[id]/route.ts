@@ -34,7 +34,9 @@ export async function GET(
       return NextResponse.json({ error: "Issue not found." }, { status: 404 });
     }
 
-    return NextResponse.json(issue);
+    return NextResponse.json(issue, {
+      headers: { "Cache-Control": "private, no-store, must-revalidate" },
+    });
   } catch {
     return NextResponse.json({ error: "Failed to load issue." }, { status: 500 });
   }
