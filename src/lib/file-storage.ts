@@ -1,16 +1,16 @@
 import { del, put } from "@vercel/blob";
+import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
 /**
- * Vercel Serverless request bodies are capped (~4.5 MB including multipart overhead).
  * Files go through the route handler first, so total payload must stay under this budget.
  *
  * We use `access: 'public'` on `put()` so `<img>`, `<a href>`, and `<video src>` work with
  * the URL stored in Postgres. `access: 'private'` would require signed URLs or a download proxy.
  */
-export const VERCEL_SERVER_MULTIPART_BUDGET_BYTES = 4 * 1024 * 1024;
+export { VERCEL_SERVER_MULTIPART_BUDGET_BYTES };
 
 /**
  * Read/write token Vercel injects when a Blob store is **connected to this project**.

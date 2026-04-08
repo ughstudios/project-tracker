@@ -2,7 +2,7 @@ import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   maxClientBlobUploadBytes,
   maxIssueUploadBytesForRuntime,
-} from "@/lib/issue-files";
+} from "@/lib/issue-upload-limits";
 
 function browserContentTypeForFile(file: File): string {
   if (file.type) return file.type;
