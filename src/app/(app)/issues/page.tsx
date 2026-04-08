@@ -1,6 +1,8 @@
 "use client";
 
+import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
@@ -70,6 +72,7 @@ export default function IssuesPage() {
   const [formFiles, setFormFiles] = useState<File[]>([]);
   const createFileInputRef = useRef<HTMLInputElement>(null);
   const [creating, setCreating] = useState(false);
+  const [createAttachmentProgress, setCreateAttachmentProgress] = useState<number | null>(null);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
@@ -160,13 +163,19 @@ export default function IssuesPage() {
     if (formFiles.length > 0) {
       const fd = new FormData();
       for (const f of formFiles) fd.append("files", f);
-      const up = await fetch(`/api/issues/${encodeURIComponent(created.id)}/attachments`, {
-        ...fetchFresh,
-        method: "POST",
-        body: fd,
-      });
-      if (!up.ok) {
-        alert(t("issueDetail.couldNotUpload"));
+      setCreateAttachmentProgress(0);
+      try {
+        const up = await postFormDataWithProgress(
+          `/api/issues/${encodeURIComponent(created.id)}/attachments`,
+          fd,
+          (p) => setCreateAttachmentProgress(p === null ? -1 : p),
+        );
+        if (!up.ok) {
+          const data = await up.json<{ error?: string }>();
+          alert(data.error ?? t("issueDetail.couldNotUpload"));
+        }
+      } finally {
+        setCreateAttachmentProgress(null);
       }
     }
 
@@ -318,6 +327,11 @@ export default function IssuesPage() {
             {formFiles.length > 0 ? (
               <p className="mt-1 text-xs text-zinc-600">{formFiles.map((f) => f.name).join(", ")}</p>
             ) : null}
+            <UploadProgressBar
+              value={createAttachmentProgress}
+              label={t("issueDetail.uploadingFiles")}
+              className="mt-2 max-w-xl"
+            />
           </label>
           <div className="md:col-span-2">
             <button

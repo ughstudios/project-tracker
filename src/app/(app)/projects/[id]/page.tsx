@@ -1,6 +1,8 @@
 "use client";
 
+import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -64,6 +66,7 @@ export default function ProjectDetailsPage() {
   const [noteInput, setNoteInput] = useState("");
   const [addingNote, setAddingNote] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -166,22 +169,27 @@ export default function ProjectDetailsPage() {
   const uploadAttachments = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
     setUploading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     for (const f of Array.from(fileList)) {
       formData.append("files", f);
     }
-    const res = await fetch(`/api/projects/${projectId}/attachments`, {
-      ...apiFetch,
-      method: "POST",
-      body: formData,
-    });
-    setUploading(false);
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? t("projectDetail.couldNotUpload"));
-      return;
+    try {
+      const res = await postFormDataWithProgress(
+        `/api/projects/${projectId}/attachments`,
+        formData,
+        (p) => setUploadProgress(p === null ? -1 : p),
+      );
+      if (!res.ok) {
+        const data = await res.json<{ error?: string }>();
+        alert(data.error ?? t("projectDetail.couldNotUpload"));
+        return;
+      }
+      await load();
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
-    await load();
   };
 
   const deleteProjectAttachment = async (attachmentId: string) => {
@@ -302,14 +310,19 @@ export default function ProjectDetailsPage() {
             <input
               type="file"
               multiple
+              disabled={uploading}
               className="input-file"
               onChange={(e) => {
                 void uploadAttachments(e.currentTarget.files);
                 e.currentTarget.value = "";
               }}
             />
-            {uploading ? <p className="mt-2 text-xs text-zinc-500">{t("projectDetail.uploading")}</p> : null}
           </div>
+          <UploadProgressBar
+            value={uploadProgress}
+            label={t("projectDetail.uploading")}
+            className="mt-2 max-w-xl"
+          />
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               {t("projectDetail.uploadedFiles", { count: String(attachments.length) })}

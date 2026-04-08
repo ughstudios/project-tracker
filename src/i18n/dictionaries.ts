@@ -266,7 +266,8 @@ const en: MessageTree = {
     receivers: "Receiver cards",
     otherProducts: "Other products",
     filesTitle: "Project Files",
-    filesHelp: "Upload any project-related files (e.g. `.rcvbp`, `.cbp`, PDFs, images). Same size limits as issue attachments.",
+    filesHelp:
+      "Any file type is allowed (documents, images, archives, `.rcvbp` / `.cbp`, etc.). Same per-file and per-request limits as issue attachments.",
     uploading: "Uploading…",
     uploadedFiles: "Uploaded files ({count})",
     noFiles: "No files uploaded yet.",
@@ -777,7 +778,8 @@ const zh: MessageTree = {
     receivers: "接收卡",
     otherProducts: "其他产品",
     filesTitle: "项目文件",
-    filesHelp: "可上传任意项目相关文件（如 `.rcvbp`、`.cbp`、PDF、图片等），大小限制与问题附件相同。",
+    filesHelp:
+      "任意文件类型均可（文档、图片、压缩包、`.rcvbp`/`.cbp` 等），大小与单次请求限制与问题附件一致。",
     uploading: "正在上传…",
     uploadedFiles: "已上传文件（{count}）",
     noFiles: "尚未上传文件。",
@@ -802,8 +804,7 @@ const zh: MessageTree = {
     backToCustomers: "返回客户列表",
     projectsCount: "进行中项目：{count}",
     filesTitle: "客户文件",
-    filesHelp:
-      "可上传合同、说明或其他文档（在大小限制内，不限制扩展名）。",
+    filesHelp: "任意文件类型均可（合同、图片、压缩包等），在大小与单次请求限制内。",
     uploading: "正在上传…",
     uploadedFiles: "已上传文件（{count}）",
     noFiles: "尚未上传文件。",

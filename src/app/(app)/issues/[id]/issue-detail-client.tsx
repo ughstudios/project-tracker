@@ -1,7 +1,9 @@
 "use client";
 
+import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
+import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -110,6 +112,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const threadFileInputRef = useRef<HTMLInputElement>(null);
   const [postingThread, setPostingThread] = useState(false);
   const [uploadingIssueFiles, setUploadingIssueFiles] = useState(false);
+  const [issueUploadProgress, setIssueUploadProgress] = useState<number | null>(null);
+  const [threadUploadProgress, setThreadUploadProgress] = useState<number | null>(null);
   const issueFileInputRef = useRef<HTMLInputElement>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [archiving, setArchiving] = useState(false);
@@ -283,21 +287,26 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     const files = Array.from(fileList);
     if (files.length === 0) return;
     setUploadingIssueFiles(true);
+    setIssueUploadProgress(0);
     const fd = new FormData();
     for (const f of files) fd.append("files", f);
-    const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/attachments`, {
-      credentials: "include",
-      method: "POST",
-      body: fd,
-    });
-    setUploadingIssueFiles(false);
-    if (issueFileInputRef.current) issueFileInputRef.current.value = "";
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? t("issueDetail.couldNotUpload"));
-      return;
+    try {
+      const res = await postFormDataWithProgress(
+        `/api/issues/${encodeURIComponent(issueId)}/attachments`,
+        fd,
+        (p) => setIssueUploadProgress(p === null ? -1 : p),
+      );
+      if (issueFileInputRef.current) issueFileInputRef.current.value = "";
+      if (!res.ok) {
+        const data = await res.json<{ error?: string }>();
+        alert(data.error ?? t("issueDetail.couldNotUpload"));
+        return;
+      }
+      await refreshIssue();
+    } finally {
+      setUploadingIssueFiles(false);
+      setIssueUploadProgress(null);
     }
-    await refreshIssue();
   };
 
   const deleteIssueAttachment = async (attachmentId: string) => {
@@ -330,34 +339,46 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     const content = threadInput.trim();
     if (!content && threadFiles.length === 0) return;
     setPostingThread(true);
-    let res: Response;
-    if (threadFiles.length > 0) {
-      const fd = new FormData();
-      fd.set("content", content);
-      for (const f of threadFiles) fd.append("files", f);
-      res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
-        credentials: "include",
-        method: "POST",
-        body: fd,
-      });
-    } else {
-      res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
-        ...fetchInit,
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
+    try {
+      if (threadFiles.length > 0) {
+        const fd = new FormData();
+        fd.set("content", content);
+        for (const f of threadFiles) fd.append("files", f);
+        setThreadUploadProgress(0);
+        try {
+          const res = await postFormDataWithProgress(
+            `/api/issues/${encodeURIComponent(issueId)}/thread`,
+            fd,
+            (p) => setThreadUploadProgress(p === null ? -1 : p),
+          );
+          if (!res.ok) {
+            const data = await res.json<{ error?: string }>();
+            alert(data.error ?? t("issueDetail.couldNotPost"));
+            return;
+          }
+        } finally {
+          setThreadUploadProgress(null);
+        }
+      } else {
+        const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
+          ...fetchInit,
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content }),
+        });
+        if (!res.ok) {
+          const data = (await res.json().catch(() => ({}))) as { error?: string };
+          alert(data.error ?? t("issueDetail.couldNotPost"));
+          return;
+        }
+      }
+      setThreadInput("");
+      setThreadFiles([]);
+      if (threadFileInputRef.current) threadFileInputRef.current.value = "";
+      await loadThreadPage("last");
+    } finally {
+      setPostingThread(false);
     }
-    setPostingThread(false);
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? t("issueDetail.couldNotPost"));
-      return;
-    }
-    setThreadInput("");
-    setThreadFiles([]);
-    if (threadFileInputRef.current) threadFileInputRef.current.value = "";
-    await loadThreadPage("last");
   };
 
   const removeThreadFile = (index: number) => {
@@ -604,10 +625,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               }}
             />
           </div>
-          {uploadingIssueFiles ? (
-            <span className="self-center text-sm text-zinc-600">{t("issueDetail.uploadingFiles")}</span>
-          ) : null}
         </div>
+        <UploadProgressBar
+          value={issueUploadProgress}
+          label={t("issueDetail.uploadingFiles")}
+          className="mt-3 max-w-xl"
+        />
         <div className="mt-4 space-y-3">
           {issue.attachments.length === 0 ? (
             <p className="text-sm text-zinc-500">{t("issueDetail.noAttachments")}</p>
@@ -735,6 +758,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               {postingThread ? t("issueDetail.posting") : t("issueDetail.post")}
             </button>
           </div>
+          <UploadProgressBar
+            value={threadUploadProgress}
+            label={t("issueDetail.uploadingFiles")}
+            className="mt-3"
+          />
         </div>
         <div
           className={`mt-6 space-y-3 border-t border-zinc-100 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}

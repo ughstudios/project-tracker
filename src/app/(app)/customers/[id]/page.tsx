@@ -1,6 +1,8 @@
 "use client";
 
+import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -11,6 +13,8 @@ type CustomerAttachment = {
   fileUrl: string;
   fileSize: number;
 };
+
+const apiFetch: RequestInit = { credentials: "include", cache: "no-store" };
 
 export default function CustomerDetailPage() {
   const { t } = useI18n();
@@ -23,11 +27,12 @@ export default function CustomerDetailPage() {
   const [projectCount, setProjectCount] = useState(0);
   const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<number | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
     setMissing(false);
-    const res = await fetch(`/api/customers/${customerId}`);
+    const res = await fetch(`/api/customers/${customerId}`, apiFetch);
     if (!res.ok) {
       setLoading(false);
       setMissing(true);
@@ -57,26 +62,33 @@ export default function CustomerDetailPage() {
   const uploadAttachments = async (fileList: FileList | null) => {
     if (!fileList?.length) return;
     setUploading(true);
+    setUploadProgress(0);
     const formData = new FormData();
     for (const f of Array.from(fileList)) {
       formData.append("files", f);
     }
-    const res = await fetch(`/api/customers/${customerId}/attachments`, {
-      method: "POST",
-      body: formData,
-    });
-    setUploading(false);
-    if (!res.ok) {
-      const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? t("customerDetail.couldNotUpload"));
-      return;
+    try {
+      const res = await postFormDataWithProgress(
+        `/api/customers/${customerId}/attachments`,
+        formData,
+        (p) => setUploadProgress(p === null ? -1 : p),
+      );
+      if (!res.ok) {
+        const data = await res.json<{ error?: string }>();
+        alert(data.error ?? t("customerDetail.couldNotUpload"));
+        return;
+      }
+      await load();
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
     }
-    await load();
   };
 
   const deleteAttachment = async (attachmentId: string) => {
     if (!confirm(t("customerDetail.confirmRemoveAttachment"))) return;
     const res = await fetch(`/api/customers/${customerId}/attachments/${attachmentId}`, {
+      ...apiFetch,
       method: "DELETE",
     });
     if (!res.ok) {
@@ -140,14 +152,19 @@ export default function CustomerDetailPage() {
           <input
             type="file"
             multiple
+            disabled={uploading}
             className="input-file"
             onChange={(e) => {
               void uploadAttachments(e.currentTarget.files);
               e.currentTarget.value = "";
             }}
           />
-          {uploading ? <p className="mt-2 text-xs text-zinc-500">{t("customerDetail.uploading")}</p> : null}
         </div>
+        <UploadProgressBar
+          value={uploadProgress}
+          label={t("customerDetail.uploading")}
+          className="mt-2 max-w-xl"
+        />
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             {t("customerDetail.uploadedFiles", { count: String(attachments.length) })}
