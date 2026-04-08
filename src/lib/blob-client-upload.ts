@@ -117,6 +117,41 @@ async function fetchBlobToken(
   return { ok: true, data: { clientToken: raw.clientToken, pathname: raw.pathname } };
 }
 
+const BLOB_PUT_MAX_ATTEMPTS = 5;
+const BLOB_PUT_RETRY_BASE_MS = 1_200;
+const BLOB_PUT_RETRY_MAX_MS = 12_000;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+/** Chrome often surfaces ERR_NETWORK_CHANGED as TypeError: Failed to fetch. */
+function isTransientBlobNetworkError(e: unknown): boolean {
+  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
+  if (
+    msg.includes("too large") ||
+    msg.includes("forbidden") ||
+    msg.includes("unauthorized") ||
+    msg.includes("not allowed") ||
+    /\b40[0-9]\b/.test(msg)
+  ) {
+    return false;
+  }
+  if (e instanceof TypeError) return true;
+  return (
+    msg.includes("failed to fetch") ||
+    msg.includes("load failed") ||
+    msg.includes("network") ||
+    msg.includes("aborted") ||
+    msg.includes("timeout") ||
+    msg.includes("err_network") ||
+    msg.includes("network_changed") ||
+    msg.includes("connection") ||
+    /\b50[234]\b/.test(msg) ||
+    msg.includes("408")
+  );
+}
+
 async function completeRegistration(
   completeUrl: string,
   body: { fileName: string; pathname: string; fileUrl: string; fileSize: number },
@@ -153,43 +188,66 @@ export async function uploadFilesViaBlobClient(options: {
   const { put } = await import("@vercel/blob/client");
 
   for (const file of files) {
-    const tok = await fetchBlobToken(tokenExtras, file);
-    if (!tok.ok) return { ok: false, error: tok.error };
+    let blobUrl: string | undefined;
+    let pathnameUsed: string | undefined;
 
-    let blobUrl: string;
-    try {
-      // Never use `multipart: true` here: it POSTs to `vercel.com/api/blob/mpu`, which does not
-      // send Access-Control-Allow-Origin for custom domains (e.g. tracker.*). Single PUT works
-      // from the app origin for large files (100 MB cap) without that CORS trap.
-      const uploaded = await put(tok.data.pathname, file, {
-        access: "public",
-        token: tok.data.clientToken,
-        contentType: browserContentTypeForFile(file),
-        onUploadProgress: ({ loaded, total, percentage }) => {
-          if (totalBytes <= 0) {
-            options.onProgress(null);
-            return;
-          }
-          const slice = total > 0 ? (file.size * loaded) / total : (file.size * percentage) / 100;
-          const pct = Math.min(100, Math.round(((doneBytes + slice) / totalBytes) * 100));
-          options.onProgress(pct);
-        },
-      });
-      blobUrl = uploaded.url;
-    } catch (e) {
-      const msg = e instanceof Error ? e.message : String(e);
+    for (let attempt = 1; attempt <= BLOB_PUT_MAX_ATTEMPTS; attempt++) {
+      const tok = await fetchBlobToken(tokenExtras, file);
+      if (!tok.ok) return { ok: false, error: tok.error };
+
+      try {
+        // Never use `multipart: true` here: it POSTs to `vercel.com/api/blob/mpu`, which does not
+        // send Access-Control-Allow-Origin for custom domains (e.g. tracker.*). Single PUT works
+        // from the app origin for large files (100 MB cap) without that CORS trap.
+        const uploaded = await put(tok.data.pathname, file, {
+          access: "public",
+          token: tok.data.clientToken,
+          contentType: browserContentTypeForFile(file),
+          onUploadProgress: ({ loaded, total, percentage }) => {
+            if (totalBytes <= 0) {
+              options.onProgress(null);
+              return;
+            }
+            const slice = total > 0 ? (file.size * loaded) / total : (file.size * percentage) / 100;
+            const pct = Math.min(100, Math.round(((doneBytes + slice) / totalBytes) * 100));
+            options.onProgress(pct);
+          },
+        });
+        blobUrl = uploaded.url;
+        pathnameUsed = tok.data.pathname;
+        break;
+      } catch (e) {
+        const retryable = isTransientBlobNetworkError(e) && attempt < BLOB_PUT_MAX_ATTEMPTS;
+        if (!retryable) {
+          const msg = e instanceof Error ? e.message : String(e);
+          return {
+            ok: false,
+            error:
+              msg && msg !== "undefined"
+                ? `Upload failed: ${msg}`
+                : "Upload failed. Check your connection and try again.",
+          };
+        }
+        options.onProgress(null);
+        const waitMs = Math.min(
+          BLOB_PUT_RETRY_MAX_MS,
+          BLOB_PUT_RETRY_BASE_MS * 2 ** (attempt - 1),
+        );
+        await delay(waitMs);
+      }
+    }
+
+    if (!blobUrl || !pathnameUsed) {
       return {
         ok: false,
         error:
-          msg && msg !== "undefined"
-            ? `Upload failed: ${msg}`
-            : "Upload failed. Check your connection and try again.",
+          "Upload failed after several retries. Your connection may be unstable—try again on Wi‑Fi or wait a moment.",
       };
     }
 
     const reg = await completeRegistration(completeUrl, {
       fileName: file.name,
-      pathname: tok.data.pathname,
+      pathname: pathnameUsed,
       fileUrl: blobUrl,
       fileSize: file.size,
     });
