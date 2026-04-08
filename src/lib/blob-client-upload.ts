@@ -158,11 +158,13 @@ export async function uploadFilesViaBlobClient(options: {
 
     let blobUrl: string;
     try {
+      // Never use `multipart: true` here: it POSTs to `vercel.com/api/blob/mpu`, which does not
+      // send Access-Control-Allow-Origin for custom domains (e.g. tracker.*). Single PUT works
+      // from the app origin for large files (100 MB cap) without that CORS trap.
       const uploaded = await put(tok.data.pathname, file, {
         access: "public",
         token: tok.data.clientToken,
         contentType: browserContentTypeForFile(file),
-        multipart: file.size > VERCEL_SERVER_MULTIPART_BUDGET_BYTES,
         onUploadProgress: ({ loaded, total, percentage }) => {
           if (totalBytes <= 0) {
             options.onProgress(null);
@@ -174,8 +176,15 @@ export async function uploadFilesViaBlobClient(options: {
         },
       });
       blobUrl = uploaded.url;
-    } catch {
-      return { ok: false, error: "Upload failed." };
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      return {
+        ok: false,
+        error:
+          msg && msg !== "undefined"
+            ? `Upload failed: ${msg}`
+            : "Upload failed. Check your connection and try again.",
+      };
     }
 
     const reg = await completeRegistration(completeUrl, {
