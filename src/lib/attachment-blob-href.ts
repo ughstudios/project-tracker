@@ -1,5 +1,5 @@
 import { getBlobStoreAccess } from "@/lib/blob-access";
-import { isLikelyVercelBlobUrl } from "@/lib/file-storage";
+import { isLikelyVercelBlobUrl } from "@/lib/blob-url-utils";
 
 /** Use for `<a href>` and `<img src>` when blobs may be private. */
 export function attachmentBlobHref(fileUrl: string): string {

@@ -1,5 +1,6 @@
 import { del, put } from "@vercel/blob";
 import { getBlobStoreAccess } from "@/lib/blob-access";
+import { isLikelyVercelBlobUrl } from "@/lib/blob-url-utils";
 import {
   VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE,
   vercelBlobRequiredMessage,
@@ -58,9 +59,7 @@ function isHttpUrl(fileUrl: string): boolean {
   return fileUrl.startsWith("http://") || fileUrl.startsWith("https://");
 }
 
-export function isLikelyVercelBlobUrl(fileUrl: string): boolean {
-  return fileUrl.includes("blob.vercel-storage.com");
-}
+export { isLikelyVercelBlobUrl };
 
 export async function deleteBlobUrlIfPresent(fileUrl: string): Promise<void> {
   if (!isLikelyVercelBlobUrl(fileUrl)) return;
