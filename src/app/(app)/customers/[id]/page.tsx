@@ -2,8 +2,11 @@
 
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
-import { uploadFilesViaBlobClient, validateFilesBeforeMultipartUpload } from "@/lib/blob-client-upload";
-import { useDirectBlobUpload } from "@/lib/hooks/use-direct-blob-upload";
+import {
+  isBlobClientUploadEnabled,
+  uploadFilesViaBlobClient,
+  validateFilesBeforeMultipartUpload,
+} from "@/lib/blob-client-upload";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -30,8 +33,6 @@ export default function CustomerDetailPage() {
   const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
-  const blobDirect = useDirectBlobUpload();
-
   const load = useCallback(async () => {
     setLoading(true);
     setMissing(false);
@@ -68,7 +69,7 @@ export default function CustomerDetailPage() {
     setUploading(true);
     setUploadProgress(0);
     try {
-      if (blobDirect) {
+      if (await isBlobClientUploadEnabled()) {
         const up = await uploadFilesViaBlobClient({
           files,
           tokenExtras: { scope: "customer", customerId },

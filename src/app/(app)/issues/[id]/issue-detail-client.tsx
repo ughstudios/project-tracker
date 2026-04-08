@@ -2,8 +2,11 @@
 
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
-import { uploadFilesViaBlobClient, validateFilesBeforeMultipartUpload } from "@/lib/blob-client-upload";
-import { useDirectBlobUpload } from "@/lib/hooks/use-direct-blob-upload";
+import {
+  isBlobClientUploadEnabled,
+  uploadFilesViaBlobClient,
+  validateFilesBeforeMultipartUpload,
+} from "@/lib/blob-client-upload";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
@@ -123,8 +126,6 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [threadPage, setThreadPage] = useState(1);
   const [threadTotal, setThreadTotal] = useState(0);
   const [threadListLoading, setThreadListLoading] = useState(false);
-  const blobDirect = useDirectBlobUpload();
-
   const loadThreadPage = useCallback(
     async (page: number | "last") => {
       setThreadListLoading(true);
@@ -292,7 +293,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setUploadingIssueFiles(true);
     setIssueUploadProgress(0);
     try {
-      if (blobDirect) {
+      if (await isBlobClientUploadEnabled()) {
         const up = await uploadFilesViaBlobClient({
           files,
           tokenExtras: { scope: "issue", issueId },
@@ -362,7 +363,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     if (!content && threadFiles.length === 0) return;
     setPostingThread(true);
     try {
-      if (threadFiles.length > 0 && blobDirect) {
+      if (threadFiles.length > 0 && (await isBlobClientUploadEnabled())) {
         const createRes = await fetch(`/api/issues/${encodeURIComponent(issueId)}/thread`, {
           ...fetchInit,
           method: "POST",

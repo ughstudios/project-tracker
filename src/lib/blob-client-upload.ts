@@ -30,6 +30,17 @@ export type BlobTokenExtras =
   | { scope: "issue"; issueId: string }
   | { scope: "thread"; issueId: string; threadEntryId: string };
 
+/** Resolve at upload time so we never pick multipart (4 MB cap on Vercel) while Blob is still “loading” in UI state. */
+export async function isBlobClientUploadEnabled(): Promise<boolean> {
+  try {
+    const r = await fetch("/api/blob/status", { credentials: "include", cache: "no-store" });
+    const d = r.ok ? ((await r.json()) as { enabled?: boolean }) : { enabled: false };
+    return Boolean(d.enabled);
+  } catch {
+    return false;
+  }
+}
+
 export function validateFilesBeforeUpload(files: File[]): string | null {
   if (files.length > ISSUE_UPLOAD_MAX_FILES_PER_POST) {
     return `At most ${ISSUE_UPLOAD_MAX_FILES_PER_POST} files per upload.`;
