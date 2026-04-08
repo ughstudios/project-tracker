@@ -6,7 +6,7 @@ import { useI18n } from "@/i18n/context";
 
 export function IssueDashboard() {
   const { t } = useI18n();
-  const { issues, projects, customers, loading } = useIssueBoardData(["/dashboard"]);
+  const { issues, projects, customers, loading, isAdmin } = useIssueBoardData(["/dashboard"]);
 
   if (loading) {
     return (
@@ -16,5 +16,12 @@ export function IssueDashboard() {
     );
   }
 
-  return <DashboardCharts issues={issues} projects={projects} customers={customers} />;
+  return (
+    <DashboardCharts
+      issues={issues}
+      projects={projects}
+      customers={customers}
+      canViewWorkRecordCharts={isAdmin}
+    />
+  );
 }

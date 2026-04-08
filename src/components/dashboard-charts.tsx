@@ -1,5 +1,6 @@
 "use client";
 
+import { WorkRecordsDashboardCharts } from "@/components/work-records-dashboard-charts";
 import { useI18n } from "@/i18n/context";
 import { useMemo } from "react";
 import {
@@ -41,9 +42,11 @@ type Props = {
   issues: ChartIssue[];
   projects: ChartProject[];
   customers: { id: string }[];
+  /** Admin / super-admin only: show work record aggregates (counts only). */
+  canViewWorkRecordCharts?: boolean;
 };
 
-export function DashboardCharts({ issues, projects, customers }: Props) {
+export function DashboardCharts({ issues, projects, customers, canViewWorkRecordCharts }: Props) {
   const { t } = useI18n();
 
   const { byAssignee, byStatus, byProject } = useMemo(() => {
@@ -244,6 +247,8 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
           ) : null}
         </div>
       )}
+
+      <WorkRecordsDashboardCharts enabled={Boolean(canViewWorkRecordCharts)} />
     </div>
   );
 }

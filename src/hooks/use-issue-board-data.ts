@@ -44,30 +44,33 @@ export function useIssueBoardData(paths: readonly string[]) {
 
   const loadData = useCallback(async () => {
     setLoading(true);
-    const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
-      fetch("/api/users", fetchFresh),
-      fetch("/api/issues", fetchFresh),
-      fetch("/api/projects", fetchFresh),
-      fetch("/api/customers", fetchFresh),
-    ]);
-    if (usersRes.ok) setUsers(await usersRes.json());
-    if (issuesRes.ok) setIssues(await issuesRes.json());
-    if (projectsRes.ok) setProjects(await projectsRes.json());
-    if (customersRes.ok) setCustomers(await customersRes.json());
-    setLoading(false);
-  }, []);
+    try {
+      const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
+        fetch("/api/users", fetchFresh),
+        fetch("/api/issues", fetchFresh),
+        fetch("/api/projects", fetchFresh),
+        fetch("/api/customers", fetchFresh),
+      ]);
+      if (usersRes.ok) setUsers(await usersRes.json());
+      if (issuesRes.ok) setIssues(await issuesRes.json());
+      if (projectsRes.ok) setProjects(await projectsRes.json());
+      if (customersRes.ok) setCustomers(await customersRes.json());
 
-  useEffect(() => {
-    if (!active) return;
-    const run = async () => {
-      await loadData();
       const sessionRes = await fetch("/api/auth/session", fetchFresh);
       if (sessionRes.ok) {
         const session = (await sessionRes.json()) as { user?: { role?: string } };
         setIsAdmin(isPrivilegedAdmin(session.user?.role));
+      } else {
+        setIsAdmin(false);
       }
-    };
-    void run();
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!active) return;
+    void loadData();
   }, [active, loadData]);
 
   useEffect(() => {
