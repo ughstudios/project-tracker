@@ -1,4 +1,3 @@
-import { getBlobStoreAccess } from "@/lib/blob-access";
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   isBrowserOnVercelDeployment,
@@ -8,18 +7,15 @@ import {
   vercelBlobRequiredMessage,
 } from "@/lib/issue-upload-limits";
 import { BLOB_RELAY_CHUNK_BYTES } from "@/lib/blob-relay-chunk";
-import { storedFileName } from "@/lib/stored-file-name";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
-const CLIENT_UPLOAD_HANDLE_URL = "/api/blob/client-upload";
-
 /**
- * Browser uploads to Vercel’s Blob API are only same-origin-friendly on `*.vercel.app`.
- * All other hosts (e.g. custom domains, localhost) use our chunked relay to avoid CORS.
+ * Always use same-origin chunked relay (`/api/blob/relay/*`).
+ * Never call `vercel.com/api/blob` from the browser — custom domains (and many others)
+ * get CORS-blocked no matter what subdomain heuristic we use.
  */
 export function blobUploadNeedsSameOriginRelay(): boolean {
-  if (typeof window === "undefined") return false;
-  return !window.location.hostname.endsWith(".vercel.app");
+  return true;
 }
 
 /** Short, neutral copy — no CORS or hosting lectures. */
@@ -67,28 +63,8 @@ export function validateFilesBeforeMultipartUpload(files: File[]): string | null
   return null;
 }
 
-function userFacingUploadError(e: unknown): string {
-  const raw = (e instanceof Error ? e.message : String(e)).trim();
-  if (!raw || raw === "undefined") return UPLOAD_FAILED_GENERIC;
-  const lo = raw.toLowerCase();
-  if (lo.includes("not authenticated") || lo.includes("unauthorized")) {
-    return "Your session may have expired. Sign in again, then retry the upload.";
-  }
-  if (lo.includes("not allowed") || lo.includes("content-type")) {
-    return "This file type can’t be uploaded here.";
-  }
-  if (lo.includes("too large") || lo.includes("maximum")) {
-    return perFileExceedsBlobProductLimitMessage();
-  }
-  if (lo.includes("could not save") || lo.includes("invalid file url")) {
-    return UPLOAD_FAILED_GENERIC;
-  }
-  return UPLOAD_FAILED_GENERIC;
-}
-
 /**
  * Ensures Vercel Blob is configured and files are within product limits.
- * Does not block uploads based on hostname — we try the real upload and only surface short errors if it fails.
  */
 export async function assertClientBlobUploadsReady(
   files: File[],
@@ -116,21 +92,6 @@ export type BlobTokenExtras =
   | { scope: "issue"; issueId: string }
   | { scope: "thread"; issueId: string; threadEntryId: string };
 
-function blobPathPrefix(extras: BlobTokenExtras): string {
-  switch (extras.scope) {
-    case "project":
-      return `projects/${extras.projectId}/`;
-    case "customer":
-      return `customers/${extras.customerId}/`;
-    case "issue":
-      return `issues/${extras.issueId}/`;
-    case "thread":
-      return `issues/${extras.issueId}/thread/${extras.threadEntryId}/`;
-    default:
-      return "";
-  }
-}
-
 async function completeRegistration(
   completeUrl: string,
   body: { fileName: string; pathname: string; fileUrl: string; fileSize: number },
@@ -146,14 +107,6 @@ async function completeRegistration(
     return { ok: false, error: raw.error ?? UPLOAD_FAILED_GENERIC };
   }
   return { ok: true };
-}
-
-const BLOB_UPLOAD_MAX_ATTEMPTS = 5;
-const BLOB_UPLOAD_RETRY_BASE_MS = 1_200;
-const BLOB_UPLOAD_RETRY_MAX_MS = 12_000;
-
-function delay(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function uploadOneFileViaRelay(
@@ -243,32 +196,10 @@ async function uploadOneFileViaRelay(
   return { ok: true };
 }
 
-function isTransientBlobNetworkError(e: unknown): boolean {
-  const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
-  if (
-    msg.includes("too large") ||
-    msg.includes("forbidden") ||
-    msg.includes("unauthorized") ||
-    msg.includes("not allowed") ||
-    /\b40[0-9]\b/.test(msg)
-  ) {
-    return false;
-  }
-  if (e instanceof TypeError) return true;
-  return (
-    msg.includes("failed to fetch") ||
-    msg.includes("load failed") ||
-    msg.includes("network") ||
-    msg.includes("aborted") ||
-    msg.includes("timeout") ||
-    msg.includes("err_network") ||
-    msg.includes("network_changed") ||
-    msg.includes("connection") ||
-    /\b50[234]\b/.test(msg) ||
-    msg.includes("408")
-  );
-}
-
+/**
+ * Upload files to Vercel Blob via same-origin relay (small chunks → Postgres → server `put()`).
+ * Works on custom domains; never touches `vercel.com` from the browser.
+ */
 export async function uploadFilesViaBlobClient(options: {
   files: File[];
   tokenExtras: BlobTokenExtras;
@@ -281,80 +212,17 @@ export async function uploadFilesViaBlobClient(options: {
 
   const totalBytes = files.reduce((s, f) => s + f.size, 0);
   let doneBytes = 0;
-  const useRelay = blobUploadNeedsSameOriginRelay();
-  const blobClient = useRelay ? null : await import("@vercel/blob/client");
-  const prefix = blobPathPrefix(tokenExtras);
 
   for (const file of files) {
-    if (useRelay) {
-      const relayed = await uploadOneFileViaRelay(
-        file,
-        tokenExtras,
-        completeUrl,
-        totalBytes,
-        doneBytes,
-        options.onProgress,
-      );
-      if (!relayed.ok) return { ok: false, error: relayed.error };
-      doneBytes += file.size;
-      options.onProgress(Math.min(100, Math.round((doneBytes / totalBytes) * 100)));
-      continue;
-    }
-
-    const stored = storedFileName(file.name);
-    const pathname = `${prefix}${stored}`;
-    const clientPayload = JSON.stringify({
-      ...tokenExtras,
-      originalFileName: file.name,
-    });
-
-    let blobUrl: string | undefined;
-
-    for (let attempt = 1; attempt <= BLOB_UPLOAD_MAX_ATTEMPTS; attempt++) {
-      try {
-        const uploaded = await blobClient!.upload(pathname, file, {
-          access: getBlobStoreAccess(),
-          handleUploadUrl: CLIENT_UPLOAD_HANDLE_URL,
-          clientPayload,
-          contentType: file.type ? file.type : "application/octet-stream",
-          onUploadProgress: ({ loaded, total, percentage }) => {
-            if (totalBytes <= 0) {
-              options.onProgress(null);
-              return;
-            }
-            const slice = total > 0 ? (file.size * loaded) / total : (file.size * percentage) / 100;
-            const pct = Math.min(100, Math.round(((doneBytes + slice) / totalBytes) * 100));
-            options.onProgress(pct);
-          },
-        });
-        blobUrl = uploaded.url;
-        break;
-      } catch (e) {
-        const retryable = isTransientBlobNetworkError(e) && attempt < BLOB_UPLOAD_MAX_ATTEMPTS;
-        if (!retryable) {
-          return { ok: false, error: userFacingUploadError(e) };
-        }
-        options.onProgress(null);
-        const waitMs = Math.min(
-          BLOB_UPLOAD_RETRY_MAX_MS,
-          BLOB_UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1),
-        );
-        await delay(waitMs);
-      }
-    }
-
-    if (!blobUrl) {
-      return { ok: false, error: UPLOAD_FAILED_GENERIC };
-    }
-
-    const reg = await completeRegistration(completeUrl, {
-      fileName: file.name,
-      pathname,
-      fileUrl: blobUrl,
-      fileSize: file.size,
-    });
-    if (!reg.ok) return { ok: false, error: reg.error ?? UPLOAD_FAILED_GENERIC };
-
+    const relayed = await uploadOneFileViaRelay(
+      file,
+      tokenExtras,
+      completeUrl,
+      totalBytes,
+      doneBytes,
+      options.onProgress,
+    );
+    if (!relayed.ok) return { ok: false, error: relayed.error };
     doneBytes += file.size;
     options.onProgress(Math.min(100, Math.round((doneBytes / totalBytes) * 100)));
   }
