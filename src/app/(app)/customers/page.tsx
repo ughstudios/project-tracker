@@ -120,7 +120,14 @@ export default function CustomersPage() {
               <tbody>
                 {customers.map((c) => (
                   <tr key={c.id} className="odd:bg-white even:bg-zinc-50/50">
-                    <td className="border border-zinc-200 px-2 py-2 font-medium">{c.name}</td>
+                    <td className="border border-zinc-200 px-2 py-2 font-medium">
+                      <Link
+                        href={`/customers/${encodeURIComponent(c.id)}`}
+                        className="text-blue-700 hover:underline"
+                      >
+                        {c.name}
+                      </Link>
+                    </td>
                     <td className="border border-zinc-200 px-2 py-2 text-zinc-700">
                       <Link
                         href={`/projects?customer=${encodeURIComponent(c.id)}`}

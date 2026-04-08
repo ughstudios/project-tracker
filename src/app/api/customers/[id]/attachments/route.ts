@@ -10,8 +10,6 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
-const ALLOWED_EXTENSIONS = new Set([".rcvbp", ".cbp"]);
-
 const uploaderSelect = { select: { id: true, name: true, email: true } as const };
 
 export async function POST(
@@ -23,13 +21,13 @@ export async function POST(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { id: projectId } = await params;
-  const project = await prisma.project.findUnique({
-    where: { id: projectId },
-    select: { id: true, archivedAt: true },
+  const { id: customerId } = await params;
+  const customer = await prisma.customer.findUnique({
+    where: { id: customerId },
+    select: { id: true, name: true, archivedAt: true },
   });
-  if (!project || project.archivedAt) {
-    return NextResponse.json({ error: "Project not found." }, { status: 404 });
+  if (!customer || customer.archivedAt) {
+    return NextResponse.json({ error: "Customer not found." }, { status: 404 });
   }
 
   const formData = await request.formData();
@@ -52,34 +50,27 @@ export async function POST(
     if (f.size > ISSUE_UPLOAD_MAX_BYTES) {
       return NextResponse.json({ error: "One or more files are too large." }, { status: 400 });
     }
-    const ext = path.extname(f.name).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      return NextResponse.json(
-        { error: "Only .rcvbp and .cbp files are allowed." },
-        { status: 400 },
-      );
-    }
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads", "projects", projectId);
+  const uploadDir = path.join(process.cwd(), "public", "uploads", "customers", customerId);
   await fs.mkdir(uploadDir, { recursive: true });
 
   const created = [];
   for (const file of files) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
-    const ext = path.extname(file.name).toLowerCase();
     const storedName = storedFileName(file.name);
     const fullPath = path.join(uploadDir, storedName);
     await fs.writeFile(fullPath, buffer);
-    const fileUrl = `/uploads/projects/${projectId}/${storedName}`;
-    const attachment = await prisma.projectAttachment.create({
+    const ext = path.extname(file.name).toLowerCase();
+    const fileUrl = `/uploads/customers/${customerId}/${storedName}`;
+    const attachment = await prisma.customerAttachment.create({
       data: {
-        projectId,
+        customerId,
         uploaderId: session.user.id,
         fileName: file.name,
         fileUrl,
-        fileType: ext.slice(1),
+        fileType: ext ? ext.slice(1) : "bin",
         fileSize: file.size,
       },
       include: { uploader: uploaderSelect },
@@ -87,10 +78,10 @@ export async function POST(
     created.push(attachment);
     await writeAuditLog({
       actorId: session.user.id,
-      entityType: "ProjectAttachment",
+      entityType: "CustomerAttachment",
       entityId: attachment.id,
       action: "UPLOAD",
-      description: `${file.name} attached to project ${projectId}.`,
+      description: `${file.name} attached to customer "${customer.name}".`,
     });
   }
 

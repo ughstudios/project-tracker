@@ -159,11 +159,13 @@ export default function ProjectDetailsPage() {
     await load();
   };
 
-  const uploadAttachment = async (file: File | null) => {
-    if (!file) return;
+  const uploadAttachments = async (fileList: FileList | null) => {
+    if (!fileList?.length) return;
     setUploading(true);
     const formData = new FormData();
-    formData.append("file", file);
+    for (const f of Array.from(fileList)) {
+      formData.append("files", f);
+    }
     const res = await fetch(`/api/projects/${projectId}/attachments`, {
       method: "POST",
       body: formData,
@@ -171,7 +173,20 @@ export default function ProjectDetailsPage() {
     setUploading(false);
     if (!res.ok) {
       const data = (await res.json().catch(() => ({}))) as { error?: string };
-      alert(data.error ?? "Could not upload file.");
+      alert(data.error ?? t("projectDetail.couldNotUpload"));
+      return;
+    }
+    await load();
+  };
+
+  const deleteProjectAttachment = async (attachmentId: string) => {
+    if (!confirm(t("projectDetail.confirmRemoveAttachment"))) return;
+    const res = await fetch(`/api/projects/${projectId}/attachments/${attachmentId}`, {
+      method: "DELETE",
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("common.attachmentRemoveFailed"));
       return;
     }
     await load();
@@ -281,30 +296,43 @@ export default function ProjectDetailsPage() {
             <input
               type="file"
               accept=".rcvbp,.cbp"
+              multiple
               className="input-file"
-              onChange={(e) => uploadAttachment(e.currentTarget.files?.[0] ?? null)}
+              onChange={(e) => {
+                void uploadAttachments(e.currentTarget.files);
+                e.currentTarget.value = "";
+              }}
             />
             {uploading ? <p className="mt-2 text-xs text-zinc-500">{t("projectDetail.uploading")}</p> : null}
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
-              Uploaded files ({attachments.length})
+              {t("projectDetail.uploadedFiles", { count: String(attachments.length) })}
             </p>
             {attachments.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-500">No files uploaded yet.</p>
+              <p className="mt-2 text-sm text-zinc-500">{t("projectDetail.noFiles")}</p>
             ) : (
               <ul className="mt-2 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
                 {attachments.map((a) => (
-                  <li key={a.id} className="flex items-center justify-between px-3 py-2 text-sm">
+                  <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                     <a
                       href={a.fileUrl}
                       target="_blank"
                       rel="noreferrer"
-                      className="text-blue-700 hover:underline"
+                      className="min-w-0 truncate text-blue-700 hover:underline"
                     >
                       {a.fileName}
                     </a>
-                    <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
+                      <button
+                        type="button"
+                        className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                        onClick={() => void deleteProjectAttachment(a.id)}
+                      >
+                        {t("common.delete")}
+                      </button>
+                    </div>
                   </li>
                 ))}
               </ul>
