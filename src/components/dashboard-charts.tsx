@@ -42,11 +42,9 @@ type Props = {
   issues: ChartIssue[];
   projects: ChartProject[];
   customers: { id: string }[];
-  /** Admin / super-admin only: show work record aggregates (counts only). */
-  canViewWorkRecordCharts?: boolean;
 };
 
-export function DashboardCharts({ issues, projects, customers, canViewWorkRecordCharts }: Props) {
+export function DashboardCharts({ issues, projects, customers }: Props) {
   const { t } = useI18n();
 
   const { byAssignee, byStatus, byProject } = useMemo(() => {
@@ -143,6 +141,8 @@ export function DashboardCharts({ issues, projects, customers, canViewWorkRecord
           </p>
         </div>
       </section>
+
+      <WorkRecordsDashboardCharts />
 
       {issues.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
@@ -247,8 +247,6 @@ export function DashboardCharts({ issues, projects, customers, canViewWorkRecord
           ) : null}
         </div>
       )}
-
-      <WorkRecordsDashboardCharts enabled={Boolean(canViewWorkRecordCharts)} />
     </div>
   );
 }

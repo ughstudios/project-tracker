@@ -19,12 +19,7 @@ type Summary = {
   byMonth: { monthKey: string; count: number }[];
 };
 
-type Props = {
-  /** Only admins / super-admins should pass true; the API returns 403 otherwise. */
-  enabled: boolean;
-};
-
-export function WorkRecordsDashboardCharts({ enabled }: Props) {
+export function WorkRecordsDashboardCharts() {
   const { t, locale } = useI18n();
   const [summary, setSummary] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(false);
@@ -46,12 +41,8 @@ export function WorkRecordsDashboardCharts({ enabled }: Props) {
   }, []);
 
   useEffect(() => {
-    if (!enabled) {
-      setSummary(null);
-      return;
-    }
     void load();
-  }, [enabled, load]);
+  }, [load]);
 
   const monthLabel = useMemo(
     () => (monthKey: string) => {
@@ -81,12 +72,10 @@ export function WorkRecordsDashboardCharts({ enabled }: Props) {
     fontSize: "12px",
   };
 
-  if (!enabled) return null;
-
   return (
     <section
-      className="space-y-4 rounded-xl border border-amber-200/80 bg-amber-50/40 p-4 shadow-sm"
-      aria-label={t("dashboard.workRecordsAdminAria")}
+      className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+      aria-label={t("dashboard.workRecordsChartsAria")}
     >
       <div>
         <h2 className="text-sm font-semibold text-zinc-900">{t("dashboard.workRecordsChartsTitle")}</h2>

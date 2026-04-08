@@ -1,16 +1,12 @@
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
-import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
-/** Aggregated work record stats for the dashboard. Admin/super-admin only — no record titles or content. */
+/** Aggregated work record stats for the dashboard (counts only — no titles or body text). Any signed-in user. */
 export async function GET() {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-  if (!isPrivilegedAdmin(session.user.role)) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
 
   const since = new Date();
