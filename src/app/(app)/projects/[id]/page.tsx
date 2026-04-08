@@ -4,7 +4,9 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import {
   resolveBlobVsMultipartUpload,
+  uploadFilesViaBlobClient,
   validateFilesBeforeMultipartUpload,
+  validateFilesBeforeUpload,
 } from "@/lib/blob-client-upload";
 import { postFormDataWithProgress } from "@/lib/upload-with-progress";
 import Link from "next/link";
@@ -180,29 +182,47 @@ export default function ProjectDetailsPage() {
     setUploading(true);
     setUploadProgress(0);
     try {
-      const strategy = await resolveBlobVsMultipartUpload();
+      const strategy = await resolveBlobVsMultipartUpload(files);
       if ("error" in strategy) {
         alert(strategy.error);
         return;
       }
-      const pre = validateFilesBeforeMultipartUpload(files);
-      if (pre) {
-        alert(pre);
-        return;
-      }
-      const formData = new FormData();
-      for (const f of files) {
-        formData.append("files", f);
-      }
-      const res = await postFormDataWithProgress(
-        `/api/projects/${projectId}/attachments`,
-        formData,
-        (p) => setUploadProgress(p === null ? -1 : p),
-      );
-      if (!res.ok) {
-        const data = await res.json<{ error?: string }>();
-        alert(data.error ?? t("projectDetail.couldNotUpload"));
-        return;
+      if (strategy.useBlob) {
+        const preBlob = validateFilesBeforeUpload(files);
+        if (preBlob) {
+          alert(preBlob);
+          return;
+        }
+        const up = await uploadFilesViaBlobClient({
+          files,
+          tokenExtras: { scope: "project", projectId },
+          completeUrl: `/api/projects/${projectId}/attachments/complete`,
+          onProgress: (p) => setUploadProgress(p === null ? -1 : p),
+        });
+        if (!up.ok) {
+          alert(up.error ?? t("projectDetail.couldNotUpload"));
+          return;
+        }
+      } else {
+        const pre = validateFilesBeforeMultipartUpload(files);
+        if (pre) {
+          alert(pre);
+          return;
+        }
+        const formData = new FormData();
+        for (const f of files) {
+          formData.append("files", f);
+        }
+        const res = await postFormDataWithProgress(
+          `/api/projects/${projectId}/attachments`,
+          formData,
+          (p) => setUploadProgress(p === null ? -1 : p),
+        );
+        if (!res.ok) {
+          const data = await res.json<{ error?: string }>();
+          alert(data.error ?? t("projectDetail.couldNotUpload"));
+          return;
+        }
       }
       await load();
     } finally {
