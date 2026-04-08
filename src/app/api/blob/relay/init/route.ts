@@ -52,7 +52,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: perFileExceedsBlobProductLimitMessage() }, { status: 400 });
   }
 
-  const authz = await authorizeBlobClientPayload(parsed);
+  const authz = await authorizeBlobClientPayload(parsed, session.user.id);
   if ("error" in authz) {
     return NextResponse.json({ error: authz.error }, { status: authz.status });
   }
@@ -62,7 +62,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     contentTypeRaw.length > 0 ? contentTypeRaw.slice(0, 256) : "application/octet-stream";
 
   const stored = storedFileName(parsed.originalFileName);
-  const prefix = expectedPathPrefix(parsed);
+  const prefix = expectedPathPrefix(parsed, session.user.id);
   if (!prefix) {
     return NextResponse.json({ error: "Invalid path scope." }, { status: 400 });
   }

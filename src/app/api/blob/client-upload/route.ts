@@ -44,11 +44,11 @@ export async function POST(request: Request): Promise<NextResponse> {
         if ("error" in parsed) {
           throw new Error(parsed.error);
         }
-        const authz = await authorizeBlobClientPayload(parsed);
+        const authz = await authorizeBlobClientPayload(parsed, session.user.id);
         if ("error" in authz) {
           throw new Error(authz.error);
         }
-        assertPathnameMatchesPayload(pathname, parsed);
+        assertPathnameMatchesPayload(pathname, parsed, session.user.id);
 
         const maxB = maxClientBlobUploadBytes();
 

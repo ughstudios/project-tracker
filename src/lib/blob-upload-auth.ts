@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 
 export type BlobClientUploadPayload = {
-  scope: "project" | "customer" | "issue" | "thread";
+  scope: "project" | "customer" | "issue" | "thread" | "workRecord";
   projectId?: string;
   customerId?: string;
   issueId?: string;
@@ -9,8 +9,13 @@ export type BlobClientUploadPayload = {
   originalFileName: string;
 };
 
-export function expectedPathPrefix(payload: BlobClientUploadPayload): string | null {
+export function expectedPathPrefix(
+  payload: BlobClientUploadPayload,
+  sessionUserId: string,
+): string | null {
   switch (payload.scope) {
+    case "workRecord":
+      return sessionUserId ? `work-records/${sessionUserId}/` : null;
     case "project":
       return payload.projectId ? `projects/${payload.projectId}/` : null;
     case "customer":
@@ -45,7 +50,8 @@ export function parseBlobClientUploadPayloadFromUnknown(
     scope !== "project" &&
     scope !== "customer" &&
     scope !== "issue" &&
-    scope !== "thread"
+    scope !== "thread" &&
+    scope !== "workRecord"
   ) {
     return { error: "Invalid scope." };
   }
@@ -72,8 +78,13 @@ export function isSafeStoredObjectKeyTail(tail: string): boolean {
 
 export async function authorizeBlobClientPayload(
   payload: BlobClientUploadPayload,
+  sessionUserId: string,
 ): Promise<{ ok: true } | { error: string; status: number }> {
   switch (payload.scope) {
+    case "workRecord": {
+      if (!sessionUserId) return { error: "Unauthorized.", status: 401 };
+      break;
+    }
     case "project": {
       const id = payload.projectId ?? "";
       if (!id) return { error: "projectId is required.", status: 400 };
@@ -138,8 +149,12 @@ export async function authorizeBlobClientPayload(
   return { ok: true };
 }
 
-export function assertPathnameMatchesPayload(pathname: string, payload: BlobClientUploadPayload): void {
-  const prefix = expectedPathPrefix(payload);
+export function assertPathnameMatchesPayload(
+  pathname: string,
+  payload: BlobClientUploadPayload,
+  sessionUserId: string,
+): void {
+  const prefix = expectedPathPrefix(payload, sessionUserId);
   if (!prefix) {
     throw new Error("Invalid path scope.");
   }

@@ -1,7 +1,9 @@
 import { auth } from "@/auth";
 import { getBlobStoreAccess } from "@/lib/blob-access";
 import { getBlobReadWriteToken, isLikelyVercelBlobUrl } from "@/lib/file-storage";
+import { isPrivilegedAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
+import { parseWorkRecordBlobPathFromUrl } from "@/lib/work-record-blob-path";
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
@@ -65,12 +67,22 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json({ error: "Invalid url." }, { status: 400 });
   }
 
+  let fileName: string | null = null;
   const attachment = await findAttachmentByBlobUrl(blobUrl);
-  if (!attachment) {
+  if (attachment) {
+    fileName = attachment.fileName.trim() || fallbackNameFromBlobUrl(blobUrl);
+  } else {
+    const wrPath = parseWorkRecordBlobPathFromUrl(blobUrl);
+    if (
+      wrPath &&
+      (wrPath.ownerUserId === session.user.id || isPrivilegedAdmin(session.user.role))
+    ) {
+      fileName = wrPath.fileName.trim() || fallbackNameFromBlobUrl(blobUrl);
+    }
+  }
+  if (!fileName) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
-
-  const fileName = attachment.fileName.trim() || fallbackNameFromBlobUrl(blobUrl);
 
   const token = getBlobReadWriteToken();
   if (!token) {

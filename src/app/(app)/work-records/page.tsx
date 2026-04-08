@@ -1,8 +1,24 @@
 "use client";
 
+import { WorkRecordContentView } from "@/components/work-record-content";
 import { useI18n } from "@/i18n/context";
+import { uploadWorkRecordPasteImages } from "@/lib/blob-client-upload";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { useCallback, useEffect, useState } from "react";
+
+function imageFilesFromClipboard(e: React.ClipboardEvent): File[] {
+  const items = e.clipboardData?.items;
+  if (!items) return [];
+  const files: File[] = [];
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+    if (it.kind === "file" && it.type.startsWith("image/")) {
+      const f = it.getAsFile();
+      if (f) files.push(f);
+    }
+  }
+  return files;
+}
 
 type WorkRecordRow = {
   id: string;
@@ -48,6 +64,7 @@ export default function WorkRecordsPage() {
   const [editTitle, setEditTitle] = useState("");
   const [editContent, setEditContent] = useState("");
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [pasteBusy, setPasteBusy] = useState(false);
 
   const fetchPage = useCallback(
     async (forPage: number | "last") => {
@@ -163,6 +180,46 @@ export default function WorkRecordsPage() {
     void fetchPage(page);
   }
 
+  const handlePasteImages = useCallback(
+    async (
+      e: React.ClipboardEvent<HTMLTextAreaElement>,
+      which: "form" | "edit",
+    ) => {
+      const files = imageFilesFromClipboard(e);
+      if (files.length === 0) return;
+      e.preventDefault();
+      const ta = e.currentTarget;
+      const snapshot = which === "form" ? formContent : editContent;
+      const setContent = which === "form" ? setFormContent : setEditContent;
+      const start = ta.selectionStart;
+      const end = ta.selectionEnd;
+      const before = snapshot.slice(0, start);
+      const after = snapshot.slice(end);
+      setPasteBusy(true);
+      try {
+        const up = await uploadWorkRecordPasteImages({
+          files,
+          onProgress: () => {},
+        });
+        if (!up.ok) {
+          alert(up.error ?? t("workRecords.pasteUploadFailed"));
+          return;
+        }
+        const insert = `${up.urls.map((u) => `![](${u})`).join("\n")}\n`;
+        const next = before + insert + after;
+        setContent(next);
+        requestAnimationFrame(() => {
+          const pos = start + insert.length;
+          ta.focus();
+          ta.setSelectionRange(pos, pos);
+        });
+      } finally {
+        setPasteBusy(false);
+      }
+    },
+    [editContent, formContent, t],
+  );
+
   async function onDelete(id: string) {
     if (!window.confirm(t("workRecords.deleteConfirm"))) return;
     setError(null);
@@ -233,13 +290,19 @@ export default function WorkRecordsPage() {
           </div>
           <label className="block text-xs font-medium text-zinc-600">
             {t("workRecords.content")}
+            <p className="mt-0.5 font-normal text-zinc-500">{t("workRecords.pasteImagesHint")}</p>
             <textarea
               required
               rows={4}
               value={formContent}
               onChange={(e) => setFormContent(e.target.value)}
-              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm"
+              onPaste={(e) => void handlePasteImages(e, "form")}
+              disabled={pasteBusy || submitting}
+              className="mt-1 w-full rounded-md border border-zinc-300 px-2 py-1.5 text-sm disabled:bg-zinc-100"
             />
+            {pasteBusy ? (
+              <p className="mt-1 text-xs text-zinc-500">{t("workRecords.pasteUploading")}</p>
+            ) : null}
           </label>
           {error ? <p className="text-sm text-red-600">{error}</p> : null}
           <button
@@ -303,16 +366,28 @@ export default function WorkRecordsPage() {
                         row.title || "—"
                       )}
                     </td>
-                    <td className="max-w-md px-2 py-2 whitespace-pre-wrap text-zinc-800">
+                    <td className="max-w-md px-2 py-2 text-zinc-800">
                       {editingId === row.id ? (
-                        <textarea
-                          rows={3}
-                          value={editContent}
-                          onChange={(e) => setEditContent(e.target.value)}
-                          className="w-full rounded border border-zinc-300 px-1 py-0.5 text-xs"
-                        />
+                        <>
+                          <p className="mb-1 text-[11px] font-normal text-zinc-500">
+                            {t("workRecords.pasteImagesHint")}
+                          </p>
+                          <textarea
+                            rows={3}
+                            value={editContent}
+                            onChange={(e) => setEditContent(e.target.value)}
+                            onPaste={(e) => void handlePasteImages(e, "edit")}
+                            disabled={pasteBusy || savingId === row.id}
+                            className="w-full rounded border border-zinc-300 px-1 py-0.5 text-xs disabled:bg-zinc-100"
+                          />
+                          {pasteBusy ? (
+                            <p className="mt-1 text-[11px] text-zinc-500">
+                              {t("workRecords.pasteUploading")}
+                            </p>
+                          ) : null}
+                        </>
                       ) : (
-                        row.content
+                        <WorkRecordContentView content={row.content} />
                       )}
                     </td>
                     <td className="px-2 py-2">

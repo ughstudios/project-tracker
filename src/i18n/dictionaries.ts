@@ -483,6 +483,10 @@ const en: MessageTree = {
     couldNotSave: "Could not save work record.",
     couldNotDelete: "Could not delete work record.",
     pageSummary: "Page {page} of {totalPages} · {total} records",
+    pasteImagesHint:
+      "Tip: paste screenshots or images from the clipboard (Ctrl+V) — they upload and appear in your note.",
+    pasteUploadFailed: "Could not upload pasted image.",
+    pasteUploading: "Uploading pasted image…",
   },
   archive: {
     title: "Archive",
@@ -1031,6 +1035,9 @@ const zh: MessageTree = {
     couldNotSave: "无法保存工作记录。",
     couldNotDelete: "无法删除工作记录。",
     pageSummary: "第 {page} / {totalPages} 页 · 共 {total} 条",
+    pasteImagesHint: "提示：在输入框中粘贴剪贴板里的截图或图片（Ctrl+V），将自动上传并插入到正文中。",
+    pasteUploadFailed: "粘贴的图片上传失败。",
+    pasteUploading: "正在上传粘贴的图片…",
   },
   archive: {
     title: "归档",
