@@ -3,6 +3,28 @@ import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget
 export const ISSUE_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
 export const ISSUE_UPLOAD_MAX_FILES_PER_POST = 20;
 
+const MB = 1024 * 1024;
+
+export function uploadMaxPerFileMb(): number {
+  return Math.floor(ISSUE_UPLOAD_MAX_BYTES / MB);
+}
+
+/** Multipart / request-body uploads: low cap on Vercel vs Blob browser uploads. */
+export function perFileExceedsMultipartRouteLimitMessage(limitBytes: number): string {
+  const limMb = Math.max(1, Math.ceil(limitBytes / MB));
+  const maxMb = uploadMaxPerFileMb();
+  return (
+    `A file exceeds the ${limMb} MB per-file limit for uploads that go through the server in this environment. ` +
+    `Connect Vercel Blob (Storage → link store, set BLOB_READ_WRITE_TOKEN) so files upload directly to storage—up to ${maxMb} MB each—or use a smaller file.`
+  );
+}
+
+/** Client Blob + product cap (token + complete routes). */
+export function perFileExceedsBlobProductLimitMessage(): string {
+  const maxMb = uploadMaxPerFileMb();
+  return `This file is larger than the ${maxMb} MB per-file maximum. Compress it, shorten or re-export the video, or split into smaller parts.`;
+}
+
 /**
  * True when the **browser** build is running on a Vercel deployment.
  * `VERCEL=1` is server-only and is **undefined** in client bundles — use this for upload UI limits.

@@ -2,7 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { blobPublicUrlMatchesPathname } from "@/lib/blob-url-verify";
 import { isBlobStorageEnabled, isLikelyVercelBlobUrl } from "@/lib/file-storage";
-import { maxClientBlobUploadBytes } from "@/lib/issue-files";
+import { maxClientBlobUploadBytes, perFileExceedsBlobProductLimitMessage } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
 import path from "node:path";
 import { NextResponse } from "next/server";
@@ -51,7 +51,7 @@ export async function POST(
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });
   }
   if (fileSize > maxClientBlobUploadBytes()) {
-    return NextResponse.json({ error: "File is too large." }, { status: 400 });
+    return NextResponse.json({ error: perFileExceedsBlobProductLimitMessage() }, { status: 400 });
   }
   if (!isLikelyVercelBlobUrl(fileUrl) || !blobPublicUrlMatchesPathname(fileUrl, pathname)) {
     return NextResponse.json({ error: "Invalid file URL." }, { status: 400 });

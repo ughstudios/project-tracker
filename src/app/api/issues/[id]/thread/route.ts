@@ -9,6 +9,7 @@ import {
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   maxIssueUploadBytesForRuntime,
+  perFileExceedsMultipartRouteLimitMessage,
   storedFileName,
 } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
@@ -111,7 +112,10 @@ export async function POST(
     const maxBytes = maxIssueUploadBytesForRuntime();
     for (const f of files) {
       if (f.size > maxBytes) {
-        return NextResponse.json({ error: "One or more files are too large." }, { status: 400 });
+        return NextResponse.json(
+          { error: perFileExceedsMultipartRouteLimitMessage(maxBytes) },
+          { status: 400 },
+        );
       }
     }
     const tooLarge = vercelMultipartPayloadTooLargeResponse(

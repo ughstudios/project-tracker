@@ -5,6 +5,8 @@ import {
   maxClientBlobUploadBytes,
   maxIssueUploadBytesForRuntime,
   multipartTooLargeHint,
+  perFileExceedsBlobProductLimitMessage,
+  perFileExceedsMultipartRouteLimitMessage,
   vercelBlobRequiredMessage,
 } from "@/lib/issue-upload-limits";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
@@ -52,7 +54,7 @@ export function validateFilesBeforeUpload(files: File[]): string | null {
   }
   const cap = maxClientBlobUploadBytes();
   for (const f of files) {
-    if (f.size > cap) return "One or more files are too large.";
+    if (f.size > cap) return perFileExceedsBlobProductLimitMessage();
   }
   return null;
 }
@@ -70,7 +72,9 @@ export function validateFilesBeforeMultipartUpload(files: File[]): string | null
   }
   for (const f of files) {
     if (f.size > cap) {
-      return isBrowserOnVercelDeployment() ? multipartTooLargeHint() : "One or more files are too large.";
+      return isBrowserOnVercelDeployment()
+        ? multipartTooLargeHint()
+        : perFileExceedsMultipartRouteLimitMessage(cap);
     }
   }
   return null;

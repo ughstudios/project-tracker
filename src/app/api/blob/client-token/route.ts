@@ -4,7 +4,11 @@ import {
   isBlobStorageEnabled,
   vercelUploadsNotReadyResponse,
 } from "@/lib/file-storage";
-import { maxClientBlobUploadBytes, storedFileName } from "@/lib/issue-files";
+import {
+  maxClientBlobUploadBytes,
+  perFileExceedsBlobProductLimitMessage,
+  storedFileName,
+} from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
 import { generateClientTokenFromReadWriteToken } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
@@ -34,7 +38,7 @@ export async function POST(request: Request) {
   }
   const maxB = maxClientBlobUploadBytes();
   if (fileSize > maxB) {
-    return NextResponse.json({ error: "File is too large." }, { status: 400 });
+    return NextResponse.json({ error: perFileExceedsBlobProductLimitMessage() }, { status: 400 });
   }
 
   const stored = storedFileName(fileName);

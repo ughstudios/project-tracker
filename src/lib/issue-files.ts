@@ -10,6 +10,8 @@ export {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   maxClientBlobUploadBytes,
   maxIssueUploadBytesForRuntime,
+  perFileExceedsBlobProductLimitMessage,
+  perFileExceedsMultipartRouteLimitMessage,
 } from "@/lib/issue-upload-limits";
 
 export function storedFileName(originalName: string): string {
