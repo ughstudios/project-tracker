@@ -5,6 +5,8 @@ import {
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
+export { storedFileName } from "@/lib/stored-file-name";
+
 export {
   ISSUE_UPLOAD_MAX_BYTES,
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
@@ -13,13 +15,6 @@ export {
   perFileExceedsBlobProductLimitMessage,
   perFileExceedsMultipartRouteLimitMessage,
 } from "@/lib/issue-upload-limits";
-
-export function storedFileName(originalName: string): string {
-  const ext = path.extname(originalName).toLowerCase();
-  const base = path.basename(originalName, ext).replace(/[^a-zA-Z0-9-_]/g, "_");
-  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 9)}`;
-  return `${stamp}-${base || "file"}${ext}`;
-}
 
 /** Absolute path under public/, or null if URL is not under this issue's uploads folder. */
 export function diskPathForIssueUpload(fileUrl: string, issueId: string): string | null {

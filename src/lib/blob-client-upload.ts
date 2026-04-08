@@ -3,14 +3,15 @@ import {
   isBrowserOnVercelDeployment,
   isHostedVercelProductionOrPreview,
   maxClientBlobUploadBytes,
-  maxIssueUploadBytesForRuntime,
   multipartTooLargeHint,
   perFileExceedsBlobProductLimitMessage,
-  perFileExceedsMultipartRouteLimitMessage,
   vercelBlobRequiredMessage,
   vercelLargeFileBlockedOnCustomDomainMessage,
 } from "@/lib/issue-upload-limits";
+import { storedFileName } from "@/lib/stored-file-name";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
+
+const CLIENT_UPLOAD_HANDLE_URL = "/api/blob/client-upload";
 
 export async function isBlobClientUploadEnabled(): Promise<boolean> {
   try {
@@ -33,21 +34,21 @@ export function validateFilesBeforeUpload(files: File[]): string | null {
   return null;
 }
 
-/** Multipart form uploads on Vercel are capped (~4 MB); use client Blob above that when enabled. */
+/** @deprecated Prefer {@link assertClientBlobUploadsReady}; kept for any external imports. */
 export function validateFilesBeforeMultipartUpload(files: File[]): string | null {
   if (files.length > ISSUE_UPLOAD_MAX_FILES_PER_POST) {
     return `At most ${ISSUE_UPLOAD_MAX_FILES_PER_POST} files per upload.`;
   }
-  const cap = maxIssueUploadBytesForRuntime();
+  const cap = maxClientBlobUploadBytes();
   const sum = files.reduce((s, f) => s + f.size, 0);
-  if (cap <= VERCEL_SERVER_MULTIPART_BUDGET_BYTES && sum > VERCEL_SERVER_MULTIPART_BUDGET_BYTES) {
+  if (sum > VERCEL_SERVER_MULTIPART_BUDGET_BYTES) {
     return isBrowserOnVercelDeployment() ? multipartTooLargeHint() : "Total upload size is too large for one request.";
   }
   for (const f of files) {
     if (f.size > cap) {
       return isBrowserOnVercelDeployment()
         ? multipartTooLargeHint()
-        : perFileExceedsMultipartRouteLimitMessage(cap);
+        : perFileExceedsBlobProductLimitMessage();
     }
   }
   return null;
@@ -61,32 +62,41 @@ function payloadExceedsServerlessMultipartBudget(files: File[]): boolean {
   );
 }
 
-/** Vercel’s browser Blob API allows `*.vercel.app` origins; custom domains get CORS-blocked. */
+/** Vercel’s browser Blob API allows `*.vercel.app` origins; custom domains get CORS-blocked for large bodies. */
 export function hostnameAllowsVercelBlobBrowserPut(): boolean {
   if (typeof window === "undefined") return true;
   return window.location.hostname.endsWith(".vercel.app");
 }
 
 /**
- * On hosted Vercel, payloads over ~4 MB cannot use API routes (serverless body ~4.5 MB cap).
- * Client `put()` sends bytes to `vercel.com/api/blob`, which is only usable from `*.vercel.app` due to CORS.
+ * Ensures Vercel Blob client uploads can run (token exchange + browser → Blob).
+ * File bytes never go through our API routes except for the small `handleUpload` JSON exchange.
  */
+export async function assertClientBlobUploadsReady(
+  files: File[],
+): Promise<{ ok: true } | { error: string }> {
+  if (!(await isBlobClientUploadEnabled())) {
+    return { error: vercelBlobRequiredMessage() };
+  }
+  const pre = validateFilesBeforeUpload(files);
+  if (pre) return { error: pre };
+  if (
+    isHostedVercelProductionOrPreview() &&
+    payloadExceedsServerlessMultipartBudget(files) &&
+    !hostnameAllowsVercelBlobBrowserPut()
+  ) {
+    return { error: vercelLargeFileBlockedOnCustomDomainMessage() };
+  }
+  return { ok: true };
+}
+
+/** @deprecated Use {@link assertClientBlobUploadsReady}. */
 export async function resolveBlobVsMultipartUpload(
   files: File[],
 ): Promise<{ useBlob: true } | { useBlob: false } | { error: string }> {
-  if (isHostedVercelProductionOrPreview()) {
-    if (!(await isBlobClientUploadEnabled())) {
-      return { error: vercelBlobRequiredMessage() };
-    }
-    if (payloadExceedsServerlessMultipartBudget(files)) {
-      if (!hostnameAllowsVercelBlobBrowserPut()) {
-        return { error: vercelLargeFileBlockedOnCustomDomainMessage() };
-      }
-      return { useBlob: true };
-    }
-    return { useBlob: false };
-  }
-  return { useBlob: false };
+  const r = await assertClientBlobUploadsReady(files);
+  if ("error" in r) return r;
+  return { useBlob: true };
 }
 
 export type BlobTokenExtras =
@@ -95,35 +105,41 @@ export type BlobTokenExtras =
   | { scope: "issue"; issueId: string }
   | { scope: "thread"; issueId: string; threadEntryId: string };
 
-type TokenResponse = { clientToken: string; pathname: string };
+function blobPathPrefix(extras: BlobTokenExtras): string {
+  switch (extras.scope) {
+    case "project":
+      return `projects/${extras.projectId}/`;
+    case "customer":
+      return `customers/${extras.customerId}/`;
+    case "issue":
+      return `issues/${extras.issueId}/`;
+    case "thread":
+      return `issues/${extras.issueId}/thread/${extras.threadEntryId}/`;
+    default:
+      return "";
+  }
+}
 
-async function fetchBlobToken(
-  extras: BlobTokenExtras,
-  file: File,
-): Promise<{ ok: true; data: TokenResponse } | { ok: false; error: string }> {
-  const res = await fetch("/api/blob/client-token", {
+async function completeRegistration(
+  completeUrl: string,
+  body: { fileName: string; pathname: string; fileUrl: string; fileSize: number },
+): Promise<{ ok: boolean; error?: string }> {
+  const res = await fetch(completeUrl, {
     method: "POST",
     credentials: "include",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      ...extras,
-      fileName: file.name,
-      fileSize: file.size,
-    }),
+    body: JSON.stringify(body),
   });
-  const raw = (await res.json().catch(() => ({}))) as { error?: string } & Partial<TokenResponse>;
+  const raw = (await res.json().catch(() => ({}))) as { error?: string };
   if (!res.ok) {
-    return { ok: false, error: raw.error ?? "Could not start upload." };
+    return { ok: false, error: raw.error ?? "Could not save attachment." };
   }
-  if (!raw.clientToken || !raw.pathname) {
-    return { ok: false, error: "Invalid token response." };
-  }
-  return { ok: true, data: { clientToken: raw.clientToken, pathname: raw.pathname } };
+  return { ok: true };
 }
 
-const BLOB_PUT_MAX_ATTEMPTS = 5;
-const BLOB_PUT_RETRY_BASE_MS = 1_200;
-const BLOB_PUT_RETRY_MAX_MS = 12_000;
+const BLOB_UPLOAD_MAX_ATTEMPTS = 5;
+const BLOB_UPLOAD_RETRY_BASE_MS = 1_200;
+const BLOB_UPLOAD_RETRY_MAX_MS = 12_000;
 
 function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
@@ -155,29 +171,12 @@ function isTransientBlobNetworkError(e: unknown): boolean {
   );
 }
 
-async function completeRegistration(
-  completeUrl: string,
-  body: { fileName: string; pathname: string; fileUrl: string; fileSize: number },
-): Promise<{ ok: boolean; error?: string }> {
-  const res = await fetch(completeUrl, {
-    method: "POST",
-    credentials: "include",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
-  const raw = (await res.json().catch(() => ({}))) as { error?: string };
-  if (!res.ok) {
-    return { ok: false, error: raw.error ?? "Could not save attachment." };
-  }
-  return { ok: true };
-}
-
 function isLikelyCorsOrBlockedBlobError(e: unknown): boolean {
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   return msg.includes("cors") || msg.includes("access-control") || msg.includes("network");
 }
 
-/** Shown when browser → vercel.com/blob API fails on some custom domains (Vercel CORS policy). */
+/** Shown when browser → Vercel Blob fails on some custom domains (Vercel CORS policy). */
 export function vercelBlobClientCorsHint(): string {
   return (
     " If you are on a custom domain, try the .vercel.app deployment URL for large uploads, " +
@@ -192,25 +191,30 @@ export async function uploadFilesViaBlobClient(options: {
   onProgress: (percent: number | null) => void;
 }): Promise<{ ok: boolean; error?: string }> {
   const { files, tokenExtras, completeUrl } = options;
-  const pre = validateFilesBeforeUpload(files);
-  if (pre) return { ok: false, error: pre };
+  const ready = await assertClientBlobUploadsReady(files);
+  if ("error" in ready) return { ok: false, error: ready.error };
 
   const totalBytes = files.reduce((s, f) => s + f.size, 0);
   let doneBytes = 0;
-  const { put } = await import("@vercel/blob/client");
+  const { upload } = await import("@vercel/blob/client");
+  const prefix = blobPathPrefix(tokenExtras);
 
   for (const file of files) {
+    const stored = storedFileName(file.name);
+    const pathname = `${prefix}${stored}`;
+    const clientPayload = JSON.stringify({
+      ...tokenExtras,
+      originalFileName: file.name,
+    });
+
     let blobUrl: string | undefined;
-    let pathnameUsed: string | undefined;
 
-    for (let attempt = 1; attempt <= BLOB_PUT_MAX_ATTEMPTS; attempt++) {
-      const tok = await fetchBlobToken(tokenExtras, file);
-      if (!tok.ok) return { ok: false, error: tok.error };
-
+    for (let attempt = 1; attempt <= BLOB_UPLOAD_MAX_ATTEMPTS; attempt++) {
       try {
-        const uploaded = await put(tok.data.pathname, file, {
+        const uploaded = await upload(pathname, file, {
           access: "public",
-          token: tok.data.clientToken,
+          handleUploadUrl: CLIENT_UPLOAD_HANDLE_URL,
+          clientPayload,
           contentType: file.type ? file.type : "application/octet-stream",
           onUploadProgress: ({ loaded, total, percentage }) => {
             if (totalBytes <= 0) {
@@ -223,10 +227,9 @@ export async function uploadFilesViaBlobClient(options: {
           },
         });
         blobUrl = uploaded.url;
-        pathnameUsed = tok.data.pathname;
         break;
       } catch (e) {
-        const retryable = isTransientBlobNetworkError(e) && attempt < BLOB_PUT_MAX_ATTEMPTS;
+        const retryable = isTransientBlobNetworkError(e) && attempt < BLOB_UPLOAD_MAX_ATTEMPTS;
         if (!retryable) {
           const msg = e instanceof Error ? e.message : String(e);
           const base =
@@ -238,14 +241,14 @@ export async function uploadFilesViaBlobClient(options: {
         }
         options.onProgress(null);
         const waitMs = Math.min(
-          BLOB_PUT_RETRY_MAX_MS,
-          BLOB_PUT_RETRY_BASE_MS * 2 ** (attempt - 1),
+          BLOB_UPLOAD_RETRY_MAX_MS,
+          BLOB_UPLOAD_RETRY_BASE_MS * 2 ** (attempt - 1),
         );
         await delay(waitMs);
       }
     }
 
-    if (!blobUrl || !pathnameUsed) {
+    if (!blobUrl) {
       return {
         ok: false,
         error:
@@ -256,7 +259,7 @@ export async function uploadFilesViaBlobClient(options: {
 
     const reg = await completeRegistration(completeUrl, {
       fileName: file.name,
-      pathname: pathnameUsed,
+      pathname,
       fileUrl: blobUrl,
       fileSize: file.size,
     });

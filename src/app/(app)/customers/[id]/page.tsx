@@ -2,13 +2,7 @@
 
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
-import {
-  resolveBlobVsMultipartUpload,
-  uploadFilesViaBlobClient,
-  validateFilesBeforeMultipartUpload,
-  validateFilesBeforeUpload,
-} from "@/lib/blob-client-upload";
-import { postFormDataWithProgress } from "@/lib/upload-with-progress";
+import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
@@ -75,47 +69,15 @@ export default function CustomerDetailPage() {
     setUploading(true);
     setUploadProgress(0);
     try {
-      const strategy = await resolveBlobVsMultipartUpload(files);
-      if ("error" in strategy) {
-        alert(strategy.error);
+      const up = await uploadFilesViaBlobClient({
+        files,
+        tokenExtras: { scope: "customer", customerId },
+        completeUrl: `/api/customers/${customerId}/attachments/complete`,
+        onProgress: (p) => setUploadProgress(p === null ? -1 : p),
+      });
+      if (!up.ok) {
+        alert(up.error ?? t("customerDetail.couldNotUpload"));
         return;
-      }
-      if (strategy.useBlob) {
-        const preBlob = validateFilesBeforeUpload(files);
-        if (preBlob) {
-          alert(preBlob);
-          return;
-        }
-        const up = await uploadFilesViaBlobClient({
-          files,
-          tokenExtras: { scope: "customer", customerId },
-          completeUrl: `/api/customers/${customerId}/attachments/complete`,
-          onProgress: (p) => setUploadProgress(p === null ? -1 : p),
-        });
-        if (!up.ok) {
-          alert(up.error ?? t("customerDetail.couldNotUpload"));
-          return;
-        }
-      } else {
-        const pre = validateFilesBeforeMultipartUpload(files);
-        if (pre) {
-          alert(pre);
-          return;
-        }
-        const formData = new FormData();
-        for (const f of files) {
-          formData.append("files", f);
-        }
-        const res = await postFormDataWithProgress(
-          `/api/customers/${customerId}/attachments`,
-          formData,
-          (p) => setUploadProgress(p === null ? -1 : p),
-        );
-        if (!res.ok) {
-          const data = await res.json<{ error?: string }>();
-          alert(data.error ?? t("customerDetail.couldNotUpload"));
-          return;
-        }
       }
       await load();
     } finally {
