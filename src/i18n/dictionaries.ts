@@ -157,7 +157,7 @@ const en: MessageTree = {
     couldNotArchive: "Could not archive issue.",
     attachmentsOptional: "Attachments (optional)",
     attachmentsOnCreateHelp:
-      "Add files now or later on the issue page. Max 50 MB per file; up to 20 files.",
+      "Add files now or later on the issue page. Max 100 MB per file; up to 20 files.",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -187,7 +187,7 @@ const en: MessageTree = {
     metaLine: "Reporter: {name} · Opened {at}",
     projectColon: "Project:",
     attachmentsTitle: "Attachments",
-    attachmentsHelp: "Upload images, videos, or any files linked to this issue (max 50 MB each).",
+    attachmentsHelp: "Upload images, videos, or any files linked to this issue (max 100 MB each).",
     chooseFiles: "Choose files",
     uploadingFiles: "Uploading…",
     noAttachments: "No files attached yet.",
@@ -669,7 +669,7 @@ const zh: MessageTree = {
     couldNotCreate: "无法创建问题。",
     couldNotArchive: "无法归档问题。",
     attachmentsOptional: "附件（可选）",
-    attachmentsOnCreateHelp: "可在此添加，或稍后在问题详情页上传。单个最大 50 MB，最多 20 个文件。",
+    attachmentsOnCreateHelp: "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个文件。",
   },
   issueDetail: {
     loading: "正在加载问题…",
@@ -699,7 +699,7 @@ const zh: MessageTree = {
     metaLine: "报告人：{name} · 创建于 {at}",
     projectColon: "项目：",
     attachmentsTitle: "附件",
-    attachmentsHelp: "可上传图片、视频或任意文件（单个最大 50 MB）。",
+    attachmentsHelp: "可上传图片、视频或任意文件（单个最大 100 MB）。",
     chooseFiles: "选择文件",
     uploadingFiles: "上传中…",
     noAttachments: "暂无附件。",

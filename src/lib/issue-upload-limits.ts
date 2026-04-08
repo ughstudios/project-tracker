@@ -1,6 +1,6 @@
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
-export const ISSUE_UPLOAD_MAX_BYTES = 50 * 1024 * 1024;
+export const ISSUE_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
 export const ISSUE_UPLOAD_MAX_FILES_PER_POST = 20;
 
 /**
