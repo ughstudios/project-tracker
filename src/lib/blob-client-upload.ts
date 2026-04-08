@@ -1,8 +1,11 @@
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
+  isBrowserOnVercelDeployment,
   maxClientBlobUploadBytes,
   maxIssueUploadBytesForRuntime,
+  multipartTooLargeHint,
 } from "@/lib/issue-upload-limits";
+import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
 function browserContentTypeForFile(file: File): string {
   if (file.type) return file.type;
@@ -59,7 +62,9 @@ export function validateFilesBeforeMultipartUpload(files: File[]): string | null
   }
   const cap = maxIssueUploadBytesForRuntime();
   for (const f of files) {
-    if (f.size > cap) return "One or more files are too large.";
+    if (f.size > cap) {
+      return isBrowserOnVercelDeployment() ? multipartTooLargeHint() : "One or more files are too large.";
+    }
   }
   return null;
 }
@@ -135,6 +140,7 @@ export async function uploadFilesViaBlobClient(options: {
         access: "public",
         token: tok.data.clientToken,
         contentType: browserContentTypeForFile(file),
+        multipart: file.size > VERCEL_SERVER_MULTIPART_BUDGET_BYTES,
         onUploadProgress: ({ loaded, total, percentage }) => {
           if (totalBytes <= 0) {
             options.onProgress(null);
