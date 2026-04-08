@@ -6,10 +6,20 @@ import {
   perFileExceedsBlobProductLimitMessage,
   vercelBlobRequiredMessage,
 } from "@/lib/issue-upload-limits";
+import { BLOB_RELAY_CHUNK_BYTES } from "@/lib/blob-relay-chunk";
 import { storedFileName } from "@/lib/stored-file-name";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
 const CLIENT_UPLOAD_HANDLE_URL = "/api/blob/client-upload";
+
+/**
+ * Browser uploads to Vercel’s Blob API are only same-origin-friendly on `*.vercel.app`.
+ * All other hosts (e.g. custom domains, localhost) use our chunked relay to avoid CORS.
+ */
+export function blobUploadNeedsSameOriginRelay(): boolean {
+  if (typeof window === "undefined") return false;
+  return !window.location.hostname.endsWith(".vercel.app");
+}
 
 /** Short, neutral copy — no CORS or hosting lectures. */
 const UPLOAD_FAILED_GENERIC =
@@ -145,6 +155,93 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+async function uploadOneFileViaRelay(
+  file: File,
+  tokenExtras: BlobTokenExtras,
+  completeUrl: string,
+  totalBytesAllFiles: number,
+  doneBytesBeforeFile: number,
+  onProgress: (percent: number | null) => void,
+): Promise<{ ok: boolean; error?: string }> {
+  const initRes = await fetch("/api/blob/relay/init", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ...tokenExtras,
+      originalFileName: file.name,
+      fileSize: file.size,
+      contentType: file.type ? file.type : "application/octet-stream",
+    }),
+  });
+  const initJson = (await initRes.json().catch(() => ({}))) as {
+    error?: string;
+    sessionId?: string;
+    pathname?: string;
+    chunkSize?: number;
+  };
+  if (!initRes.ok) {
+    return { ok: false, error: initJson.error ?? UPLOAD_FAILED_GENERIC };
+  }
+  const sessionId = initJson.sessionId;
+  const pathname = initJson.pathname;
+  const chunkSize = initJson.chunkSize ?? BLOB_RELAY_CHUNK_BYTES;
+  if (!sessionId || !pathname) {
+    return { ok: false, error: UPLOAD_FAILED_GENERIC };
+  }
+
+  let offset = 0;
+  while (offset < file.size) {
+    const end = Math.min(offset + chunkSize, file.size);
+    const slice = file.slice(offset, end);
+    const chunkRes = await fetch("/api/blob/relay/chunk", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/octet-stream",
+        "X-Blob-Relay-Session": sessionId,
+      },
+      body: slice,
+    });
+    const chunkJson = (await chunkRes.json().catch(() => ({}))) as { error?: string };
+    if (!chunkRes.ok) {
+      return { ok: false, error: chunkJson.error ?? UPLOAD_FAILED_GENERIC };
+    }
+    offset = end;
+    const pct = Math.min(
+      100,
+      Math.round(((doneBytesBeforeFile + offset) / totalBytesAllFiles) * 100),
+    );
+    onProgress(pct);
+  }
+
+  const compRes = await fetch("/api/blob/relay/complete", {
+    method: "POST",
+    credentials: "include",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId }),
+  });
+  const compJson = (await compRes.json().catch(() => ({}))) as {
+    error?: string;
+    url?: string;
+  };
+  if (!compRes.ok) {
+    return { ok: false, error: compJson.error ?? UPLOAD_FAILED_GENERIC };
+  }
+  if (!compJson.url) {
+    return { ok: false, error: UPLOAD_FAILED_GENERIC };
+  }
+
+  const reg = await completeRegistration(completeUrl, {
+    fileName: file.name,
+    pathname,
+    fileUrl: compJson.url,
+    fileSize: file.size,
+  });
+  if (!reg.ok) return { ok: false, error: reg.error ?? UPLOAD_FAILED_GENERIC };
+  return { ok: true };
+}
+
 function isTransientBlobNetworkError(e: unknown): boolean {
   const msg = (e instanceof Error ? e.message : String(e)).toLowerCase();
   if (
@@ -183,10 +280,26 @@ export async function uploadFilesViaBlobClient(options: {
 
   const totalBytes = files.reduce((s, f) => s + f.size, 0);
   let doneBytes = 0;
-  const { upload } = await import("@vercel/blob/client");
+  const useRelay = blobUploadNeedsSameOriginRelay();
+  const blobClient = useRelay ? null : await import("@vercel/blob/client");
   const prefix = blobPathPrefix(tokenExtras);
 
   for (const file of files) {
+    if (useRelay) {
+      const relayed = await uploadOneFileViaRelay(
+        file,
+        tokenExtras,
+        completeUrl,
+        totalBytes,
+        doneBytes,
+        options.onProgress,
+      );
+      if (!relayed.ok) return { ok: false, error: relayed.error };
+      doneBytes += file.size;
+      options.onProgress(Math.min(100, Math.round((doneBytes / totalBytes) * 100)));
+      continue;
+    }
+
     const stored = storedFileName(file.name);
     const pathname = `${prefix}${stored}`;
     const clientPayload = JSON.stringify({
@@ -198,7 +311,7 @@ export async function uploadFilesViaBlobClient(options: {
 
     for (let attempt = 1; attempt <= BLOB_UPLOAD_MAX_ATTEMPTS; attempt++) {
       try {
-        const uploaded = await upload(pathname, file, {
+        const uploaded = await blobClient!.upload(pathname, file, {
           access: "public",
           handleUploadUrl: CLIENT_UPLOAD_HANDLE_URL,
           clientPayload,

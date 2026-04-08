@@ -270,3 +270,33 @@ model IssueThreadAttachment {
 
   @@index([threadEntryId])
 }
+
+/// Temporary staging for same-origin → Blob relay (custom domains: browser cannot call vercel.com/api/blob).
+model BlobRelayUpload {
+  id           String   @id @default(cuid())
+  userId       String
+  pathname     String
+  contentType  String   @default("application/octet-stream")
+  totalSize    Int
+  received     Int      @default(0)
+  nextChunkSeq Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  chunks BlobRelayChunk[]
+
+  @@index([userId, createdAt])
+}
+
+model BlobRelayChunk {
+  id        String   @id @default(cuid())
+  sessionId String
+  seq       Int
+  data      Bytes
+  createdAt DateTime @default(now())
+
+  session BlobRelayUpload @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, seq])
+  @@index([sessionId])
+}
