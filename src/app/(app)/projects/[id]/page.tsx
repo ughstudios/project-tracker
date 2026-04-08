@@ -27,6 +27,8 @@ type ProjectIssue = {
   status: string;
 };
 
+const apiFetch: RequestInit = { credentials: "include", cache: "no-store" };
+
 const receiverCardModels = [
   "5G Series - HC5",
   "5G Series - RV5000",
@@ -66,9 +68,9 @@ export default function ProjectDetailsPage() {
   const load = useCallback(async () => {
     setLoading(true);
     const [projectRes, customersRes, productsRes] = await Promise.all([
-      fetch(`/api/projects/${projectId}`),
-      fetch("/api/customers"),
-      fetch("/api/products"),
+      fetch(`/api/projects/${projectId}`, apiFetch),
+      fetch("/api/customers", apiFetch),
+      fetch("/api/products", apiFetch),
     ]);
     if (!projectRes.ok) {
       setLoading(false);
@@ -122,6 +124,7 @@ export default function ProjectDetailsPage() {
     e.preventDefault();
     setSaving(true);
     const res = await fetch(`/api/projects/${projectId}`, {
+      ...apiFetch,
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -146,6 +149,7 @@ export default function ProjectDetailsPage() {
     if (!content) return;
     setAddingNote(true);
     const res = await fetch(`/api/projects/${projectId}/notes`, {
+      ...apiFetch,
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content }),
@@ -167,6 +171,7 @@ export default function ProjectDetailsPage() {
       formData.append("files", f);
     }
     const res = await fetch(`/api/projects/${projectId}/attachments`, {
+      ...apiFetch,
       method: "POST",
       body: formData,
     });
@@ -182,6 +187,7 @@ export default function ProjectDetailsPage() {
   const deleteProjectAttachment = async (attachmentId: string) => {
     if (!confirm(t("projectDetail.confirmRemoveAttachment"))) return;
     const res = await fetch(`/api/projects/${projectId}/attachments/${attachmentId}`, {
+      ...apiFetch,
       method: "DELETE",
     });
     if (!res.ok) {
@@ -295,7 +301,6 @@ export default function ProjectDetailsPage() {
           <div className="input-file-zone max-w-xl">
             <input
               type="file"
-              accept=".rcvbp,.cbp"
               multiple
               className="input-file"
               onChange={(e) => {

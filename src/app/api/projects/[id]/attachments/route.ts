@@ -15,8 +15,6 @@ import { prisma } from "@/lib/prisma";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
-const ALLOWED_EXTENSIONS = new Set([".rcvbp", ".cbp"]);
-
 const uploaderSelect = { select: { id: true, name: true, email: true } as const };
 
 export async function POST(
@@ -61,13 +59,6 @@ export async function POST(
     if (f.size > maxBytes) {
       return NextResponse.json({ error: "One or more files are too large." }, { status: 400 });
     }
-    const ext = path.extname(f.name).toLowerCase();
-    if (!ALLOWED_EXTENSIONS.has(ext)) {
-      return NextResponse.json(
-        { error: "Only .rcvbp and .cbp files are allowed." },
-        { status: 400 },
-      );
-    }
   }
   const tooLarge = vercelMultipartPayloadTooLargeResponse(files);
   if (tooLarge) return tooLarge;
@@ -94,7 +85,7 @@ export async function POST(
         uploaderId: session.user.id,
         fileName: file.name,
         fileUrl,
-        fileType: ext.slice(1),
+        fileType: ext ? ext.slice(1) : "bin",
         fileSize: file.size,
       },
       include: { uploader: uploaderSelect },

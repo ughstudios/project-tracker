@@ -293,7 +293,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setUploadingIssueFiles(false);
     if (issueFileInputRef.current) issueFileInputRef.current.value = "";
     if (!res.ok) {
-      alert(t("issueDetail.couldNotUpload"));
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("issueDetail.couldNotUpload"));
       return;
     }
     await refreshIssue();
@@ -349,7 +350,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     }
     setPostingThread(false);
     if (!res.ok) {
-      alert(t("issueDetail.couldNotPost"));
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("issueDetail.couldNotPost"));
       return;
     }
     setThreadInput("");
