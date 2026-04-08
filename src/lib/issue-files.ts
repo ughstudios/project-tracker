@@ -1,3 +1,4 @@
+import { deleteBlobUrlIfPresent, shouldSkipLocalDelete } from "@/lib/file-storage";
 import { promises as fs } from "node:fs";
 import path from "node:path";
 
@@ -24,6 +25,8 @@ export function diskPathForIssueUpload(fileUrl: string, issueId: string): string
 }
 
 export async function removeUploadFileIfPresent(fileUrl: string, issueId: string): Promise<void> {
+  await deleteBlobUrlIfPresent(fileUrl);
+  if (shouldSkipLocalDelete(fileUrl)) return;
   const abs = diskPathForIssueUpload(fileUrl, issueId);
   if (!abs) return;
   try {

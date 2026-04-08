@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
+import { writeAuditLog } from "@/lib/audit";
+import { contentTypeForUpload, vercelUploadsNotReadyResponse, writeUploadedFile } from "@/lib/file-storage";
 import {
   ISSUE_UPLOAD_MAX_BYTES,
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   storedFileName,
 } from "@/lib/issue-files";
-import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
@@ -86,6 +86,9 @@ export async function POST(
   const contentType = request.headers.get("content-type") ?? "";
 
   if (contentType.includes("multipart/form-data")) {
+    const blocked = vercelUploadsNotReadyResponse();
+    if (blocked) return blocked;
+
     const formData = await request.formData();
     const content = String(formData.get("content") ?? "").trim();
     const files: File[] = [];
@@ -130,16 +133,20 @@ export async function POST(
       "thread",
       entry.id,
     );
-    await fs.mkdir(uploadDir, { recursive: true });
 
     for (const file of files) {
       const bytes = await file.arrayBuffer();
       const buffer = Buffer.from(bytes);
       const storedName = storedFileName(file.name);
-      const fullPath = path.join(uploadDir, storedName);
-      await fs.writeFile(fullPath, buffer);
       const ext = path.extname(file.name).toLowerCase();
-      const fileUrl = `/uploads/issues/${issueId}/thread/${entry.id}/${storedName}`;
+      const { fileUrl } = await writeUploadedFile({
+        buffer,
+        blobPathname: `issues/${issueId}/thread/${entry.id}/${storedName}`,
+        localDir: uploadDir,
+        publicUrlDir: `/uploads/issues/${issueId}/thread/${entry.id}`,
+        fileName: storedName,
+        contentType: contentTypeForUpload(file),
+      });
       await prisma.issueThreadAttachment.create({
         data: {
           threadEntryId: entry.id,

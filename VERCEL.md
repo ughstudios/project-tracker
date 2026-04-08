@@ -72,6 +72,7 @@ Vercel → **Project → Settings → Environment Variables**:
 | **`AUTH_SECRET`** | Long random string, e.g. run `openssl rand -base64 32` locally. |
 | **`AUTH_URL`** | `https://<your-project>.vercel.app` (no trailing slash). Use your real production hostname. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
+| **`BLOB_READ_WRITE_TOKEN`** | **Required for file uploads on Vercel.** Create a Blob store under **Storage** → connect it to this project so Vercel injects this token. Serverless functions cannot write under `public/uploads`. |
 
 After saving, **Redeploy** so the build sees the new values.
 
@@ -99,4 +100,8 @@ Seed promotes `daniel.gleason@lednets.com` to **SUPER_ADMIN** (new installs: `SE
 
 ## 6. File uploads
 
-`.rcvbp` / `.cbp` uploads write under `public/uploads` on disk; on Vercel that is **not durable**. Plan blob storage later if you need persistent files.
+On **Vercel**, set **`BLOB_READ_WRITE_TOKEN`** (see table above). Uploads are stored in **Vercel Blob** and URLs saved in the database point at `*.public.blob.vercel-storage.com`.
+
+**Local development** (no `VERCEL=1`): if the token is unset, files still write to `public/uploads` as before.
+
+If you deploy to Vercel without Blob configured, upload API routes return **503** with a short message instead of failing with `ENOENT` on `mkdir`.

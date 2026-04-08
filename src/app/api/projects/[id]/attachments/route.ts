@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { contentTypeForUpload, vercelUploadsNotReadyResponse, writeUploadedFile } from "@/lib/file-storage";
 import {
   ISSUE_UPLOAD_MAX_BYTES,
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   storedFileName,
 } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
-import { promises as fs } from "node:fs";
 import path from "node:path";
 import { NextResponse } from "next/server";
 
@@ -22,6 +22,9 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+
+  const blocked = vercelUploadsNotReadyResponse();
+  if (blocked) return blocked;
 
   const { id: projectId } = await params;
   const project = await prisma.project.findUnique({
@@ -62,7 +65,6 @@ export async function POST(
   }
 
   const uploadDir = path.join(process.cwd(), "public", "uploads", "projects", projectId);
-  await fs.mkdir(uploadDir, { recursive: true });
 
   const created = [];
   for (const file of files) {
@@ -70,9 +72,14 @@ export async function POST(
     const buffer = Buffer.from(bytes);
     const ext = path.extname(file.name).toLowerCase();
     const storedName = storedFileName(file.name);
-    const fullPath = path.join(uploadDir, storedName);
-    await fs.writeFile(fullPath, buffer);
-    const fileUrl = `/uploads/projects/${projectId}/${storedName}`;
+    const { fileUrl } = await writeUploadedFile({
+      buffer,
+      blobPathname: `projects/${projectId}/${storedName}`,
+      localDir: uploadDir,
+      publicUrlDir: `/uploads/projects/${projectId}`,
+      fileName: storedName,
+      contentType: contentTypeForUpload(file),
+    });
     const attachment = await prisma.projectAttachment.create({
       data: {
         projectId,
