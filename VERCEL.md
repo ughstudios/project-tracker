@@ -62,6 +62,20 @@ Install nothing permanently; commands use `npx` under the hood (`package.json` s
 - Import [github.com/ughstudios/project-tracker](https://github.com/ughstudios/project-tracker).
 - **Root directory**: leave default (this repo’s `package.json` is at the repo root).
 
+## 2.1 Vercel Blob — so the next `git push` deploy works
+
+The app does **not** read your **store ID** or **region** (for example IAD1 / Washington, D.C.) from code. Those are shown in the dashboard for your reference only. Runtime uploads use the **`BLOB_READ_WRITE_TOKEN`** Vercel attaches when the store is linked to the project.
+
+Do this once per project (then any push to `main` is enough):
+
+1. Open **[Vercel Dashboard](https://vercel.com/dashboard) → Storage** and select your Blob store.
+2. Use **Connect Project** and choose the **same** Vercel project that deploys this Git repo.
+3. Go to that project → **Settings → Environment Variables** and confirm **`BLOB_READ_WRITE_TOKEN`** exists.
+4. Assign that variable to **Production** and **Preview** (and **Development** if you use `vercel dev`). If it is only on Production, **preview** URLs will return **503** on uploads until you add it there too.
+5. **Redeploy** the latest commit once after connecting (or push again): the build does not need the token, but **serverless routes** need it at runtime.
+
+No `vercel.json` or store ID in this repository is required.
+
 ## 3. Required environment variables
 
 Vercel → **Project → Settings → Environment Variables**:

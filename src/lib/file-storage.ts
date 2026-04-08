@@ -12,8 +12,20 @@ import { NextResponse } from "next/server";
  */
 export const VERCEL_SERVER_MULTIPART_BUDGET_BYTES = 4 * 1024 * 1024;
 
+/**
+ * Read/write token Vercel injects when a Blob store is **connected to this project**.
+ * No store ID or region is configured in code—the token selects the store (e.g. IAD1).
+ */
+function getBlobReadWriteToken(): string | undefined {
+  const primary = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (primary) return primary;
+  const legacy = process.env.VERCEL_BLOB_READ_WRITE_TOKEN?.trim();
+  if (legacy) return legacy;
+  return undefined;
+}
+
 export function isBlobStorageEnabled(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  return Boolean(getBlobReadWriteToken());
 }
 
 /** Total file bytes (+ optional UTF-8 text field) too large for one serverless invocation on Vercel. */
@@ -56,7 +68,7 @@ export function isLikelyVercelBlobUrl(fileUrl: string): boolean {
 
 export async function deleteBlobUrlIfPresent(fileUrl: string): Promise<void> {
   if (!isLikelyVercelBlobUrl(fileUrl)) return;
-  const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  const token = getBlobReadWriteToken();
   if (!token) return;
   try {
     await del(fileUrl, { token });
@@ -79,11 +91,11 @@ export type WriteUploadedFileOptions = {
 export async function writeUploadedFile(
   opts: WriteUploadedFileOptions,
 ): Promise<{ fileUrl: string }> {
-  if (isBlobStorageEnabled()) {
-    const token = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  const blobToken = getBlobReadWriteToken();
+  if (blobToken) {
     const blob = await put(opts.blobPathname, opts.buffer, {
       access: "public",
-      ...(token ? { token } : {}),
+      token: blobToken,
       contentType: opts.contentType || "application/octet-stream",
       addRandomSuffix: false,
     });
