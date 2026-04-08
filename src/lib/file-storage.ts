@@ -1,4 +1,5 @@
 import { del, put } from "@vercel/blob";
+import { getBlobStoreAccess } from "@/lib/blob-access";
 import {
   VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE,
   vercelBlobRequiredMessage,
@@ -11,8 +12,9 @@ import { NextResponse } from "next/server";
 /**
  * Files go through the route handler first, so total payload must stay under this budget.
  *
- * We use `access: 'public'` on `put()` so `<img>`, `<a href>`, and `<video src>` work with
- * the URL stored in Postgres. `access: 'private'` would require signed URLs or a download proxy.
+ * `access` follows `NEXT_PUBLIC_BLOB_STORE_ACCESS` / `BLOB_STORE_ACCESS` (must match the
+ * Blob store in Vercel). Private stores → set `private` and use `/api/blob/media` for viewing
+ * (`attachmentBlobHref`).
  */
 export { VERCEL_SERVER_MULTIPART_BUDGET_BYTES };
 
@@ -88,7 +90,7 @@ export async function writeUploadedFile(
   const blobToken = getBlobReadWriteToken();
   if (blobToken) {
     const blob = await put(opts.blobPathname, opts.buffer, {
-      access: "public",
+      access: getBlobStoreAccess(),
       token: blobToken,
       contentType: opts.contentType || "application/octet-stream",
       addRandomSuffix: false,

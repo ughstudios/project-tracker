@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { getBlobStoreAccess } from "@/lib/blob-access";
 import {
   getBlobReadWriteToken,
   isBlobStorageEnabled,
@@ -65,7 +66,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   let url: string;
   try {
     const blob = await put(upload.pathname, buffer, {
-      access: "public",
+      access: getBlobStoreAccess(),
       token,
       contentType: upload.contentType || "application/octet-stream",
       addRandomSuffix: false,

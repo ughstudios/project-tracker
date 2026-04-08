@@ -1,3 +1,4 @@
+import { getBlobStoreAccess } from "@/lib/blob-access";
 import {
   ISSUE_UPLOAD_MAX_FILES_PER_POST,
   isBrowserOnVercelDeployment,
@@ -312,7 +313,7 @@ export async function uploadFilesViaBlobClient(options: {
     for (let attempt = 1; attempt <= BLOB_UPLOAD_MAX_ATTEMPTS; attempt++) {
       try {
         const uploaded = await blobClient!.upload(pathname, file, {
-          access: "public",
+          access: getBlobStoreAccess(),
           handleUploadUrl: CLIENT_UPLOAD_HANDLE_URL,
           clientPayload,
           contentType: file.type ? file.type : "application/octet-stream",

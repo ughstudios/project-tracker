@@ -3,6 +3,7 @@
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
+import { attachmentBlobHref } from "@/lib/attachment-blob-href";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -644,10 +645,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             issue.attachments.map((att) => (
               <div key={att.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
                 {isImageExt(att.fileType) ? (
-                  <a href={att.fileUrl} target="_blank" rel="noreferrer" className="block">
+                  <a
+                    href={attachmentBlobHref(att.fileUrl)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="block"
+                  >
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
-                      src={att.fileUrl}
+                      src={attachmentBlobHref(att.fileUrl)}
                       alt=""
                       className="max-h-48 w-auto max-w-full rounded object-contain"
                     />
@@ -655,7 +661,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 ) : null}
                 {isVideoExt(att.fileType) ? (
                   <video
-                    src={att.fileUrl}
+                    src={attachmentBlobHref(att.fileUrl)}
                     controls
                     className="max-h-56 w-full max-w-lg rounded"
                     preload="metadata"
@@ -663,7 +669,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 ) : null}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
                   <a
-                    href={att.fileUrl}
+                    href={attachmentBlobHref(att.fileUrl)}
                     download={att.fileName}
                     target="_blank"
                     rel="noreferrer"
@@ -790,10 +796,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     {entry.attachments.map((att) => (
                       <div key={att.id} className="rounded-md border border-zinc-200 bg-white p-2">
                         {isImageExt(att.fileType) ? (
-                          <a href={att.fileUrl} target="_blank" rel="noreferrer" className="block">
+                          <a
+                            href={attachmentBlobHref(att.fileUrl)}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="block"
+                          >
                             {/* eslint-disable-next-line @next/next/no-img-element */}
                             <img
-                              src={att.fileUrl}
+                              src={attachmentBlobHref(att.fileUrl)}
                               alt=""
                               className="max-h-40 w-auto max-w-full rounded object-contain"
                             />
@@ -801,7 +812,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                         ) : null}
                         {isVideoExt(att.fileType) ? (
                           <video
-                            src={att.fileUrl}
+                            src={attachmentBlobHref(att.fileUrl)}
                             controls
                             className="max-h-48 w-full max-w-md rounded"
                             preload="metadata"
@@ -809,7 +820,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                         ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">
                           <a
-                            href={att.fileUrl}
+                            href={attachmentBlobHref(att.fileUrl)}
                             download={att.fileName}
                             target="_blank"
                             rel="noreferrer"

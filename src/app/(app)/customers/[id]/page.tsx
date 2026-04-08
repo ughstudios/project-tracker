@@ -2,6 +2,7 @@
 
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import { attachmentBlobHref } from "@/lib/attachment-blob-href";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -177,7 +178,7 @@ export default function CustomerDetailPage() {
               {attachments.map((a) => (
                 <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
                   <a
-                    href={a.fileUrl}
+                    href={attachmentBlobHref(a.fileUrl)}
                     target="_blank"
                     rel="noreferrer"
                     className="min-w-0 truncate text-blue-700 hover:underline"
