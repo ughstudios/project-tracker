@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
 import { blobPublicUrlMatchesPathname } from "@/lib/blob-url-verify";
 import { isBlobStorageEnabled, isLikelyVercelBlobUrl } from "@/lib/file-storage";
@@ -41,7 +42,12 @@ export async function POST(
     pathname?: string;
     fileUrl?: string;
     fileSize?: number;
+    uploadNote?: string;
   };
+  const noteParsed = parseRequiredUploadNote(body.uploadNote);
+  if ("error" in noteParsed) {
+    return NextResponse.json({ error: noteParsed.error }, { status: 400 });
+  }
   const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
   const pathname = typeof body.pathname === "string" ? body.pathname.trim() : "";
   const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
@@ -70,6 +76,7 @@ export async function POST(
       fileUrl,
       fileType: ext ? ext.slice(1) : "bin",
       fileSize,
+      uploadNote: noteParsed.uploadNote,
     },
     include: { uploader: uploaderSelect },
   });

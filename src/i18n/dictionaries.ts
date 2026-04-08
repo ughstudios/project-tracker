@@ -87,6 +87,12 @@ const en: MessageTree = {
     version: "Version",
     quantity: "Quantity",
     optional: "(optional)",
+    attachmentUploadNoteLabel: "Why upload this? (required)",
+    attachmentUploadNotePlaceholder:
+      "Explain what this file is and why it is being added (visible to everyone who can view the issue or record).",
+    attachmentUploadNoteRequiredAlert:
+      "Please enter a note explaining why you are uploading (required before files can be uploaded).",
+    attachmentNoteHeading: "Upload note",
   },
   logout: {
     logout: "Logout",
@@ -145,6 +151,15 @@ const en: MessageTree = {
     chartByProjectHint: "Projects with the most active issues (up to 12).",
     axisIssues: "Issues",
     chartUnassigned: "Unassigned",
+    workRecordsAdminAria: "Admin-only work record statistics",
+    workRecordsChartsTitle: "Work records (admin)",
+    workRecordsChartsHint: "Aggregated counts only. Titles and journal content are not shown.",
+    workRecordsChartsEmpty: "No work records to chart yet.",
+    chartWorkRecordsByAuthor: "Records by author",
+    chartWorkRecordsByAuthorHint: "Total work records per person (all time).",
+    chartWorkRecordsByMonth: "Records by month",
+    chartWorkRecordsByMonthHint: "Records with a work date in the last 12 months (UTC).",
+    axisWorkRecords: "Records",
   },
   issues: {
     title: "Issues",
@@ -171,7 +186,7 @@ const en: MessageTree = {
     couldNotArchive: "Could not archive issue.",
     attachmentsOptional: "Attachments (optional)",
     attachmentsOnCreateHelp:
-      "Add files now or later on the issue page. Max 100 MB per file; up to 20 files.",
+      "Add files now or later on the issue page. Max 100 MB per file; up to 20 files. If you attach files, an upload note is required.",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -207,7 +222,7 @@ const en: MessageTree = {
     noAttachments: "No files attached yet.",
     downloadFile: "Download",
     removeFile: "Remove",
-    threadFilesHint: "Optional: add files with your message.",
+    threadFilesHint: "Optional: add files with your message. A short note explaining the files is required when you attach any.",
     threadPendingUploads: "Files to upload with this reply",
     threadRemoveFileAria: "Remove {name} from pending attachments",
     threadPageSummary: "Page {page} of {totalPages} · {total} replies",
@@ -623,6 +638,10 @@ const zh: MessageTree = {
     version: "版本",
     quantity: "数量",
     optional: "（可选）",
+    attachmentUploadNoteLabel: "上传原因（必填）",
+    attachmentUploadNotePlaceholder: "说明此文件的用途或为何上传（有权限查看该记录的用户均可见）。",
+    attachmentUploadNoteRequiredAlert: "请先填写上传说明，再上传文件。",
+    attachmentNoteHeading: "上传说明",
   },
   logout: {
     logout: "退出登录",
@@ -680,6 +699,15 @@ const zh: MessageTree = {
     chartByProjectHint: "进行中问题最多的项目（最多 12 个）。",
     axisIssues: "问题数",
     chartUnassigned: "未分配",
+    workRecordsAdminAria: "管理员可见的工作记录统计",
+    workRecordsChartsTitle: "工作记录（管理员）",
+    workRecordsChartsHint: "仅显示汇总数量，不显示标题与正文内容。",
+    workRecordsChartsEmpty: "暂无工作记录可统计。",
+    chartWorkRecordsByAuthor: "按作者分布",
+    chartWorkRecordsByAuthorHint: "每人工作记录总数（全量）。",
+    chartWorkRecordsByMonth: "按月分布",
+    chartWorkRecordsByMonthHint: "工作日期落在最近 12 个月内的记录数（UTC）。",
+    axisWorkRecords: "条数",
   },
   kanban: {
     title: "看板",
@@ -708,7 +736,8 @@ const zh: MessageTree = {
     couldNotCreate: "无法创建问题。",
     couldNotArchive: "无法归档问题。",
     attachmentsOptional: "附件（可选）",
-    attachmentsOnCreateHelp: "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个文件。",
+    attachmentsOnCreateHelp:
+      "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个。若添加附件，须填写上传说明。",
   },
   issueDetail: {
     loading: "正在加载问题…",
@@ -744,7 +773,7 @@ const zh: MessageTree = {
     noAttachments: "暂无附件。",
     downloadFile: "下载",
     removeFile: "删除",
-    threadFilesHint: "可选：随消息附带文件。",
+    threadFilesHint: "可选：随消息附带文件。附带文件时须填写简短上传说明。",
     threadPendingUploads: "将随本条回复上传的文件",
     threadRemoveFileAria: "从待上传列表中移除「{name}」",
     threadPageSummary: "第 {page} / {totalPages} 页 · 共 {total} 条回复",

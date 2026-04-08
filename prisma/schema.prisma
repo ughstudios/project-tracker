@@ -147,6 +147,7 @@ model ProjectAttachment {
   fileUrl    String
   fileType   String
   fileSize   Int
+  uploadNote String   @default("")
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
@@ -162,6 +163,7 @@ model CustomerAttachment {
   fileUrl   String
   fileType  String
   fileSize  Int
+  uploadNote String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -243,6 +245,7 @@ model IssueAttachment {
   fileUrl   String
   fileType  String
   fileSize  Int
+  uploadNote String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -260,6 +263,7 @@ model IssueThreadAttachment {
   fileUrl   String
   fileType  String
   fileSize  Int
+  uploadNote String   @default("")
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

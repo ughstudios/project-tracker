@@ -70,6 +70,7 @@ export default function IssuesPage() {
   const [formRnd, setFormRnd] = useState("");
   const [formAssigneeId, setFormAssigneeId] = useState("");
   const [formFiles, setFormFiles] = useState<File[]>([]);
+  const [formAttachmentUploadNote, setFormAttachmentUploadNote] = useState("");
   const createFileInputRef = useRef<HTMLInputElement>(null);
   const [creating, setCreating] = useState(false);
   const [createAttachmentProgress, setCreateAttachmentProgress] = useState<number | null>(null);
@@ -91,6 +92,10 @@ export default function IssuesPage() {
     if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
     setListLoading(false);
   }, []);
+
+  useEffect(() => {
+    if (formFiles.length === 0) setFormAttachmentUploadNote("");
+  }, [formFiles.length]);
 
   useEffect(() => {
     if (pathname !== "/issues") return;
@@ -160,12 +165,19 @@ export default function IssuesPage() {
     const created = (await res.json()) as { id: string };
 
     if (formFiles.length > 0) {
+      const note = formAttachmentUploadNote.trim();
+      if (!note) {
+        alert(t("common.attachmentUploadNoteRequiredAlert"));
+        setCreating(false);
+        return;
+      }
       setCreateAttachmentProgress(0);
       try {
         const up = await uploadFilesViaBlobClient({
           files: formFiles,
           tokenExtras: { scope: "issue", issueId: created.id },
           completeUrl: `/api/issues/${encodeURIComponent(created.id)}/attachments/complete`,
+          uploadNote: note,
           onProgress: (p) => setCreateAttachmentProgress(p === null ? -1 : p),
         });
         if (!up.ok) {
@@ -183,6 +195,7 @@ export default function IssuesPage() {
     setFormRnd("");
     setFormAssigneeId("");
     setFormFiles([]);
+    setFormAttachmentUploadNote("");
     if (createFileInputRef.current) createFileInputRef.current.value = "";
     setCreating(false);
     await loadLists();
@@ -322,7 +335,20 @@ export default function IssuesPage() {
               />
             </div>
             {formFiles.length > 0 ? (
-              <p className="mt-1 text-xs text-zinc-600">{formFiles.map((f) => f.name).join(", ")}</p>
+              <>
+                <label className="mt-2 block text-sm">
+                  <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+                  <textarea
+                    className="input mt-1 min-h-[64px] w-full"
+                    value={formAttachmentUploadNote}
+                    onChange={(e) => setFormAttachmentUploadNote(e.target.value)}
+                    placeholder={t("common.attachmentUploadNotePlaceholder")}
+                    disabled={creating}
+                    required
+                  />
+                </label>
+                <p className="mt-1 text-xs text-zinc-600">{formFiles.map((f) => f.name).join(", ")}</p>
+              </>
             ) : null}
             <UploadProgressBar
               value={createAttachmentProgress}

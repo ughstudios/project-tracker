@@ -25,6 +25,7 @@ type IssueFileAttachment = {
   fileUrl: string;
   fileType: string;
   fileSize: number;
+  uploadNote: string;
   createdAt: string;
   uploader: { id: string; name: string | null; email: string | null } | null;
 };
@@ -75,7 +76,10 @@ function formatBytes(n: number) {
 function withAttachmentDefaults(data: IssueDetail): IssueDetail {
   return {
     ...data,
-    attachments: data.attachments ?? [],
+    attachments: (data.attachments ?? []).map((a) => ({
+      ...a,
+      uploadNote: a.uploadNote ?? "",
+    })),
   };
 }
 
@@ -114,6 +118,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [postingThread, setPostingThread] = useState(false);
   const [uploadingIssueFiles, setUploadingIssueFiles] = useState(false);
   const [issueUploadProgress, setIssueUploadProgress] = useState<number | null>(null);
+  const [issueUploadNote, setIssueUploadNote] = useState("");
+  const [threadUploadNote, setThreadUploadNote] = useState("");
   const [threadUploadProgress, setThreadUploadProgress] = useState<number | null>(null);
   const issueFileInputRef = useRef<HTMLInputElement>(null);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -141,7 +147,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         setThreadEntries(
           data.entries.map((e) => ({
             ...e,
-            attachments: e.attachments ?? [],
+            attachments: (e.attachments ?? []).map((a) => ({
+              ...a,
+              uploadNote: a.uploadNote ?? "",
+            })),
           })),
         );
         setThreadPage(data.page);
@@ -152,6 +161,13 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     },
     [issueId],
   );
+
+  useEffect(() => {
+    if (threadFiles.length === 0) {
+      setThreadUploadNote("");
+      if (threadFileInputRef.current) threadFileInputRef.current.value = "";
+    }
+  }, [threadFiles.length]);
 
   const syncDraftFromIssue = useCallback((data: IssueDetail) => {
     setTitle(data.title);
@@ -229,7 +245,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             setThreadEntries(
               td.entries.map((e) => ({
                 ...e,
-                attachments: e.attachments ?? [],
+                attachments: (e.attachments ?? []).map((a) => ({
+                  ...a,
+                  uploadNote: a.uploadNote ?? "",
+                })),
               })),
             );
             setThreadPage(td.page);
@@ -289,6 +308,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const uploadIssueAttachments = async (fileList: FileList | File[]) => {
     const files = Array.from(fileList);
     if (files.length === 0) return;
+    const note = issueUploadNote.trim();
+    if (!note) {
+      alert(t("common.attachmentUploadNoteRequiredAlert"));
+      if (issueFileInputRef.current) issueFileInputRef.current.value = "";
+      return;
+    }
     setUploadingIssueFiles(true);
     setIssueUploadProgress(0);
     try {
@@ -296,6 +321,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         files,
         tokenExtras: { scope: "issue", issueId },
         completeUrl: `/api/issues/${encodeURIComponent(issueId)}/attachments/complete`,
+        uploadNote: note,
         onProgress: (p) => setIssueUploadProgress(p === null ? -1 : p),
       });
       if (issueFileInputRef.current) issueFileInputRef.current.value = "";
@@ -303,6 +329,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         alert(up.error ?? t("issueDetail.couldNotUpload"));
         return;
       }
+      setIssueUploadNote("");
       await refreshIssue();
     } finally {
       setUploadingIssueFiles(false);
@@ -353,6 +380,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const postThread = async () => {
     const content = threadInput.trim();
     if (!content && threadFiles.length === 0) return;
+    if (threadFiles.length > 0 && !threadUploadNote.trim()) {
+      alert(t("common.attachmentUploadNoteRequiredAlert"));
+      return;
+    }
     setPostingThread(true);
     try {
       if (threadFiles.length > 0) {
@@ -374,6 +405,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             files: threadFiles,
             tokenExtras: { scope: "thread", issueId, threadEntryId: entry.id },
             completeUrl: `/api/issues/${encodeURIComponent(issueId)}/thread/${encodeURIComponent(entry.id)}/attachments/complete`,
+            uploadNote: threadUploadNote.trim(),
             onProgress: (p) => setThreadUploadProgress(p === null ? -1 : p),
           });
           if (!up.ok) {
@@ -398,6 +430,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       }
       setThreadInput("");
       setThreadFiles([]);
+      setThreadUploadNote("");
       if (threadFileInputRef.current) threadFileInputRef.current.value = "";
       await loadThreadPage("last");
     } finally {
@@ -406,17 +439,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   };
 
   const removeThreadFile = (index: number) => {
-    setThreadFiles((prev) => {
-      const next = prev.filter((_, i) => i !== index);
-      if (next.length === 0 && threadFileInputRef.current) {
-        threadFileInputRef.current.value = "";
-      }
-      return next;
-    });
+    setThreadFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
   const clearThreadFiles = () => {
     setThreadFiles([]);
+    setThreadUploadNote("");
     if (threadFileInputRef.current) threadFileInputRef.current.value = "";
   };
 
@@ -635,6 +663,16 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.attachmentsHelp")}</p>
+        <label className="mt-3 block max-w-xl text-sm">
+          <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+          <textarea
+            className="input mt-1 min-h-[64px] w-full"
+            value={issueUploadNote}
+            onChange={(e) => setIssueUploadNote(e.target.value)}
+            placeholder={t("common.attachmentUploadNotePlaceholder")}
+            disabled={uploadingIssueFiles}
+          />
+        </label>
         <div className="mt-3 flex flex-wrap items-start gap-3">
           <div className="input-file-zone max-w-xl flex-1 min-w-[min(100%,18rem)]">
             <input
@@ -703,6 +741,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     {t("issueDetail.removeFile")}
                   </button>
                 </div>
+                {att.uploadNote.trim() ? (
+                  <p className="mt-2 whitespace-pre-wrap border-t border-zinc-200 pt-2 text-xs text-zinc-600">
+                    <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
+                    {att.uploadNote.trim()}
+                  </p>
+                ) : null}
               </div>
             ))
           )}
@@ -725,6 +769,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             onChange={(e) => setThreadInput(e.target.value)}
           />
 
+          {threadFiles.length > 0 ? (
+            <label className="mt-3 block text-sm">
+              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <textarea
+                className="input mt-1 min-h-[64px] w-full"
+                value={threadUploadNote}
+                onChange={(e) => setThreadUploadNote(e.target.value)}
+                placeholder={t("common.attachmentUploadNotePlaceholder")}
+                disabled={postingThread}
+              />
+            </label>
+          ) : null}
           {threadFiles.length > 0 ? (
             <ul className="mt-3 flex flex-wrap gap-2" aria-label={t("issueDetail.threadPendingUploads")}>
               {threadFiles.map((f, i) => (
@@ -854,6 +910,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                             {t("issueDetail.removeFile")}
                           </button>
                         </div>
+                        {att.uploadNote.trim() ? (
+                          <p className="mt-2 whitespace-pre-wrap border-t border-zinc-100 pt-2 text-xs text-zinc-600">
+                            <span className="font-medium text-zinc-700">
+                              {t("common.attachmentNoteHeading")}:{" "}
+                            </span>
+                            {att.uploadNote.trim()}
+                          </p>
+                        ) : null}
                       </div>
                     ))}
                   </div>

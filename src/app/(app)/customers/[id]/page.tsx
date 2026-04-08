@@ -13,6 +13,7 @@ type CustomerAttachment = {
   fileName: string;
   fileUrl: string;
   fileSize: number;
+  uploadNote: string;
 };
 
 const apiFetch: RequestInit = { credentials: "include", cache: "no-store" };
@@ -34,6 +35,7 @@ export default function CustomerDetailPage() {
   const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
+  const [fileUploadNote, setFileUploadNote] = useState("");
   const load = useCallback(async (mode: "full" | "customerOnly" = "full") => {
     if (mode === "full") {
       setLoading(true);
@@ -56,7 +58,12 @@ export default function CustomerDetailPage() {
       _count?: { projects: number };
     };
     setName(data.name ?? "");
-    setAttachments(data.attachments ?? []);
+    setAttachments(
+      (data.attachments ?? []).map((a) => ({
+        ...a,
+        uploadNote: a.uploadNote ?? "",
+      })),
+    );
     setProjectCount(data._count?.projects ?? 0);
     if (mode === "full") setLoading(false);
   }, [customerId]);
@@ -68,8 +75,13 @@ export default function CustomerDetailPage() {
     void run();
   }, [load]);
 
-  const uploadAttachments = async (fileList: FileList | null) => {
-    if (!fileList?.length || !customerId) return;
+  const uploadAttachments = async (fileList: FileList | null): Promise<boolean> => {
+    if (!fileList?.length || !customerId) return false;
+    const note = fileUploadNote.trim();
+    if (!note) {
+      alert(t("common.attachmentUploadNoteRequiredAlert"));
+      return false;
+    }
     const files = Array.from(fileList);
     setUploading(true);
     setUploadProgress(0);
@@ -78,13 +90,16 @@ export default function CustomerDetailPage() {
         files,
         tokenExtras: { scope: "customer", customerId },
         completeUrl: `/api/customers/${customerId}/attachments/complete`,
+        uploadNote: note,
         onProgress: (p) => setUploadProgress(p === null ? -1 : p),
       });
       if (!up.ok) {
         alert(up.error ?? t("customerDetail.couldNotUpload"));
-        return;
+        return false;
       }
+      setFileUploadNote("");
       await load();
+      return true;
     } finally {
       setUploading(false);
       setUploadProgress(null);
@@ -155,15 +170,27 @@ export default function CustomerDetailPage() {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
         <h2 className="text-base font-semibold">{t("customerDetail.filesTitle")}</h2>
         <p className="text-sm text-zinc-600">{t("customerDetail.filesHelp")}</p>
-        <div className="input-file-zone max-w-xl">
+        <label className="block max-w-xl text-sm">
+          <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+          <textarea
+            className="input mt-1 min-h-[64px] w-full"
+            value={fileUploadNote}
+            onChange={(e) => setFileUploadNote(e.target.value)}
+            placeholder={t("common.attachmentUploadNotePlaceholder")}
+            disabled={uploading}
+          />
+        </label>
+        <div className="input-file-zone mt-3 max-w-xl">
           <input
             type="file"
             multiple
             disabled={uploading}
             className="input-file"
             onChange={(e) => {
-              void uploadAttachments(e.currentTarget.files);
-              e.currentTarget.value = "";
+              const el = e.currentTarget;
+              void uploadAttachments(el.files).then((ok) => {
+                if (ok) el.value = "";
+              });
             }}
           />
         </div>
@@ -181,25 +208,33 @@ export default function CustomerDetailPage() {
           ) : (
             <ul className="mt-2 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
               {attachments.map((a) => (
-                <li key={a.id} className="flex items-center justify-between gap-2 px-3 py-2 text-sm">
-                  <a
-                    href={attachmentBlobHref(a.fileUrl, { asDownload: true })}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="min-w-0 truncate text-blue-700 hover:underline"
-                  >
-                    {a.fileName}
-                  </a>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
-                    <button
-                      type="button"
-                      className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
-                      onClick={() => void deleteAttachment(a.id)}
+                <li key={a.id} className="px-3 py-2 text-sm">
+                  <div className="flex items-center justify-between gap-2">
+                    <a
+                      href={attachmentBlobHref(a.fileUrl, { asDownload: true })}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="min-w-0 truncate text-blue-700 hover:underline"
                     >
-                      {t("common.delete")}
-                    </button>
+                      {a.fileName}
+                    </a>
+                    <div className="flex shrink-0 items-center gap-2">
+                      <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
+                      <button
+                        type="button"
+                        className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                        onClick={() => void deleteAttachment(a.id)}
+                      >
+                        {t("common.delete")}
+                      </button>
+                    </div>
                   </div>
+                  {a.uploadNote.trim() ? (
+                    <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-600">
+                      <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
+                      {a.uploadNote.trim()}
+                    </p>
+                  ) : null}
                 </li>
               ))}
             </ul>

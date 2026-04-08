@@ -94,7 +94,13 @@ export type BlobTokenExtras =
 
 async function completeRegistration(
   completeUrl: string,
-  body: { fileName: string; pathname: string; fileUrl: string; fileSize: number },
+  body: {
+    fileName: string;
+    pathname: string;
+    fileUrl: string;
+    fileSize: number;
+    uploadNote: string;
+  },
 ): Promise<{ ok: boolean; error?: string }> {
   const res = await fetch(completeUrl, {
     method: "POST",
@@ -113,6 +119,7 @@ async function uploadOneFileViaRelay(
   file: File,
   tokenExtras: BlobTokenExtras,
   completeUrl: string,
+  uploadNote: string,
   totalBytesAllFiles: number,
   doneBytesBeforeFile: number,
   onProgress: (percent: number | null) => void,
@@ -191,6 +198,7 @@ async function uploadOneFileViaRelay(
     pathname,
     fileUrl: compJson.url,
     fileSize: file.size,
+    uploadNote,
   });
   if (!reg.ok) return { ok: false, error: reg.error ?? UPLOAD_FAILED_GENERIC };
   return { ok: true };
@@ -204,9 +212,11 @@ export async function uploadFilesViaBlobClient(options: {
   files: File[];
   tokenExtras: BlobTokenExtras;
   completeUrl: string;
+  /** Required: explains why the file(s) are being uploaded (stored per file). */
+  uploadNote: string;
   onProgress: (percent: number | null) => void;
 }): Promise<{ ok: boolean; error?: string }> {
-  const { files, tokenExtras, completeUrl } = options;
+  const { files, tokenExtras, completeUrl, uploadNote } = options;
   const ready = await assertClientBlobUploadsReady(files);
   if ("error" in ready) return { ok: false, error: ready.error };
 
@@ -218,6 +228,7 @@ export async function uploadFilesViaBlobClient(options: {
       file,
       tokenExtras,
       completeUrl,
+      uploadNote,
       totalBytes,
       doneBytes,
       options.onProgress,
