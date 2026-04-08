@@ -1,4 +1,8 @@
 import { del, put } from "@vercel/blob";
+import {
+  VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE,
+  vercelBlobRequiredMessage,
+} from "@/lib/issue-upload-limits";
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 import { promises as fs } from "node:fs";
 import path from "node:path";
@@ -32,10 +36,10 @@ export function vercelMultipartPayloadTooLargeResponse(
   if (process.env.VERCEL !== "1") return null;
   const filesSum = files.reduce((a, f) => a + f.size, 0);
   if (filesSum + extraUtf8Bytes <= VERCEL_SERVER_MULTIPART_BUDGET_BYTES) return null;
+  const mb = Math.max(1, Math.floor(VERCEL_SERVER_MULTIPART_BUDGET_BYTES / (1024 * 1024)));
   return NextResponse.json(
     {
-      error:
-        "Total size for this upload is too large for Vercel server-side uploads (about 4 MB per request, including all files). Send fewer or smaller files, or split into multiple uploads.",
+      error: `Total upload size exceeds about ${mb} MB for one request on Vercel (including all files in the same upload). Send fewer or smaller files per request. ${VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE}`,
     },
     { status: 413 },
   );
@@ -45,13 +49,7 @@ export function vercelMultipartPayloadTooLargeResponse(
 export function vercelUploadsNotReadyResponse(): NextResponse | null {
   if (process.env.VERCEL !== "1") return null;
   if (isBlobStorageEnabled()) return null;
-  return NextResponse.json(
-    {
-      error:
-        "File uploads require Vercel Blob. In the Vercel dashboard open Storage, create a Blob store, and connect it to this project so BLOB_READ_WRITE_TOKEN is set.",
-    },
-    { status: 503 },
-  );
+  return NextResponse.json({ error: vercelBlobRequiredMessage() }, { status: 503 });
 }
 
 function isHttpUrl(fileUrl: string): boolean {

@@ -5,6 +5,13 @@ export const ISSUE_UPLOAD_MAX_FILES_PER_POST = 20;
 
 const MB = 1024 * 1024;
 
+/** Steps to link Blob (shown with size-limit errors and when uploads are blocked). */
+export const VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS =
+  "In Vercel: Project → Storage → connect a Blob store so BLOB_READ_WRITE_TOKEN is set, then redeploy.";
+
+/** Shared copy when uploads hit the ~4 MB serverless request budget on Vercel. */
+export const VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE = `Files over about 4 MB must upload via Vercel Blob on this deployment. ${VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS}`;
+
 export function uploadMaxPerFileMb(): number {
   return Math.floor(ISSUE_UPLOAD_MAX_BYTES / MB);
 }
@@ -12,11 +19,7 @@ export function uploadMaxPerFileMb(): number {
 /** Multipart / request-body uploads: low cap on Vercel vs Blob browser uploads. */
 export function perFileExceedsMultipartRouteLimitMessage(limitBytes: number): string {
   const limMb = Math.max(1, Math.ceil(limitBytes / MB));
-  const maxMb = uploadMaxPerFileMb();
-  return (
-    `A file exceeds the ${limMb} MB per-file limit for uploads that go through the server in this environment. ` +
-    `Connect Vercel Blob (Storage → link store, set BLOB_READ_WRITE_TOKEN) so files upload directly to storage—up to ${maxMb} MB each—or use a smaller file.`
-  );
+  return `A file exceeds the about ${limMb} MB limit for a single request on this deployment. ${VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE} You can also use a smaller file or split the upload.`;
 }
 
 /** Client Blob + product cap (token + complete routes). */
@@ -48,7 +51,7 @@ export function maxIssueUploadBytesForRuntime(): number {
 }
 
 export function multipartTooLargeHint(): string {
-  return `Files over about ${Math.floor(VERCEL_SERVER_MULTIPART_BUDGET_BYTES / (1024 * 1024))} MB must upload via Vercel Blob on this deployment. In Vercel: Project → Storage → connect a Blob store so BLOB_READ_WRITE_TOKEN is set, then redeploy.`;
+  return VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE;
 }
 
 /** Production or Preview on Vercel (not `vercel dev`’s `development`). */
@@ -58,5 +61,5 @@ export function isHostedVercelProductionOrPreview(): boolean {
 }
 
 export function vercelBlobRequiredMessage(): string {
-  return "This deployment requires Vercel Blob for file uploads. In Vercel: Project → Storage → connect a Blob store, add BLOB_READ_WRITE_TOKEN for Production (and Preview if you use it), then redeploy.";
+  return `File uploads require Vercel Blob on this deployment. ${VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS}`;
 }
