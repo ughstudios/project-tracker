@@ -445,8 +445,11 @@ export default function ProjectDetailsPage() {
             <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
               {issues.map((issue) => (
                 <li key={issue.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                  <Link href={`/issues/${issue.id}`} className="text-blue-700 hover:underline">
-                    {issue.title}
+                  <Link href={`/issues/${issue.id}`} className="min-w-0 text-blue-700 hover:underline">
+                    <span className="block font-mono text-[11px] text-zinc-500 break-all">
+                      {issue.id}
+                    </span>
+                    <span className="block font-medium">{issue.title}</span>
                   </Link>
                   <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
                     {issue.status}

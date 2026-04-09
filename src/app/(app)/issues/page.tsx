@@ -125,6 +125,7 @@ export default function IssuesPage() {
       const matchText =
         !q ||
         [
+          i.id,
           i.title,
           i.symptom,
           i.project?.name ?? "",
@@ -415,6 +416,9 @@ export default function IssuesPage() {
                 >
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
                     <span className="font-medium text-zinc-900">{i.title}</span>
+                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                      {t("issues.ticketId")}: {i.id}
+                    </span>
                     <span className="block text-xs text-zinc-500 sm:text-sm">
                       {(() => {
                         const linkPart =

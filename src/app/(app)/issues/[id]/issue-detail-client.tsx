@@ -582,7 +582,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("issueDetail.editTitle")}</h1>
-        <div className="mt-1 space-y-1 text-sm text-zinc-600">
+        <p className="mt-1 text-xs text-zinc-600">
+          <span className="font-medium text-zinc-700">{t("issues.ticketId")}:</span>{" "}
+          <span className="font-mono text-[11px] text-zinc-800 break-all">{issue.id}</span>
+        </p>
+        <div className="mt-2 space-y-1 text-sm text-zinc-600">
           {p ? (
             <p>
               {t("issueDetail.projectColon")}{" "}

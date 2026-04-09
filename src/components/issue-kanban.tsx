@@ -33,6 +33,7 @@ export function IssueKanban() {
       const matchesText =
         !q ||
         [
+          issue.id,
           issue.title,
           issue.project?.name ?? "",
           issue.project?.product ?? "",
@@ -220,6 +221,9 @@ export function IssueKanban() {
                               }}
                             >
                               <p className="text-sm font-semibold text-zinc-800">{issue.title}</p>
+                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                                {t("issues.ticketId")}: {issue.id}
+                              </p>
                               <p className="mt-1 text-xs text-zinc-500">
                                 {[
                                   issue.project

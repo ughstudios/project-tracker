@@ -184,7 +184,9 @@ export default async function ArchivePage() {
           <ul className="mt-2 space-y-1 text-sm">
             {issues.map((i) => (
               <li key={i.id} className="flex items-center justify-between gap-2">
-                <span>
+                <span className="min-w-0 break-words">
+                  <span className="font-mono text-[11px] text-zinc-600">{i.id}</span>
+                  {" — "}
                   {i.title} ({i.status}) —{" "}
                   {[i.project?.name, i.customer?.name].filter(Boolean).join(" · ") ||
                     t("issues.unlinked")}
