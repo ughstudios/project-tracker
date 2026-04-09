@@ -511,10 +511,11 @@ const en: MessageTree = {
   },
   pending: {
     title: "Pending Registrations",
-    subtitle: "Approve users before they can sign in.",
+    subtitle: "Approve or reject registrations before users can sign in.",
     none: "No pending registrations.",
     requested: "Requested",
     approve: "Approve",
+    rejectDelete: "Reject & delete",
   },
   account: {
     title: "Account",
@@ -1069,10 +1070,11 @@ const zh: MessageTree = {
   },
   pending: {
     title: "待审核注册",
-    subtitle: "批准用户后方可登录。",
+    subtitle: "批准后用户可登录；驳回将删除待审核账户。",
     none: "暂无待审核注册。",
     requested: "申请时间",
     approve: "批准",
+    rejectDelete: "驳回并删除",
   },
   account: {
     title: "账户",
