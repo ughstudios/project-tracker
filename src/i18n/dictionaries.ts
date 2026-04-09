@@ -386,6 +386,8 @@ const en: MessageTree = {
     title: "Logs",
     subtitle: "Audit trail of edits, uploads, and updates with timestamps and actor.",
     none: "No logs yet.",
+    pageSummary: "Page {page} of {totalPages} · {total} entries",
+    couldNotLoad: "Could not load logs.",
   },
   reports: {
     title: "Reports",
@@ -944,6 +946,8 @@ const zh: MessageTree = {
     title: "日志",
     subtitle: "编辑、上传与更新的审计记录（含时间与操作人）。",
     none: "暂无日志。",
+    pageSummary: "第 {page} / {totalPages} 页 · 共 {total} 条",
+    couldNotLoad: "无法加载日志。",
   },
   reports: {
     title: "报表",
