@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentNoteInlineEditor } from "@/components/attachment-note-inline-editor";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
@@ -230,6 +231,25 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const saveProjectAttachmentNote = async (attachmentId: string, note: string): Promise<boolean> => {
+    const res = await fetch(`/api/projects/${projectId}/attachments/${attachmentId}`, {
+      ...apiFetch,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uploadNote: note }),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("common.attachmentNoteSaveFailed"));
+      return false;
+    }
+    const { attachment } = (await res.json()) as { attachment: ProjectAttachment };
+    setAttachments((prev) =>
+      prev.map((a) => (a.id === attachmentId ? { ...a, uploadNote: attachment.uploadNote } : a)),
+    );
+    return true;
+  };
+
   const deleteProjectAttachment = async (attachmentId: string) => {
     if (!confirm(t("projectDetail.confirmRemoveAttachment"))) return;
     const res = await fetch(`/api/projects/${projectId}/attachments/${attachmentId}`, {
@@ -404,12 +424,11 @@ export default function ProjectDetailsPage() {
                         </button>
                       </div>
                     </div>
-                    {a.uploadNote.trim() ? (
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-600">
-                        <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
-                        {a.uploadNote.trim()}
-                      </p>
-                    ) : null}
+                    <AttachmentNoteInlineEditor
+                      uploadNote={a.uploadNote}
+                      borderClassName="border-zinc-100"
+                      onSave={(note) => saveProjectAttachmentNote(a.id, note)}
+                    />
                   </li>
                 ))}
               </ul>

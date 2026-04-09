@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentNoteInlineEditor } from "@/components/attachment-note-inline-editor";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
@@ -104,6 +105,25 @@ export default function CustomerDetailPage() {
       setUploading(false);
       setUploadProgress(null);
     }
+  };
+
+  const saveCustomerAttachmentNote = async (attachmentId: string, note: string): Promise<boolean> => {
+    const res = await fetch(`/api/customers/${customerId}/attachments/${attachmentId}`, {
+      ...apiFetch,
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ uploadNote: note }),
+    });
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("common.attachmentNoteSaveFailed"));
+      return false;
+    }
+    const { attachment } = (await res.json()) as { attachment: CustomerAttachment };
+    setAttachments((prev) =>
+      prev.map((a) => (a.id === attachmentId ? { ...a, uploadNote: attachment.uploadNote } : a)),
+    );
+    return true;
   };
 
   const deleteAttachment = async (attachmentId: string) => {
@@ -229,12 +249,11 @@ export default function CustomerDetailPage() {
                       </button>
                     </div>
                   </div>
-                  {a.uploadNote.trim() ? (
-                    <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-600">
-                      <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
-                      {a.uploadNote.trim()}
-                    </p>
-                  ) : null}
+                  <AttachmentNoteInlineEditor
+                    uploadNote={a.uploadNote}
+                    borderClassName="border-zinc-100"
+                    onSave={(note) => saveCustomerAttachmentNote(a.id, note)}
+                  />
                 </li>
               ))}
             </ul>

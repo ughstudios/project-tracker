@@ -1,5 +1,6 @@
 "use client";
 
+import { AttachmentNoteInlineEditor } from "@/components/attachment-note-inline-editor";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
@@ -335,6 +336,72 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       setUploadingIssueFiles(false);
       setIssueUploadProgress(null);
     }
+  };
+
+  const saveIssueAttachmentNote = async (attachmentId: string, note: string): Promise<boolean> => {
+    const res = await fetch(
+      `/api/issues/${encodeURIComponent(issueId)}/attachments/${encodeURIComponent(attachmentId)}`,
+      {
+        ...fetchInit,
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadNote: note }),
+      },
+    );
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("common.attachmentNoteSaveFailed"));
+      return false;
+    }
+    const { attachment } = (await res.json()) as { attachment: IssueFileAttachment };
+    setIssue((prev) =>
+      prev
+        ? {
+            ...prev,
+            attachments: prev.attachments.map((a) =>
+              a.id === attachmentId ? { ...a, uploadNote: attachment.uploadNote } : a,
+            ),
+          }
+        : prev,
+    );
+    router.refresh();
+    return true;
+  };
+
+  const saveThreadAttachmentNote = async (
+    entryId: string,
+    attachmentId: string,
+    note: string,
+  ): Promise<boolean> => {
+    const res = await fetch(
+      `/api/issues/${encodeURIComponent(issueId)}/thread/${encodeURIComponent(entryId)}/attachments/${encodeURIComponent(attachmentId)}`,
+      {
+        ...fetchInit,
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uploadNote: note }),
+      },
+    );
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("common.attachmentNoteSaveFailed"));
+      return false;
+    }
+    const { attachment } = (await res.json()) as { attachment: IssueFileAttachment };
+    setThreadEntries((prev) =>
+      prev.map((e) =>
+        e.id === entryId
+          ? {
+              ...e,
+              attachments: e.attachments.map((a) =>
+                a.id === attachmentId ? { ...a, uploadNote: attachment.uploadNote } : a,
+              ),
+            }
+          : e,
+      ),
+    );
+    router.refresh();
+    return true;
   };
 
   const deleteIssueAttachment = async (attachmentId: string) => {
@@ -741,12 +808,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     {t("issueDetail.removeFile")}
                   </button>
                 </div>
-                {att.uploadNote.trim() ? (
-                  <p className="mt-2 whitespace-pre-wrap border-t border-zinc-200 pt-2 text-xs text-zinc-600">
-                    <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
-                    {att.uploadNote.trim()}
-                  </p>
-                ) : null}
+                <AttachmentNoteInlineEditor
+                  uploadNote={att.uploadNote}
+                  onSave={(note) => saveIssueAttachmentNote(att.id, note)}
+                />
               </div>
             ))
           )}
@@ -910,14 +975,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                             {t("issueDetail.removeFile")}
                           </button>
                         </div>
-                        {att.uploadNote.trim() ? (
-                          <p className="mt-2 whitespace-pre-wrap border-t border-zinc-100 pt-2 text-xs text-zinc-600">
-                            <span className="font-medium text-zinc-700">
-                              {t("common.attachmentNoteHeading")}:{" "}
-                            </span>
-                            {att.uploadNote.trim()}
-                          </p>
-                        ) : null}
+                        <AttachmentNoteInlineEditor
+                          uploadNote={att.uploadNote}
+                          borderClassName="border-zinc-100"
+                          onSave={(note) => saveThreadAttachmentNote(entry.id, att.id, note)}
+                        />
                       </div>
                     ))}
                   </div>

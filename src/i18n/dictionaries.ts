@@ -93,6 +93,11 @@ const en: MessageTree = {
     attachmentUploadNoteRequiredAlert:
       "Please enter a note explaining why you are uploading (required before files can be uploaded).",
     attachmentNoteHeading: "Upload note",
+    cancel: "Cancel",
+    editNote: "Edit note",
+    addNote: "Add note",
+    attachmentNoteEmpty: "No note yet.",
+    attachmentNoteSaveFailed: "Could not save note.",
   },
   logout: {
     logout: "Logout",
@@ -646,6 +651,11 @@ const zh: MessageTree = {
     attachmentUploadNotePlaceholder: "说明此文件的用途或为何上传（有权限查看该记录的用户均可见）。",
     attachmentUploadNoteRequiredAlert: "请先填写上传说明，再上传文件。",
     attachmentNoteHeading: "上传说明",
+    cancel: "取消",
+    editNote: "编辑说明",
+    addNote: "添加说明",
+    attachmentNoteEmpty: "暂无说明。",
+    attachmentNoteSaveFailed: "无法保存说明。",
   },
   logout: {
     logout: "退出登录",
