@@ -166,6 +166,10 @@ const en: MessageTree = {
     chartWorkRecordsByMonthHint: "Records with a work date in the last 12 months (UTC).",
     axisWorkRecords: "Records",
   },
+  kanban: {
+    title: "Kanban",
+    subtitle: "Drag cards between columns to update assignee and status, and use filters to narrow the board.",
+  },
   issues: {
     title: "Issues",
     subtitle: "Create an issue, then open it to edit details and use the thread for updates.",
