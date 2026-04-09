@@ -30,7 +30,7 @@ export async function GET(
       },
     });
 
-    if (!issue || issue.archivedAt) {
+    if (!issue) {
       return NextResponse.json({ error: "Issue not found." }, { status: 404 });
     }
 

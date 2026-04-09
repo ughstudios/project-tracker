@@ -8,12 +8,15 @@ type Props = {
   onSave: (note: string) => Promise<boolean>;
   /** e.g. border-zinc-200 vs border-zinc-100 for nested cards */
   borderClassName?: string;
+  /** When true, show note text only (no edit/save). */
+  readOnly?: boolean;
 };
 
 export function AttachmentNoteInlineEditor({
   uploadNote,
   onSave,
   borderClassName = "border-zinc-200",
+  readOnly = false,
 }: Props) {
   const { t } = useI18n();
   const [editing, setEditing] = useState(false);
@@ -88,13 +91,15 @@ export function AttachmentNoteInlineEditor({
           <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
           {uploadNote.trim() || t("common.attachmentNoteEmpty")}
         </p>
-        <button
-          type="button"
-          onClick={startEdit}
-          className="shrink-0 text-xs font-medium text-blue-700 underline"
-        >
-          {uploadNote.trim() ? t("common.editNote") : t("common.addNote")}
-        </button>
+        {readOnly ? null : (
+          <button
+            type="button"
+            onClick={startEdit}
+            className="shrink-0 text-xs font-medium text-blue-700 underline"
+          >
+            {uploadNote.trim() ? t("common.editNote") : t("common.addNote")}
+          </button>
+        )}
       </div>
     </div>
   );

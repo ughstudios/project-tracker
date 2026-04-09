@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { ArchiveIssuesSection } from "@/components/archive-issues-section";
 import { getServerTranslator } from "@/i18n/server";
 import { writeAuditLog } from "@/lib/audit";
 import { prisma } from "@/lib/prisma";
@@ -105,6 +106,10 @@ export default async function ArchivePage() {
         id: true,
         title: true,
         status: true,
+        symptom: true,
+        cause: true,
+        solution: true,
+        rndContact: true,
         archivedAt: true,
         project: { select: { name: true } },
         customer: { select: { name: true } },
@@ -177,37 +182,22 @@ export default async function ArchivePage() {
       </section>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-base font-semibold">{t("archive.issues")}</h2>
-        {issues.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">{t("archive.noIssues")}</p>
-        ) : (
-          <ul className="mt-2 space-y-1 text-sm">
-            {issues.map((i) => (
-              <li key={i.id} className="flex items-center justify-between gap-2">
-                <span className="min-w-0 break-words">
-                  <span className="font-mono text-[11px] text-zinc-600">{i.id}</span>
-                  {" — "}
-                  {i.title} ({i.status}) —{" "}
-                  {[i.project?.name, i.customer?.name].filter(Boolean).join(" · ") ||
-                    t("issues.unlinked")}
-                  {" — "}
-                  {i.archivedAt ? new Date(i.archivedAt).toLocaleString() : ""}
-                </span>
-                {staffAdmin ? (
-                  <form action={unarchiveIssue}>
-                    <input type="hidden" name="id" value={i.id} />
-                    <button
-                      type="submit"
-                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
-                    >
-                      {t("common.unarchive")}
-                    </button>
-                  </form>
-                ) : null}
-              </li>
-            ))}
-          </ul>
-        )}
+        <ArchiveIssuesSection
+          issues={issues.map((i) => ({
+            id: i.id,
+            title: i.title,
+            status: i.status,
+            symptom: i.symptom,
+            cause: i.cause,
+            solution: i.solution,
+            rndContact: i.rndContact,
+            archivedAt: i.archivedAt ? i.archivedAt.toISOString() : null,
+            project: i.project,
+            customer: i.customer,
+          }))}
+          staffAdmin={staffAdmin}
+          unarchiveAction={unarchiveIssue}
+        />
       </section>
     </div>
   );

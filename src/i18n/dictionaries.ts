@@ -239,6 +239,12 @@ const en: MessageTree = {
     threadPageSummary: "Page {page} of {totalPages} · {total} replies",
     couldNotUpload: "Could not upload file(s).",
     confirmRemoveAttachment: "Remove this attachment?",
+    backToArchive: "Back to archive",
+    archivedReadOnlyBanner:
+      "This issue is archived. You can review it here, but editing, uploads, replies, and deletions are disabled.",
+    archivedAtLabel: "Archived {at}",
+    viewArchivedTitle: "Archived issue",
+    threadHelpArchived: "Below are historical replies. You cannot add new messages to archived issues.",
   },
   issueStatus: {
     OPEN: "OPEN",
@@ -510,6 +516,9 @@ const en: MessageTree = {
     noCustomers: "No archived customers.",
     noProjects: "No archived projects.",
     noIssues: "No archived issues.",
+    issuesSearchHelp: "Search includes title, ticket ID, status, symptom, cause, solution, R&D contact, and linked names. Open an issue to read the full record (read-only).",
+    issuesSearchPlaceholder: "Search archived issues…",
+    noIssuesMatchSearch: "No archived issues match your search.",
   },
   pending: {
     title: "Pending Registrations",
@@ -803,6 +812,12 @@ const zh: MessageTree = {
     threadPageSummary: "第 {page} / {totalPages} 页 · 共 {total} 条回复",
     couldNotUpload: "上传失败。",
     confirmRemoveAttachment: "确定删除此附件？",
+    backToArchive: "返回归档",
+    archivedReadOnlyBanner:
+      "此问题已归档。可在此查阅完整内容，但不可编辑、上传、回复或删除。",
+    archivedAtLabel: "归档时间：{at}",
+    viewArchivedTitle: "已归档问题",
+    threadHelpArchived: "以下为历史回复。已归档问题不可发表新留言。",
   },
   issueStatus: {
     OPEN: "待处理",
@@ -1070,6 +1085,10 @@ const zh: MessageTree = {
     noCustomers: "暂无已归档客户。",
     noProjects: "暂无已归档项目。",
     noIssues: "暂无已归档问题。",
+    issuesSearchHelp:
+      "可搜索标题、工单号、状态、现象、原因、对策、研发联系人及关联项目/客户名称。点击标题打开完整记录（只读）。",
+    issuesSearchPlaceholder: "搜索已归档问题…",
+    noIssuesMatchSearch: "没有符合条件的已归档问题。",
   },
   pending: {
     title: "待审核注册",

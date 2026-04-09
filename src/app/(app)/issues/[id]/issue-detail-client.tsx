@@ -48,6 +48,7 @@ type IssueDetail = {
   solution: string;
   rndContact: string;
   createdAt: string;
+  archivedAt: string | null;
   projectId: string | null;
   customerId: string | null;
   project: ProjectSummary | null;
@@ -77,6 +78,7 @@ function formatBytes(n: number) {
 function withAttachmentDefaults(data: IssueDetail): IssueDetail {
   return {
     ...data,
+    archivedAt: data.archivedAt ?? null,
     attachments: (data.attachments ?? []).map((a) => ({
       ...a,
       uploadNote: a.uploadNote ?? "",
@@ -278,6 +280,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
   const save = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (issue?.archivedAt) return;
     if (!title.trim() || !symptom.trim()) return;
     setSaving(true);
     const res = await fetch(`/api/issues/${encodeURIComponent(issueId)}`, {
@@ -561,14 +564,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const p = issue.project;
   const c = issue.customer;
   const threadTotalPages = Math.max(1, Math.ceil(threadTotal / THREAD_PAGE_SIZE));
+  const readOnly = Boolean(issue.archivedAt);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <Link href="/issues" className="text-sm font-medium text-zinc-700 underline underline-offset-2">
-          ← {t("nav.issues")}
+        <Link
+          href={readOnly ? "/archive" : "/issues"}
+          className="text-sm font-medium text-zinc-700 underline underline-offset-2"
+        >
+          ← {readOnly ? t("issueDetail.backToArchive") : t("nav.issues")}
         </Link>
-        {isAdmin ? (
+        {isAdmin && !readOnly ? (
           <button
             type="button"
             onClick={() => void archive()}
@@ -580,8 +587,26 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         ) : null}
       </div>
 
+      {readOnly ? (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm"
+          role="status"
+        >
+          <p>{t("issueDetail.archivedReadOnlyBanner")}</p>
+          {issue.archivedAt ? (
+            <p className="mt-1 text-xs text-amber-900/90">
+              {t("issueDetail.archivedAtLabel", {
+                at: new Date(issue.archivedAt).toLocaleString(),
+              })}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h1 className="text-xl font-semibold">{t("issueDetail.editTitle")}</h1>
+        <h1 className="text-xl font-semibold">
+          {readOnly ? t("issueDetail.viewArchivedTitle") : t("issueDetail.editTitle")}
+        </h1>
         <p className="mt-1 text-xs text-zinc-600">
           <span className="font-medium text-zinc-700">{t("issues.ticketId")}:</span>{" "}
           <span className="font-mono text-[11px] text-zinc-800 break-all">{issue.id}</span>
@@ -628,6 +653,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               required
+              disabled={readOnly}
             />
           </label>
           <p className="text-xs text-zinc-500 md:col-span-2">{t("issues.linkHint")}</p>
@@ -637,6 +663,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 w-full"
               value={projectId}
               onChange={(e) => setProjectId(e.target.value)}
+              disabled={readOnly}
             >
               <option value="">{t("issues.noProject")}</option>
               {projects.map((proj) => (
@@ -652,6 +679,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 w-full"
               value={customerId}
               onChange={(e) => setCustomerId(e.target.value)}
+              disabled={readOnly}
             >
               <option value="">{t("issues.noCustomer")}</option>
               {customers.map((cust) => (
@@ -667,6 +695,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 w-full"
               value={status}
               onChange={(e) => setStatus(e.target.value)}
+              disabled={readOnly}
             >
               <option value="OPEN">{t("issueStatus.OPEN")}</option>
               <option value="IN_PROGRESS">{t("issueStatus.IN_PROGRESS")}</option>
@@ -679,6 +708,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 w-full"
               value={assigneeId}
               onChange={(e) => setAssigneeId(e.target.value)}
+              disabled={readOnly}
             >
               <option value="">{t("common.unassigned")}</option>
               {users.map((u) => (
@@ -695,6 +725,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               value={symptom}
               onChange={(e) => setSymptom(e.target.value)}
               required
+              disabled={readOnly}
             />
           </label>
           <label className="block text-sm">
@@ -703,6 +734,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 min-h-[64px] w-full"
               value={cause}
               onChange={(e) => setCause(e.target.value)}
+              disabled={readOnly}
             />
           </label>
           <label className="block text-sm">
@@ -711,6 +743,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 min-h-[64px] w-full"
               value={solution}
               onChange={(e) => setSolution(e.target.value)}
+              disabled={readOnly}
             />
           </label>
           <label className="block text-sm md:col-span-2">
@@ -719,51 +752,58 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               className="input mt-1 w-full"
               value={rndContact}
               onChange={(e) => setRndContact(e.target.value)}
+              disabled={readOnly}
             />
           </label>
         </div>
-        <button
-          type="submit"
-          disabled={saving}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
-        >
-          {saving ? t("common.saving") : t("issueDetail.saveChanges")}
-        </button>
+        {readOnly ? null : (
+          <button
+            type="submit"
+            disabled={saving}
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+          >
+            {saving ? t("common.saving") : t("issueDetail.saveChanges")}
+          </button>
+        )}
       </form>
 
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.attachmentsHelp")}</p>
-        <label className="mt-3 block max-w-xl text-sm">
-          <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
-          <textarea
-            className="input mt-1 min-h-[64px] w-full"
-            value={issueUploadNote}
-            onChange={(e) => setIssueUploadNote(e.target.value)}
-            placeholder={t("common.attachmentUploadNotePlaceholder")}
-            disabled={uploadingIssueFiles}
-          />
-        </label>
-        <div className="mt-3 flex flex-wrap items-start gap-3">
-          <div className="input-file-zone max-w-xl flex-1 min-w-[min(100%,18rem)]">
-            <input
-              ref={issueFileInputRef}
-              type="file"
-              multiple
-              disabled={uploadingIssueFiles}
-              className="input-file"
-              onChange={(e) => {
-                const list = e.target.files;
-                if (list?.length) void uploadIssueAttachments(list);
-              }}
+        {readOnly ? null : (
+          <>
+            <label className="mt-3 block max-w-xl text-sm">
+              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <textarea
+                className="input mt-1 min-h-[64px] w-full"
+                value={issueUploadNote}
+                onChange={(e) => setIssueUploadNote(e.target.value)}
+                placeholder={t("common.attachmentUploadNotePlaceholder")}
+                disabled={uploadingIssueFiles}
+              />
+            </label>
+            <div className="mt-3 flex flex-wrap items-start gap-3">
+              <div className="input-file-zone max-w-xl flex-1 min-w-[min(100%,18rem)]">
+                <input
+                  ref={issueFileInputRef}
+                  type="file"
+                  multiple
+                  disabled={uploadingIssueFiles}
+                  className="input-file"
+                  onChange={(e) => {
+                    const list = e.target.files;
+                    if (list?.length) void uploadIssueAttachments(list);
+                  }}
+                />
+              </div>
+            </div>
+            <UploadProgressBar
+              value={issueUploadProgress}
+              label={t("issueDetail.uploadingFiles")}
+              className="mt-3 max-w-xl"
             />
-          </div>
-        </div>
-        <UploadProgressBar
-          value={issueUploadProgress}
-          label={t("issueDetail.uploadingFiles")}
-          className="mt-3 max-w-xl"
-        />
+          </>
+        )}
         <div className="mt-4 space-y-3">
           {issue.attachments.length === 0 ? (
             <p className="text-sm text-zinc-500">{t("issueDetail.noAttachments")}</p>
@@ -804,16 +844,19 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     {att.fileName}
                   </a>
                   <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
-                  <button
-                    type="button"
-                    onClick={() => void deleteIssueAttachment(att.id)}
-                    className="text-xs font-medium text-red-700 underline"
-                  >
-                    {t("issueDetail.removeFile")}
-                  </button>
+                  {readOnly ? null : (
+                    <button
+                      type="button"
+                      onClick={() => void deleteIssueAttachment(att.id)}
+                      className="text-xs font-medium text-red-700 underline"
+                    >
+                      {t("issueDetail.removeFile")}
+                    </button>
+                  )}
                 </div>
                 <AttachmentNoteInlineEditor
                   uploadNote={att.uploadNote}
+                  readOnly={readOnly}
                   onSave={(note) => saveIssueAttachmentNote(att.id, note)}
                 />
               </div>
@@ -825,10 +868,15 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
         <div className="flex flex-col gap-1">
           <h2 className="text-base font-semibold text-zinc-900">{t("issueDetail.thread")}</h2>
-          <p className="text-sm text-zinc-600">{t("issueDetail.threadHelp")}</p>
-          <p className="text-sm text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
+          <p className="text-sm text-zinc-600">
+            {readOnly ? t("issueDetail.threadHelpArchived") : t("issueDetail.threadHelp")}
+          </p>
+          {readOnly ? null : (
+            <p className="text-sm text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
+          )}
         </div>
 
+        {readOnly ? null : (
         <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 shadow-inner">
           <textarea
             className="input min-h-[140px] w-full resize-y text-[15px] leading-relaxed"
@@ -918,8 +966,9 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             className="mt-3"
           />
         </div>
+        )}
         <div
-          className={`mt-6 space-y-3 border-t border-zinc-100 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
+          className={`${readOnly ? "mt-5" : "mt-6"} space-y-3 border-t border-zinc-100 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
         >
           {threadListLoading && threadEntries.length === 0 ? (
             <p className="text-sm text-zinc-600">{t("common.loading")}</p>
@@ -971,17 +1020,20 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                             {att.fileName}
                           </a>
                           <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
-                          <button
-                            type="button"
-                            onClick={() => void deleteThreadAttachment(entry.id, att.id)}
-                            className="text-xs font-medium text-red-700 underline"
-                          >
-                            {t("issueDetail.removeFile")}
-                          </button>
+                          {readOnly ? null : (
+                            <button
+                              type="button"
+                              onClick={() => void deleteThreadAttachment(entry.id, att.id)}
+                              className="text-xs font-medium text-red-700 underline"
+                            >
+                              {t("issueDetail.removeFile")}
+                            </button>
+                          )}
                         </div>
                         <AttachmentNoteInlineEditor
                           uploadNote={att.uploadNote}
                           borderClassName="border-zinc-100"
+                          readOnly={readOnly}
                           onSave={(note) => saveThreadAttachmentNote(entry.id, att.id, note)}
                         />
                       </div>
