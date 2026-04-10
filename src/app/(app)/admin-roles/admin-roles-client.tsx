@@ -96,11 +96,11 @@ export function AdminRolesClient() {
   const peerSuperLocked = (u: RowUser) =>
     u.role === ROLE_SUPER_ADMIN && u.id !== meId;
 
-   return (
+  return (
     <div className="space-y-4">
       <dialog
         ref={passwordDialogRef}
-        className="w-[min(100%,28rem)] rounded-xl border border-zinc-200 bg-white p-6 shadow-xl backdrop:bg-zinc-950/40"
+        className="fixed left-1/2 top-1/2 z-[200] max-h-[90dvh] w-[min(calc(100vw-2rem),28rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl backdrop:bg-zinc-950/40"
         onClose={() => {
           setPasswordUser(null);
           setPwdNew("");
