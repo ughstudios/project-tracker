@@ -3,17 +3,22 @@
 import { useI18n } from "@/i18n/context";
 import { ROLE_ADMIN, ROLE_EMPLOYEE, ROLE_SUPER_ADMIN } from "@/lib/roles";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 type RowUser = { id: string; name: string; email: string; role: string };
 
 export function AdminRolesClient() {
   const { t } = useI18n();
   const router = useRouter();
+  const passwordDialogRef = useRef<HTMLDialogElement>(null);
   const [users, setUsers] = useState<RowUser[]>([]);
   const [meId, setMeId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
+  const [passwordUser, setPasswordUser] = useState<RowUser | null>(null);
+  const [pwdNew, setPwdNew] = useState("");
+  const [pwdConfirm, setPwdConfirm] = useState("");
+  const [passwordSaving, setPasswordSaving] = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -48,11 +53,112 @@ export function AdminRolesClient() {
     router.refresh();
   };
 
+  const openPasswordDialog = (u: RowUser) => {
+    setPasswordUser(u);
+    setPwdNew("");
+    setPwdConfirm("");
+    passwordDialogRef.current?.showModal();
+  };
+
+  const closePasswordDialog = () => {
+    passwordDialogRef.current?.close();
+  };
+
+  const submitPasswordReset = async () => {
+    if (!passwordUser) return;
+    if (pwdNew.length < 8) {
+      alert(t("errors.account.newPasswordShort"));
+      return;
+    }
+    if (pwdNew !== pwdConfirm) {
+      alert(t("errors.account.passwordsMismatch"));
+      return;
+    }
+    setPasswordSaving(true);
+    const res = await fetch(`/api/users/${passwordUser.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        newPassword: pwdNew,
+        confirmPassword: pwdConfirm,
+      }),
+    });
+    setPasswordSaving(false);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("adminRoles.couldNotUpdatePassword"));
+      return;
+    }
+    closePasswordDialog();
+    router.refresh();
+  };
+
   const peerSuperLocked = (u: RowUser) =>
     u.role === ROLE_SUPER_ADMIN && u.id !== meId;
 
-  return (
+   return (
     <div className="space-y-4">
+      <dialog
+        ref={passwordDialogRef}
+        className="w-[min(100%,28rem)] rounded-xl border border-zinc-200 bg-white p-6 shadow-xl backdrop:bg-zinc-950/40"
+        onClose={() => {
+          setPasswordUser(null);
+          setPwdNew("");
+          setPwdConfirm("");
+        }}
+      >
+        {passwordUser ? (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-zinc-900">
+              {t("adminRoles.passwordDialogTitle", { name: passwordUser.name })}
+            </h2>
+            <p className="text-sm text-zinc-600">{t("adminRoles.passwordDialogHelp")}</p>
+            <div className="space-y-2">
+              <label className="block text-sm font-medium text-zinc-800">
+                {t("adminRoles.newPassword")}
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  className="input mt-1 w-full"
+                  value={pwdNew}
+                  onChange={(e) => setPwdNew(e.target.value)}
+                  disabled={passwordSaving}
+                />
+              </label>
+              <label className="block text-sm font-medium text-zinc-800">
+                {t("adminRoles.confirmPassword")}
+                <input
+                  type="password"
+                  autoComplete="new-password"
+                  className="input mt-1 w-full"
+                  value={pwdConfirm}
+                  onChange={(e) => setPwdConfirm(e.target.value)}
+                  disabled={passwordSaving}
+                />
+              </label>
+            </div>
+            <div className="flex flex-wrap justify-end gap-2 pt-2">
+              <button
+                type="button"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                disabled={passwordSaving}
+                onClick={() => closePasswordDialog()}
+              >
+                {t("common.cancel")}
+              </button>
+              <button
+                type="button"
+                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                disabled={passwordSaving}
+                onClick={() => void submitPasswordReset()}
+              >
+                {passwordSaving ? t("common.saving") : t("adminRoles.updatePassword")}
+              </button>
+            </div>
+          </div>
+        ) : null}
+      </dialog>
+
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("adminRoles.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600">{t("adminRoles.subtitle")}</p>
@@ -65,12 +171,13 @@ export function AdminRolesClient() {
           <p className="text-sm text-zinc-600">{t("adminRoles.none")}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full min-w-[640px] border-collapse text-sm">
+            <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead>
                 <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
                   <th className="border border-zinc-200 px-2 py-2">{t("common.name")}</th>
                   <th className="border border-zinc-200 px-2 py-2">{t("common.email")}</th>
                   <th className="border border-zinc-200 px-2 py-2">{t("adminRoles.roleColumn")}</th>
+                  <th className="border border-zinc-200 px-2 py-2">{t("adminRoles.passwordColumn")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -100,6 +207,16 @@ export function AdminRolesClient() {
                           <option value={ROLE_SUPER_ADMIN}>{t("adminRoles.roleSuperAdmin")}</option>
                         </select>
                       )}
+                    </td>
+                    <td className="border border-zinc-200 px-2 py-2">
+                      <button
+                        type="button"
+                        className="text-sm font-medium text-zinc-900 underline decoration-zinc-400 underline-offset-2 hover:text-zinc-700 disabled:opacity-50"
+                        disabled={passwordSaving}
+                        onClick={() => openPasswordDialog(u)}
+                      >
+                        {t("adminRoles.setPassword")}
+                      </button>
                     </td>
                   </tr>
                 ))}
