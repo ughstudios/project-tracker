@@ -383,6 +383,9 @@ const en: MessageTree = {
     saved: "Saved.",
     couldNotSave: "Could not save settings.",
     couldNotLoad: "Could not load settings.",
+    migrationTitle: "Database setup required",
+    migrationBody:
+      "The AppSettings table is missing (migrations not applied on this environment).\n\nOn your host (or locally), run:\n  npx prisma migrate deploy\n\nThen redeploy or restart the app. Until then, toggles are shown but cannot be saved.",
     tabLabels: {
       dashboard: "Dashboard",
       kanban: "Kanban",
@@ -990,6 +993,9 @@ const zh: MessageTree = {
     saved: "已保存。",
     couldNotSave: "无法保存设置。",
     couldNotLoad: "无法加载设置。",
+    migrationTitle: "需要完成数据库迁移",
+    migrationBody:
+      "缺少 AppSettings 表（当前环境未执行迁移）。\n\n在服务器或本地执行：\n  npx prisma migrate deploy\n\n然后重新部署或重启应用。完成前界面可打开，但无法保存更改。",
     tabLabels: {
       dashboard: "工作台",
       kanban: "看板",

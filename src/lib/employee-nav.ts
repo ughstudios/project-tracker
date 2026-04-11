@@ -94,14 +94,30 @@ export function mergeEmployeeNavAccess(
   return out;
 }
 
-export async function getEmployeeNavAccessRow() {
-  let row = await prisma.appSettings.findUnique({ where: { id: SETTINGS_ID } });
-  if (!row) {
-    row = await prisma.appSettings.create({
-      data: { id: SETTINGS_ID, employeeNavAccess: {} },
-    });
+export type EmployeeNavAccessRowResult =
+  | { ok: true; id: string; employeeNavAccess: unknown }
+  | { ok: false; id: string; employeeNavAccess: unknown };
+
+/**
+ * Loads or creates the singleton AppSettings row. If the table is missing (migration not applied),
+ * returns ok: false and empty JSON so the admin UI can still render.
+ */
+export async function getEmployeeNavAccessRow(): Promise<EmployeeNavAccessRowResult> {
+  try {
+    let row = await prisma.appSettings.findUnique({ where: { id: SETTINGS_ID } });
+    if (!row) {
+      row = await prisma.appSettings.create({
+        data: { id: SETTINGS_ID, employeeNavAccess: {} },
+      });
+    }
+    return { ok: true, id: row.id, employeeNavAccess: row.employeeNavAccess };
+  } catch (err) {
+    console.error(
+      "[employee-nav] AppSettings table missing or unreadable. Run: npx prisma migrate deploy",
+      err,
+    );
+    return { ok: false, id: SETTINGS_ID, employeeNavAccess: {} };
   }
-  return row;
 }
 
 export async function getEmployeeNavAccessMap(): Promise<Record<EmployeeNavTabId, boolean>> {

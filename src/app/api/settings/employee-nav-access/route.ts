@@ -27,6 +27,7 @@ export async function GET() {
   const partial = parseEmployeeNavAccessJson(row.employeeNavAccess);
   return NextResponse.json({
     employeeNavAccess: mergeEmployeeNavAccess(partial),
+    settingsDbOk: row.ok,
   });
 }
 
@@ -58,16 +59,36 @@ export async function PATCH(request: Request) {
   }
 
   const row = await getEmployeeNavAccessRow();
+  if (!row.ok) {
+    return NextResponse.json(
+      {
+        error:
+          "App settings database table is missing. On the server, run: npx prisma migrate deploy",
+      },
+      { status: 503 },
+    );
+  }
   const prevPartial = parseEmployeeNavAccessJson(row.employeeNavAccess);
   const nextPartial: Partial<Record<EmployeeNavTabId, boolean>> = { ...prevPartial };
   for (const id of EMPLOYEE_NAV_TAB_IDS) {
     if (id in stored) nextPartial[id] = stored[id];
   }
 
-  await prisma.appSettings.update({
-    where: { id: row.id },
-    data: { employeeNavAccess: nextPartial as object },
-  });
+  try {
+    await prisma.appSettings.update({
+      where: { id: row.id },
+      data: { employeeNavAccess: nextPartial as object },
+    });
+  } catch (err) {
+    console.error("[employee-nav] Failed to update AppSettings.", err);
+    return NextResponse.json(
+      {
+        error:
+          "Could not save settings. Ensure migrations are applied (npx prisma migrate deploy).",
+      },
+      { status: 503 },
+    );
+  }
 
   const merged = mergeEmployeeNavAccess(nextPartial);
   const disabled = EMPLOYEE_NAV_TAB_IDS.filter((id) => merged[id] === false);

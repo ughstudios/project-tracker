@@ -17,5 +17,5 @@ export default async function EmployeeNavAccessPage() {
   const partial = parseEmployeeNavAccessJson(row.employeeNavAccess);
   const merged = mergeEmployeeNavAccess(partial);
 
-  return <EmployeeNavAccessClient initialAccess={merged} />;
+  return <EmployeeNavAccessClient initialAccess={merged} settingsDbOk={row.ok} />;
 }
