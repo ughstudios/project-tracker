@@ -829,6 +829,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                   <video
                     src={attachmentBlobHref(att.fileUrl)}
                     controls
+                    playsInline
                     className="max-h-56 w-full max-w-lg rounded"
                     preload="metadata"
                   />
@@ -1005,6 +1006,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                           <video
                             src={attachmentBlobHref(att.fileUrl)}
                             controls
+                            playsInline
                             className="max-h-48 w-full max-w-md rounded"
                             preload="metadata"
                           />
