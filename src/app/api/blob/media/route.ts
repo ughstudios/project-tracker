@@ -4,7 +4,7 @@ import { getBlobReadWriteToken, isLikelyVercelBlobUrl } from "@/lib/file-storage
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { parseWorkRecordBlobPathFromUrl } from "@/lib/work-record-blob-path";
-import { get } from "@vercel/blob";
+import { BlobError, get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
@@ -44,6 +44,8 @@ function contentDispositionHeader(fileName: string, asAttachment: boolean): stri
 /**
  * Streams a Vercel Blob object to logged-in users when the store is private.
  * Query: `?url=` = stored attachment URL. Optional `download=1` uses attachment disposition (Save / download name).
+ *
+ * Forwards `Range` / `If-Range` so `<video>` can seek and read MP4 metadata (many files need ranged reads).
  */
 export async function GET(request: Request): Promise<Response> {
   const session = await auth();
@@ -89,19 +91,58 @@ export async function GET(request: Request): Promise<Response> {
     return NextResponse.json({ error: "Blob storage is not configured." }, { status: 503 });
   }
 
-  const blob = await get(blobUrl, { access: "private", token });
+  const range = request.headers.get("Range");
+  const ifRange = request.headers.get("If-Range");
+  const forwardHeaders: Record<string, string> = {};
+  if (range) forwardHeaders.Range = range;
+  if (ifRange) forwardHeaders["If-Range"] = ifRange;
+
+  let blob;
+  try {
+    blob = await get(blobUrl, {
+      access: "private",
+      token,
+      ...(Object.keys(forwardHeaders).length > 0 ? { headers: forwardHeaders } : {}),
+    });
+  } catch (e) {
+    if (e instanceof BlobError && /\b416\b/.test(String((e as Error).message))) {
+      return new Response(null, { status: 416 });
+    }
+    console.error("blob media proxy:", e);
+    return NextResponse.json({ error: "Failed to load blob." }, { status: 502 });
+  }
+
   if (!blob || blob.statusCode !== 200 || !blob.stream) {
     return NextResponse.json({ error: "Not found." }, { status: 404 });
   }
 
   const asAttachment = reqUrl.searchParams.get("download") === "1";
+  const upstream = blob.headers;
+  const contentRange = upstream.get("content-range");
+  const status = contentRange ? 206 : 200;
 
-  return new Response(blob.stream, {
-    status: 200,
-    headers: {
-      "Content-Type": blob.blob.contentType || "application/octet-stream",
-      "Content-Disposition": contentDispositionHeader(fileName, asAttachment),
-      "Cache-Control": "private, no-store",
-    },
-  });
+  const headers = new Headers();
+  headers.set("Content-Type", blob.blob.contentType || "application/octet-stream");
+  headers.set("Content-Disposition", contentDispositionHeader(fileName, asAttachment));
+  headers.set("Cache-Control", "private, no-store");
+
+  const contentLength = upstream.get("content-length");
+  if (contentLength) {
+    headers.set("Content-Length", contentLength);
+  } else if (status === 200 && blob.blob.size > 0) {
+    headers.set("Content-Length", String(blob.blob.size));
+  }
+
+  if (contentRange) headers.set("Content-Range", contentRange);
+
+  const acceptRanges = upstream.get("accept-ranges");
+  headers.set("Accept-Ranges", acceptRanges || "bytes");
+
+  const etag = upstream.get("etag");
+  if (etag) headers.set("ETag", etag);
+
+  const lastModified = upstream.get("last-modified");
+  if (lastModified) headers.set("Last-Modified", lastModified);
+
+  return new Response(blob.stream, { status, headers });
 }
