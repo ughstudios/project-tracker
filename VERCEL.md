@@ -84,11 +84,15 @@ Vercel → **Project → Settings → Environment Variables**:
 |------|--------|
 | **`DATABASE_URL`** | Full Neon URI from step 1. **Required for build.** |
 | **`AUTH_SECRET`** | Long random string, e.g. run `openssl rand -base64 32` locally. |
-| **`AUTH_URL`** | `https://<your-project>.vercel.app` (no trailing slash). Use your real production hostname. |
+| **`AUTH_URL`** | **Exact origin users use in the browser** (no trailing slash). Examples: `https://tracker.colorlightcloud.com` for a custom domain, or `https://<project>.vercel.app`. **Do not use `http://localhost:3000` in production** — mismatched Auth.js cookies often cause “page couldn’t load” with `200` on RSC requests. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
 | **`BLOB_READ_WRITE_TOKEN`** | **Required for file uploads on Vercel.** Create a Blob store under **Storage** → connect it to this project so Vercel injects this token. Serverless functions cannot write under `public/uploads`. |
 
 After saving, **Redeploy** so the build sees the new values.
+
+### Custom domain (e.g. `tracker.colorlightcloud.com`)
+
+Point **`AUTH_URL`** and **`NEXTAUTH_URL`** at **`https://tracker.colorlightcloud.com`**, not at localhost and not only at the default `*.vercel.app` URL unless that is what people use to sign in. After changing these, **clear cookies** for the site (or use a private window) and **sign in again** so `authjs.callback-url` and session cookies match the live origin.
 
 ## 4. What the build does
 
