@@ -21,6 +21,7 @@ type ProjectSummary = {
 type CustomerSummary = { id: string; name: string };
 
 const FILTER_UNLINKED = "__unlinked__";
+const FILTER_ASSIGNEE_UNASSIGNED = "__unassigned__";
 
 type IssueListItem = {
   id: string;
@@ -59,6 +60,7 @@ export default function IssuesPage() {
   const [listLoading, setListLoading] = useState(true);
 
   const [linkFilter, setLinkFilter] = useState("");
+  const [assigneeListFilter, setAssigneeListFilter] = useState("");
   const [listQuery, setListQuery] = useState("");
 
   const [formTitle, setFormTitle] = useState("");
@@ -122,6 +124,11 @@ export default function IssuesPage() {
     const q = listQuery.trim().toLowerCase();
     return issues.filter((i) => {
       const matchLink = matchesLinkFilter(i, linkFilter);
+      const matchAssignee =
+        !assigneeListFilter ||
+        (assigneeListFilter === FILTER_ASSIGNEE_UNASSIGNED
+          ? !i.assignee
+          : i.assignee?.id === assigneeListFilter);
       const matchText =
         !q ||
         [
@@ -135,9 +142,9 @@ export default function IssuesPage() {
           .join(" ")
           .toLowerCase()
           .includes(q);
-      return matchLink && matchText;
+      return matchLink && matchAssignee && matchText;
     });
-  }, [issues, listQuery, linkFilter]);
+  }, [issues, listQuery, linkFilter, assigneeListFilter]);
 
   const createIssue = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -372,11 +379,26 @@ export default function IssuesPage() {
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issues.allIssues")}</h2>
         <p className="mt-1 text-sm text-zinc-600">{t("issues.listHelp")}</p>
-        <div className="mt-3 grid gap-2 sm:grid-cols-2">
+        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+          <select
+            className="input w-full"
+            value={assigneeListFilter}
+            onChange={(e) => setAssigneeListFilter(e.target.value)}
+            aria-label={t("issues.filterByAssignee")}
+          >
+            <option value="">{t("dashboard.allUsers")}</option>
+            <option value={FILTER_ASSIGNEE_UNASSIGNED}>{t("dashboard.unassignedOnly")}</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name ?? u.email}
+              </option>
+            ))}
+          </select>
           <select
             className="input w-full"
             value={linkFilter}
             onChange={(e) => setLinkFilter(e.target.value)}
+            aria-label={t("issues.filterByLink")}
           >
             <option value="">{t("issues.allLinks")}</option>
             <option value={FILTER_UNLINKED}>{t("issues.unlinked")}</option>
@@ -396,7 +418,7 @@ export default function IssuesPage() {
             </optgroup>
           </select>
           <input
-            className="input w-full"
+            className="input w-full sm:col-span-2 lg:col-span-1"
             placeholder={t("issues.searchPlaceholder")}
             value={listQuery}
             onChange={(e) => setListQuery(e.target.value)}

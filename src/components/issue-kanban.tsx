@@ -6,6 +6,7 @@ import { useIssueBoardData } from "@/hooks/use-issue-board-data";
 import { useMemo, useState } from "react";
 
 const FILTER_UNLINKED = "__unlinked__";
+const FILTER_ASSIGNEE_UNASSIGNED = "__unassigned__";
 
 function matchesLinkFilter(issue: IssueBoardIssue, filter: string) {
   if (!filter) return true;
@@ -48,7 +49,10 @@ export function IssueKanban() {
           .toLowerCase()
           .includes(q);
       const matchesAssignee =
-        !assigneeFilter || issue.assignee?.id === assigneeFilter;
+        !assigneeFilter ||
+        (assigneeFilter === FILTER_ASSIGNEE_UNASSIGNED
+          ? !issue.assignee
+          : issue.assignee?.id === assigneeFilter);
       const matchesLink = matchesLinkFilter(issue, linkFilter);
       const matchesStatus = !statusFilter || issue.status === statusFilter;
 
@@ -115,8 +119,10 @@ export function IssueKanban() {
             className="input"
             value={assigneeFilter}
             onChange={(e) => setAssigneeFilter(e.target.value)}
+            aria-label={t("issues.filterByAssignee")}
           >
             <option value="">{t("dashboard.allUsers")}</option>
+            <option value={FILTER_ASSIGNEE_UNASSIGNED}>{t("dashboard.unassignedOnly")}</option>
             {users.map((u) => (
               <option key={u.id} value={u.id}>
                 {u.name}
