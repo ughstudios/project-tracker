@@ -4,22 +4,57 @@ import { getBlobReadWriteToken, isLikelyVercelBlobUrl } from "@/lib/file-storage
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { prisma } from "@/lib/prisma";
 import { parseWorkRecordBlobPathFromUrl } from "@/lib/work-record-blob-path";
+import { Prisma } from "@/generated/prisma";
 import { head } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
+/** Vercel Pro (and above) can use 60s; Hobby is capped lower — still set so Pro isn’t stuck at the default. */
+export const maxDuration = 60;
+
+/** Ranged video playback hammers this route; cache resolved file names to skip repeat DB round-trips. */
+const ATTACHMENT_NAME_TTL_MS = 5 * 60 * 1000;
+const ATTACHMENT_NAME_MAX = 400;
+const attachmentNameByUrl = new Map<string, { name: string; t: number }>();
+
+function cachedAttachmentName(url: string): string | undefined {
+  const e = attachmentNameByUrl.get(url);
+  if (!e || Date.now() - e.t > ATTACHMENT_NAME_TTL_MS) {
+    if (e) attachmentNameByUrl.delete(url);
+    return undefined;
+  }
+  return e.name;
+}
+
+function rememberAttachmentName(url: string, name: string) {
+  if (attachmentNameByUrl.size >= ATTACHMENT_NAME_MAX) {
+    const k = attachmentNameByUrl.keys().next().value;
+    if (k !== undefined) attachmentNameByUrl.delete(k);
+  }
+  attachmentNameByUrl.set(url, { name, t: Date.now() });
+}
+
+/** One DB round-trip (video playback issues many sequential range requests). */
 async function findAttachmentByBlobUrl(
   fileUrl: string,
 ): Promise<{ fileName: string } | null> {
-  const [issueAtt, projectAtt, customerAtt, threadAtt] = await Promise.all([
-    prisma.issueAttachment.findFirst({ where: { fileUrl }, select: { fileName: true } }),
-    prisma.projectAttachment.findFirst({ where: { fileUrl }, select: { fileName: true } }),
-    prisma.customerAttachment.findFirst({ where: { fileUrl }, select: { fileName: true } }),
-    prisma.issueThreadAttachment.findFirst({ where: { fileUrl }, select: { fileName: true } }),
-  ]);
-  const row = issueAtt ?? projectAtt ?? customerAtt ?? threadAtt;
+  const hit = cachedAttachmentName(fileUrl);
+  if (hit) return { fileName: hit };
+
+  const rows = await prisma.$queryRaw<{ fileName: string }[]>(Prisma.sql`
+    SELECT "fileName" FROM "IssueAttachment" WHERE "fileUrl" = ${fileUrl}
+    UNION ALL
+    SELECT "fileName" FROM "ProjectAttachment" WHERE "fileUrl" = ${fileUrl}
+    UNION ALL
+    SELECT "fileName" FROM "CustomerAttachment" WHERE "fileUrl" = ${fileUrl}
+    UNION ALL
+    SELECT "fileName" FROM "IssueThreadAttachment" WHERE "fileUrl" = ${fileUrl}
+    LIMIT 1
+  `);
+  const row = rows[0];
+  if (row?.fileName) rememberAttachmentName(fileUrl, row.fileName);
   return row ? { fileName: row.fileName } : null;
 }
 
@@ -191,8 +226,18 @@ export async function GET(request: Request): Promise<Response> {
       method: "GET",
       headers: originHeaders,
       cache: "no-store",
+      signal: AbortSignal.timeout(55_000),
     });
   } catch (e) {
+    const err = e instanceof Error ? e : null;
+    if (
+      err &&
+      (err.name === "TimeoutError" ||
+        err.name === "AbortError" ||
+        /aborted|timeout/i.test(err.message))
+    ) {
+      return NextResponse.json({ error: "Blob read timed out." }, { status: 504 });
+    }
     console.error("blob media proxy fetch:", e);
     return NextResponse.json({ error: "Failed to load blob." }, { status: 502 });
   }

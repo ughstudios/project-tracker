@@ -6,7 +6,7 @@ function sleep(ms: number) {
 
 function isRetryableConnectionError(e: unknown): boolean {
   const msg = e instanceof Error ? e.message : String(e);
-  return /P1017|P1001|P1008|Kind:\s*Closed|closed the connection|Connection terminated|ECONNRESET|ETIMEDOUT|EPIPE/i.test(
+  return /P1017|P1001|P1002|P1008|Kind:\s*Closed|closed the connection|Connection terminated|ECONNRESET|ETIMEDOUT|EPIPE/i.test(
     msg,
   );
 }
