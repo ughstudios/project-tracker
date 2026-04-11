@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import { TABS_DASHBOARD_ONLY } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -8,6 +10,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_DASHBOARD_ONLY);
+  if (denied) return denied;
 
   const since = new Date();
   since.setUTCMonth(since.getUTCMonth() - 11);

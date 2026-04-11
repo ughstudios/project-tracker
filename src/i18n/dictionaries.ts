@@ -25,6 +25,8 @@ const en: MessageTree = {
     adminRoles: "Admin roles",
     pendingShort: "Pending",
     adminRolesShort: "Roles",
+    employeeNavAccess: "Employee page access",
+    employeeNavAccessShort: "Pages",
   },
   language: {
     label: "Language",
@@ -369,6 +371,31 @@ const en: MessageTree = {
     none: "No approved users.",
     couldNotUpdate: "Could not update role.",
   },
+  employeeNavAccess: {
+    title: "Employee page access",
+    subtitle:
+      "Choose which main areas of the app are visible to users with the Employee role. Administrators and super administrators always have full access.",
+    allowLabel: "Allow employees",
+    tabHelp:
+      "When turned off, the sidebar link is hidden and employees cannot open that page or use related data exports. They may still use Account settings.",
+    save: "Save changes",
+    saving: "Saving…",
+    saved: "Saved.",
+    couldNotSave: "Could not save settings.",
+    couldNotLoad: "Could not load settings.",
+    tabLabels: {
+      dashboard: "Dashboard",
+      kanban: "Kanban",
+      issues: "Issues",
+      projects: "Projects",
+      "work-records": "Work records",
+      reports: "Reports",
+      customers: "Customers",
+      inventory: "Inventory",
+      logs: "Logs (audit)",
+      archive: "Archive",
+    },
+  },
   inventory: {
     title: "Warehouse inventory",
     subtitle:
@@ -612,6 +639,8 @@ const zh: MessageTree = {
     adminRoles: "管理员角色",
     pendingShort: "待审核",
     adminRolesShort: "角色",
+    employeeNavAccess: "员工页面权限",
+    employeeNavAccessShort: "页面",
   },
   language: {
     label: "语言",
@@ -948,6 +977,31 @@ const zh: MessageTree = {
     loading: "加载中…",
     none: "暂无已通过用户。",
     couldNotUpdate: "无法更新角色。",
+  },
+  employeeNavAccess: {
+    title: "员工页面权限",
+    subtitle:
+      "设置「员工」角色可访问的主导航区域。管理员与超级管理员始终拥有全部权限。",
+    allowLabel: "允许员工访问",
+    tabHelp:
+      "关闭后，侧栏不再显示该项，员工无法打开对应页面或使用相关导出；仍可使用「账户」设置。",
+    save: "保存更改",
+    saving: "保存中…",
+    saved: "已保存。",
+    couldNotSave: "无法保存设置。",
+    couldNotLoad: "无法加载设置。",
+    tabLabels: {
+      dashboard: "工作台",
+      kanban: "看板",
+      issues: "问题",
+      projects: "项目",
+      "work-records": "工作记录",
+      reports: "报表",
+      customers: "客户",
+      inventory: "库存",
+      logs: "日志（审计）",
+      archive: "归档",
+    },
   },
   inventory: {
     title: "仓库库存",

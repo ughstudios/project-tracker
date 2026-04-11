@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import { TABS_LOGS } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -7,6 +9,8 @@ export async function GET(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_LOGS);
+  if (denied) return denied;
 
   const { searchParams } = new URL(request.url);
   const rawPage = searchParams.get("page");

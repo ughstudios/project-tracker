@@ -304,3 +304,12 @@ model BlobRelayChunk {
   @@unique([sessionId, seq])
   @@index([sessionId])
 }
+
+/// Singleton-style app configuration (id is always "default").
+model AppSettings {
+  id                 String   @id @default("default")
+  /// Per main nav area: when false, employees cannot open that page or related APIs. Missing keys default to allowed.
+  employeeNavAccess  Json     @default("{}")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+}

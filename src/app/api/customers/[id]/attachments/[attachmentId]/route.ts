@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_CUSTOMER_DETAIL } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { removeCustomerUploadFileIfPresent } from "@/lib/customer-files";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -15,6 +17,8 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_CUSTOMER_DETAIL);
+  if (denied) return denied;
 
   const { id: customerId, attachmentId } = await params;
   const customer = await prisma.customer.findUnique({
@@ -65,6 +69,8 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_CUSTOMER_DETAIL);
+  if (denied) return denied;
 
   const { id: customerId, attachmentId } = await params;
   const customer = await prisma.customer.findUnique({

@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_PROJECT_DETAIL } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -8,6 +10,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_PROJECT_DETAIL);
+  if (denied) return denied;
 
   const projects = await prisma.project.findMany({
     where: { archivedAt: null, customer: { archivedAt: null } },
@@ -51,6 +55,8 @@ export async function POST(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_PROJECT_DETAIL);
+  if (denied) return denied;
 
   const body = (await request.json()) as {
     name?: string;

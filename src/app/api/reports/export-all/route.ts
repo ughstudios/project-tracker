@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import { TABS_REPORTS } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
 import { prisma } from "@/lib/prisma";
 import { parseIssueCols, parseUserCols, parseWorkCols } from "@/lib/report-params";
@@ -11,6 +13,8 @@ export async function GET(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_REPORTS);
+  if (denied) return denied;
   if (!isPrivilegedAdmin(session.user.role)) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }

@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_WORK_RECORDS_PAGE } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
@@ -15,6 +17,8 @@ export async function GET(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_WORK_RECORDS_PAGE);
+  if (denied) return denied;
 
   const isAdmin = isPrivilegedAdmin(session.user.role);
   const { searchParams } = new URL(request.url);
@@ -65,6 +69,8 @@ export async function POST(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_WORK_RECORDS_PAGE);
+  if (denied) return denied;
 
   let body: unknown;
   try {

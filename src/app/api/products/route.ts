@@ -1,4 +1,6 @@
 import { auth } from "@/auth";
+import { TABS_PRODUCTS_CATALOG } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { NextResponse } from "next/server";
 
 const PRODUCT_GROUPS: Array<{ group: string; items: string[] }> = [
@@ -61,6 +63,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_PRODUCTS_CATALOG);
+  if (denied) return denied;
 
   return NextResponse.json({
     groups: PRODUCT_GROUPS,

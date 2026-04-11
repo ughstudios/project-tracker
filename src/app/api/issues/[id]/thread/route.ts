@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_ISSUE_DATA } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -13,6 +15,8 @@ export async function GET(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_ISSUE_DATA);
+  if (denied) return denied;
 
   const { id: issueId } = await params;
   const issue = await prisma.issue.findUnique({
@@ -69,6 +73,8 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_ISSUE_DATA);
+  if (denied) return denied;
 
   const { id: issueId } = await params;
   const issue = await prisma.issue.findUnique({

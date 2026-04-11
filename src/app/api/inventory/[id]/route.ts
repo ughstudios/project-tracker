@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_INVENTORY } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -11,6 +13,8 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_INVENTORY);
+  if (denied) return denied;
 
   const { id } = await params;
   const body = (await request.json()) as Record<string, unknown>;
@@ -106,6 +110,8 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_INVENTORY);
+  if (denied) return denied;
 
   const { id } = await params;
   const existing = await prisma.warehouseStockLine.findUnique({ where: { id } });

@@ -4,10 +4,13 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/context";
 import { LanguageToggle } from "@/components/language-toggle";
+import type { EmployeeNavTabId } from "@/lib/employee-nav";
 import { isPrivilegedAdmin, isSuperAdmin } from "@/lib/roles";
 
 type Props = {
   user: { name?: string | null; email?: string | null; role?: string | null };
+  /** Effective visibility of main nav tabs for this user (admins: all true). */
+  navAccess: Record<EmployeeNavTabId, boolean>;
   onLogout: React.ReactNode;
   children: React.ReactNode;
 };
@@ -55,11 +58,12 @@ function NavSection({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-export function AppShell({ user, onLogout, children }: Props) {
+export function AppShell({ user, navAccess, onLogout, children }: Props) {
   const { t } = useI18n();
   const staffAdmin = isPrivilegedAdmin(user.role);
   const superAdmin = isSuperAdmin(user.role);
   const showAdminSection = staffAdmin || superAdmin;
+  const showTab = (id: EmployeeNavTabId) => navAccess[id] !== false;
 
   return (
     <div className="min-h-screen bg-zinc-50">
@@ -81,16 +85,32 @@ export function AppShell({ user, onLogout, children }: Props) {
 
             <nav className="flex min-h-0 flex-1 flex-col" aria-label={t("nav.mainMenuAria")}>
               <div className="flex flex-col gap-px">
-                <NavItem href="/dashboard" label={t("nav.dashboard")} />
-                <NavItem href="/kanban" label={t("nav.kanban")} />
-                <NavItem href="/issues" label={t("nav.issues")} prefix />
-                <NavItem href="/projects" label={t("nav.projects")} />
-                <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
-                <NavItem href="/reports" label={t("nav.reports")} />
-                <NavItem href="/customers" label={t("nav.customers")} />
-                <NavItem href="/inventory" label={t("nav.inventory")} />
-                <NavItem href="/logs" label={t("nav.logs")} />
-                <NavItem href="/archive" label={t("nav.archive")} />
+                {showTab("dashboard") ? (
+                  <NavItem href="/dashboard" label={t("nav.dashboard")} />
+                ) : null}
+                {showTab("kanban") ? <NavItem href="/kanban" label={t("nav.kanban")} /> : null}
+                {showTab("issues") ? (
+                  <NavItem href="/issues" label={t("nav.issues")} prefix />
+                ) : null}
+                {showTab("projects") ? (
+                  <NavItem href="/projects" label={t("nav.projects")} />
+                ) : null}
+                {showTab("work-records") ? (
+                  <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
+                ) : null}
+                {showTab("reports") ? (
+                  <NavItem href="/reports" label={t("nav.reports")} />
+                ) : null}
+                {showTab("customers") ? (
+                  <NavItem href="/customers" label={t("nav.customers")} />
+                ) : null}
+                {showTab("inventory") ? (
+                  <NavItem href="/inventory" label={t("nav.inventory")} />
+                ) : null}
+                {showTab("logs") ? <NavItem href="/logs" label={t("nav.logs")} /> : null}
+                {showTab("archive") ? (
+                  <NavItem href="/archive" label={t("nav.archive")} />
+                ) : null}
               </div>
 
               <NavRule />
@@ -103,6 +123,7 @@ export function AppShell({ user, onLogout, children }: Props) {
                 <>
                   <NavRule />
                   <NavSection label={t("nav.footerAdmin")}>
+                    <NavItem href="/employee-nav-access" label={t("nav.employeeNavAccess")} />
                     {staffAdmin ? (
                       <NavItem
                         href="/pending-registrations"

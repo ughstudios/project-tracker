@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_WORK_RECORDS_PAGE } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
@@ -23,6 +25,8 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_WORK_RECORDS_PAGE);
+  if (denied) return denied;
 
   const { id } = await params;
   const existing = await prisma.workRecord.findUnique({ where: { id } });
@@ -104,6 +108,8 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_WORK_RECORDS_PAGE);
+  if (denied) return denied;
 
   const { id } = await params;
   const existing = await prisma.workRecord.findUnique({ where: { id } });

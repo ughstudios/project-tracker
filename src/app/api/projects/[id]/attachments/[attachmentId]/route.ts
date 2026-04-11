@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_PROJECT_DETAIL } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { removeProjectUploadFileIfPresent } from "@/lib/project-files";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -15,6 +17,8 @@ export async function PATCH(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_PROJECT_DETAIL);
+  if (denied) return denied;
 
   const { id: projectId, attachmentId } = await params;
   const project = await prisma.project.findUnique({
@@ -65,6 +69,8 @@ export async function DELETE(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_PROJECT_DETAIL);
+  if (denied) return denied;
 
   const { id: projectId, attachmentId } = await params;
   const project = await prisma.project.findUnique({

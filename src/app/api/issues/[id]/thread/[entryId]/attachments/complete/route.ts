@@ -1,6 +1,8 @@
 import { auth } from "@/auth";
 import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_ISSUE_DATA } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { blobPublicUrlMatchesPathname } from "@/lib/blob-url-verify";
 import { isBlobStorageEnabled, isLikelyVercelBlobUrl } from "@/lib/file-storage";
 import { maxClientBlobUploadBytes, perFileExceedsBlobProductLimitMessage } from "@/lib/issue-files";
@@ -24,6 +26,8 @@ export async function POST(
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_ISSUE_DATA);
+  if (denied) return denied;
   if (!isBlobStorageEnabled()) {
     return NextResponse.json({ error: "Blob storage is not configured." }, { status: 503 });
   }

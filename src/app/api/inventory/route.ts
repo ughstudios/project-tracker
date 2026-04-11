@@ -1,5 +1,7 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { TABS_INVENTORY } from "@/lib/employee-nav";
+import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import type { WarehouseItemKind } from "@/generated/prisma";
 import { NextResponse } from "next/server";
@@ -41,6 +43,8 @@ export async function GET() {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_INVENTORY);
+  if (denied) return denied;
 
   const lines = await prisma.warehouseStockLine.findMany({
     orderBy: [{ kind: "asc" }, { model: "asc" }, { firmware: "asc" }, { receiverVersion: "asc" }],
@@ -54,6 +58,8 @@ export async function POST(request: Request) {
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
+  const denied = await guardEmployeeNavApi(session, TABS_INVENTORY);
+  if (denied) return denied;
 
   const body = (await request.json()) as Record<string, unknown>;
   const n = normalizeLine({
