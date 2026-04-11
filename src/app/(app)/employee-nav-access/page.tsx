@@ -1,9 +1,6 @@
 import { auth } from "@/auth";
-import {
-  getEmployeeNavAccessRow,
-  mergeEmployeeNavAccess,
-  parseEmployeeNavAccessJson,
-} from "@/lib/employee-nav";
+import { getEmployeeNavAccessRow } from "@/lib/employee-nav";
+import { mergeEmployeeNavAccess, parseEmployeeNavAccessJson } from "@/lib/employee-nav-shared";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { redirect } from "next/navigation";
 import { EmployeeNavAccessClient } from "./employee-nav-access-client";

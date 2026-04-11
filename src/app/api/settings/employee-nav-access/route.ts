@@ -1,12 +1,12 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
+import { getEmployeeNavAccessRow } from "@/lib/employee-nav";
 import {
   EMPLOYEE_NAV_TAB_IDS,
-  getEmployeeNavAccessRow,
   mergeEmployeeNavAccess,
   parseEmployeeNavAccessJson,
   type EmployeeNavTabId,
-} from "@/lib/employee-nav";
+} from "@/lib/employee-nav-shared";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";

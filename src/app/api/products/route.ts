@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { TABS_PRODUCTS_CATALOG } from "@/lib/employee-nav";
+import { TABS_PRODUCTS_CATALOG } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { NextResponse } from "next/server";
 

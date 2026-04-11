@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
-import { TABS_ISSUE_DATA } from "@/lib/employee-nav";
+import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";

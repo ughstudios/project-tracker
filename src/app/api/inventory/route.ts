@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
-import { TABS_INVENTORY } from "@/lib/employee-nav";
+import { TABS_INVENTORY } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import type { WarehouseItemKind } from "@/generated/prisma";

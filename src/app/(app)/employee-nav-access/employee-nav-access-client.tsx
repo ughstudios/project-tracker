@@ -3,7 +3,7 @@
 import {
   EMPLOYEE_NAV_TAB_IDS,
   type EmployeeNavTabId,
-} from "@/lib/employee-nav";
+} from "@/lib/employee-nav-shared";
 import { useI18n } from "@/i18n/context";
 import { useCallback, useMemo, useState } from "react";
 

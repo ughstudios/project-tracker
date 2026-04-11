@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { TABS_DASHBOARD_ONLY } from "@/lib/employee-nav";
+import { TABS_DASHBOARD_ONLY } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";

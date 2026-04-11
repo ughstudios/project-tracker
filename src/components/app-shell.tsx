@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/context";
 import { LanguageToggle } from "@/components/language-toggle";
-import type { EmployeeNavTabId } from "@/lib/employee-nav";
+import type { EmployeeNavTabId } from "@/lib/employee-nav-shared";
 import { isPrivilegedAdmin, isSuperAdmin } from "@/lib/roles";
 
 type Props = {

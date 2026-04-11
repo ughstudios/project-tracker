@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
-import { TABS_CUSTOMER_DETAIL } from "@/lib/employee-nav";
+import { TABS_CUSTOMER_DETAIL } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { TABS_REPORTS } from "@/lib/employee-nav";
+import { TABS_REPORTS } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { issuesToCsv } from "@/lib/report-column-defs";
 import { withBomUtf8 } from "@/lib/csv";

@@ -1,4 +1,5 @@
-import { requireEmployeeNavAnyOf, TABS_PROJECT_DETAIL } from "@/lib/employee-nav";
+import { requireEmployeeNavAnyOf } from "@/lib/employee-nav";
+import { TABS_PROJECT_DETAIL } from "@/lib/employee-nav-shared";
 
 export default async function ProjectDetailLayout({
   children,

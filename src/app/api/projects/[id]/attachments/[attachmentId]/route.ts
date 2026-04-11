@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
-import { TABS_PROJECT_DETAIL } from "@/lib/employee-nav";
+import { TABS_PROJECT_DETAIL } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { removeProjectUploadFileIfPresent } from "@/lib/project-files";
 import { prisma } from "@/lib/prisma";

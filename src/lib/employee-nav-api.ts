@@ -1,11 +1,11 @@
 import type { Session } from "next-auth";
 import { NextResponse } from "next/server";
 import { isPrivilegedAdmin } from "@/lib/roles";
+import { getEmployeeNavAccessMap } from "@/lib/employee-nav";
 import {
   type EmployeeNavTabId,
   employeeNavAllowsAny,
-  getEmployeeNavAccessMap,
-} from "@/lib/employee-nav";
+} from "@/lib/employee-nav-shared";
 
 /**
  * For employees: allow the request only if at least one of `tabs` is not disabled.

@@ -1,5 +1,5 @@
 import { auth } from "@/auth";
-import { TABS_REPORTS } from "@/lib/employee-nav";
+import { TABS_REPORTS } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
 import { prisma } from "@/lib/prisma";
