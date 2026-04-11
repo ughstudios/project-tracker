@@ -69,6 +69,57 @@ function isVideoExt(ext: string) {
   return VIDEO_EXT.has(ext.toLowerCase());
 }
 
+const VIDEO_MIME: Record<string, string> = {
+  mp4: "video/mp4",
+  webm: "video/webm",
+  ogv: "video/ogg",
+  mov: "video/quicktime",
+  m4v: "video/mp4",
+};
+
+function AttachmentVideo({
+  fileUrl,
+  fileType,
+  fileName,
+  className,
+}: {
+  fileUrl: string;
+  fileType: string;
+  fileName: string;
+  className: string;
+}) {
+  const { t } = useI18n();
+  const [failed, setFailed] = useState(false);
+  const href = attachmentBlobHref(fileUrl);
+  const mime = VIDEO_MIME[fileType.toLowerCase()] ?? `video/${fileType}`;
+
+  return (
+    <div>
+      <video
+        controls
+        playsInline
+        preload="auto"
+        className={className}
+        onError={() => setFailed(true)}
+      >
+        <source src={href} type={mime} />
+      </video>
+      {failed ? (
+        <p className="mt-2 text-sm text-amber-900">
+          {t("issueDetail.videoPlayFailed")}{" "}
+          <a
+            href={attachmentBlobHref(fileUrl, { asDownload: true })}
+            className="font-medium text-amber-950 underline"
+            download={fileName}
+          >
+            {t("issueDetail.videoDownloadInstead")}
+          </a>
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
 function formatBytes(n: number) {
   if (n < 1024) return `${n} B`;
   if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
@@ -826,12 +877,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                   </a>
                 ) : null}
                 {isVideoExt(att.fileType) ? (
-                  <video
-                    src={attachmentBlobHref(att.fileUrl)}
-                    controls
-                    playsInline
+                  <AttachmentVideo
+                    fileUrl={att.fileUrl}
+                    fileType={att.fileType}
+                    fileName={att.fileName}
                     className="max-h-56 w-full max-w-lg rounded"
-                    preload="metadata"
                   />
                 ) : null}
                 <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -1003,12 +1053,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                           </a>
                         ) : null}
                         {isVideoExt(att.fileType) ? (
-                          <video
-                            src={attachmentBlobHref(att.fileUrl)}
-                            controls
-                            playsInline
+                          <AttachmentVideo
+                            fileUrl={att.fileUrl}
+                            fileType={att.fileType}
+                            fileName={att.fileName}
                             className="max-h-48 w-full max-w-md rounded"
-                            preload="metadata"
                           />
                         ) : null}
                         <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1">

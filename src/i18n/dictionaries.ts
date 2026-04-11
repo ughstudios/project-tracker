@@ -249,6 +249,8 @@ const en: MessageTree = {
     archivedAtLabel: "Archived {at}",
     viewArchivedTitle: "Archived issue",
     threadHelpArchived: "Below are historical replies. You cannot add new messages to archived issues.",
+    videoPlayFailed: "This video cannot play in the browser.",
+    videoDownloadInstead: "Download to open with another app.",
   },
   issueStatus: {
     OPEN: "OPEN",
@@ -864,6 +866,8 @@ const zh: MessageTree = {
     archivedAtLabel: "归档时间：{at}",
     viewArchivedTitle: "已归档问题",
     threadHelpArchived: "以下为历史回复。已归档问题不可发表新留言。",
+    videoPlayFailed: "无法在浏览器内播放此视频。",
+    videoDownloadInstead: "请下载后用本地播放器打开。",
   },
   issueStatus: {
     OPEN: "待处理",

@@ -42,6 +42,35 @@ function contentDispositionHeader(fileName: string, asAttachment: boolean): stri
   return `${type}; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(trimmed)}`;
 }
 
+/**
+ * Vercel Blob often serves `application/octet-stream`; browsers then treat video as non-playable
+ * and leave the play control disabled. Prefer a concrete type from the stored file name.
+ */
+function contentTypeForFileName(fileName: string, upstreamContentType: string | null): string {
+  const raw = upstreamContentType?.split(";")[0]?.trim() ?? "";
+  const base = raw.toLowerCase();
+  if (base && base !== "application/octet-stream" && base !== "binary/octet-stream") {
+    return raw;
+  }
+  const ext = (fileName.match(/\.([a-z0-9]+)$/i)?.[1] ?? "").toLowerCase();
+  const byExt: Record<string, string> = {
+    mp4: "video/mp4",
+    m4v: "video/mp4",
+    webm: "video/webm",
+    ogv: "video/ogg",
+    mov: "video/quicktime",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+    svg: "image/svg+xml",
+    bmp: "image/bmp",
+  };
+  if (ext && byExt[ext]) return byExt[ext];
+  return raw || "application/octet-stream";
+}
+
 type ResolvedMedia =
   | {
       ok: true;
@@ -112,9 +141,10 @@ function buildClientHeaders(
   asAttachment: boolean,
 ): Headers {
   const headers = new Headers();
-  const ct = upstream.headers.get("content-type");
-  if (ct) headers.set("Content-Type", ct);
-  else headers.set("Content-Type", "application/octet-stream");
+  headers.set(
+    "Content-Type",
+    contentTypeForFileName(fileName, upstream.headers.get("content-type")),
+  );
 
   headers.set("Content-Disposition", contentDispositionHeader(fileName, asAttachment));
   headers.set("Cache-Control", "private, no-store");
@@ -205,7 +235,7 @@ export async function HEAD(request: Request): Promise<Response> {
   }
 
   const headers = new Headers();
-  headers.set("Content-Type", meta.contentType || "application/octet-stream");
+  headers.set("Content-Type", contentTypeForFileName(fileName, meta.contentType || null));
   headers.set("Content-Length", String(meta.size));
   headers.set("Accept-Ranges", "bytes");
   headers.set("Content-Disposition", contentDispositionHeader(fileName, asAttachment));
