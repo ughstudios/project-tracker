@@ -21,6 +21,8 @@ model User {
   role         String   @default("EMPLOYEE")
   approvalStatus String @default("APPROVED")
   approvedAt   DateTime?
+  /// Set when the user finishes or skips the first-login onboarding tour (server-side).
+  onboardingCompletedAt DateTime?
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 

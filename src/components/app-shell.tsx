@@ -4,12 +4,14 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/context";
 import { LanguageToggle } from "@/components/language-toggle";
+import { OnboardingWizard } from "@/components/onboarding-wizard";
 import { ThemeToggle } from "@/components/theme-toggle";
 import type { EmployeeNavTabId } from "@/lib/employee-nav-shared";
 import { isPrivilegedAdmin, isSuperAdmin } from "@/lib/roles";
 
 type Props = {
-  user: { name?: string | null; email?: string | null; role?: string | null };
+  user: { id: string; name?: string | null; email?: string | null; role?: string | null };
+  onboardingCompleted: boolean;
   /** Effective visibility of main nav tabs for this user (admins: all true). */
   navAccess: Record<EmployeeNavTabId, boolean>;
   onLogout: React.ReactNode;
@@ -59,7 +61,7 @@ function NavSection({ label, children }: { label: string; children: React.ReactN
   );
 }
 
-export function AppShell({ user, navAccess, onLogout, children }: Props) {
+export function AppShell({ user, onboardingCompleted, navAccess, onLogout, children }: Props) {
   const { t } = useI18n();
   const staffAdmin = isPrivilegedAdmin(user.role);
   const superAdmin = isSuperAdmin(user.role);
@@ -68,6 +70,7 @@ export function AppShell({ user, navAccess, onLogout, children }: Props) {
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-[var(--body-bg)]">
+      <OnboardingWizard onboardingCompleted={onboardingCompleted} />
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <div className="grid gap-5 lg:grid-cols-[216px_1fr]">
           <aside className="panel-surface flex flex-col rounded-xl p-3 lg:min-h-[calc(100vh-3rem)]">

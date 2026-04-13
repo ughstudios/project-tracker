@@ -617,6 +617,28 @@ const en: MessageTree = {
     updateEmail: "Update email",
     emailUpdating: "Updating email and signing you out…",
   },
+  onboarding: {
+    skip: "Skip tour",
+    done: "Get started",
+    completeFailed: "Could not save your progress. Check your connection and try again.",
+    stepOf: "Step {current} of {total}",
+    s1: {
+      title: "What this app is for",
+      body: "Project Tracker helps your team record and resolve field issues, tie work to customers and projects, and keep a searchable history. It gives you one place for tickets, discussion, and exports instead of scattered spreadsheets and email alone.",
+    },
+    s2: {
+      title: "How issues work",
+      body: "Use Issues to log problems and fixes. Create a ticket from the list, then open it to edit symptom, cause, solution, and R&D contact. The thread is for ongoing updates and attachments. Status and assignee show progress; link a customer or project when it helps others find context.",
+    },
+    s3: {
+      title: "Where to find things",
+      body: "The sidebar is your map:\n\n• Dashboard — charts and a high-level view of active work\n• Kanban — drag cards to change status or assignee\n• Issues — filter and search the list; open a row for the full page\n• Customers & Projects — profiles, attachments, and notes\n• Work records — a personal work journal (who can see what depends on your role)\n• Reports — CSV exports; Archive — read-only history\n\nSome sections may be hidden for your account if an admin limited employee page access.",
+    },
+    s4: {
+      title: "Make it yours",
+      body: "Use Appearance and Language at the bottom of the sidebar. Open Account to change your display name, password, or sign-in email.",
+    },
+  },
   errors: {
     login: {
       pendingApproval: "Your registration is pending admin approval.",
@@ -1250,6 +1272,28 @@ const zh: MessageTree = {
     newEmail: "新邮箱",
     updateEmail: "更新邮箱",
     emailUpdating: "正在更新邮箱并退出登录…",
+  },
+  onboarding: {
+    skip: "跳过引导",
+    done: "开始使用",
+    completeFailed: "无法保存进度，请检查网络后重试。",
+    stepOf: "第 {current} / {total} 步",
+    s1: {
+      title: "这个应用是做什么的",
+      body: "项目跟踪帮助团队记录并解决现场问题，把工作和客户、项目关联起来，并保留可搜索的历史。工单、讨论和导出集中在一处，减少只依赖零散表格和邮件的情况。",
+    },
+    s2: {
+      title: "问题（Issues）怎么用",
+      body: "在「问题」中登记故障与对策。从列表新建工单后，打开即可编辑现象、原因、对策与研发联系人。讨论串用于持续更新与附件。状态和负责人反映进展；需要时关联客户或项目，方便他人理解背景。",
+    },
+    s3: {
+      title: "各功能在哪里",
+      body: "左侧导航是总览：\n\n• 工作台 — 图表与活跃工作概况\n• 看板 — 拖动卡片调整状态或负责人\n• 问题 — 筛选与搜索列表；点击行进入完整页面\n• 客户与项目 — 档案、附件与备注\n• 工作记录 — 个人工作日志（可见范围因角色而异）\n• 报表 — CSV 导出；归档 — 只读历史\n\n若管理员限制了员工页面权限，部分入口可能对您的账号不可见。",
+    },
+    s4: {
+      title: "个性化设置",
+      body: "侧栏底部可切换外观与语言。在「账户」中可修改显示名称、密码或登录邮箱。",
+    },
   },
   errors: {
     login: {
