@@ -518,16 +518,21 @@ function ProjectsPageContent() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("projects.listTitle")}</h2>
-          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-3">
-            <div className="flex min-w-0 flex-col gap-1 sm:min-w-[11rem]">
-              <label htmlFor="projects-customer-filter" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
+        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
+          <h2 className="shrink-0 text-base font-semibold leading-none text-zinc-900 dark:text-zinc-100">
+            {t("projects.listTitle")}
+          </h2>
+          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+              <label
+                htmlFor="projects-customer-filter"
+                className="shrink-0 text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              >
                 {t("projects.filterByCustomer")}
               </label>
               <select
                 id="projects-customer-filter"
-                className="input w-full"
+                className="input w-full min-w-0 sm:w-[13rem]"
                 value={customerFilterId}
                 onChange={(e) => setCustomerFilter(e.target.value)}
               >
@@ -540,7 +545,7 @@ function ProjectsPageContent() {
               </select>
             </div>
             <input
-              className="input w-full sm:min-w-[12rem] md:w-80"
+              className="input w-full min-w-0 sm:min-w-[12rem] sm:max-w-md sm:flex-1"
               placeholder={t("projects.searchPh")}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -604,14 +609,17 @@ function ProjectsPageContent() {
                     </td>
                     <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{p._count?.issues ?? 0}</td>
                     <td className="px-2 py-2">
-                      <div className="flex flex-wrap items-center gap-2">
-                        <Link href={`/projects/${p.id}`} className="link-accent text-sm font-medium underline underline-offset-2">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Link
+                          href={`/projects/${p.id}`}
+                          className="btn-secondary inline-flex items-center justify-center rounded-md px-2.5 py-1 text-xs font-medium no-underline"
+                        >
                           {t("projects.open")}
                         </Link>
                         {isAdmin ? (
                           <button
                             type="button"
-                            className="btn-secondary rounded px-2 py-1 text-xs font-medium disabled:opacity-60"
+                            className="btn-secondary rounded-md px-2.5 py-1 text-xs font-medium disabled:opacity-60"
                             onClick={() => archiveProject(p.id, p.name)}
                             disabled={archivingProjectId === p.id}
                           >
