@@ -250,27 +250,40 @@ export default function IssuesPage() {
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.subtitle")}</p>
       </header>
 
-      <section className="panel-surface rounded-xl p-4">
-        <div className="flex flex-wrap items-start justify-between gap-3">
-          <div>
-            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("issues.allIssues")}</h2>
-            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.listHelp")}</p>
+      <section className="panel-surface overflow-hidden rounded-xl p-0">
+        <div className="border-b border-zinc-200 px-4 py-4 dark:border-white/[0.08]">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("issues.allIssues")}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                {t("issues.listToolbarHint")}
+              </p>
+              <details className="mt-2">
+                <summary className="cursor-pointer text-xs font-medium text-zinc-600 underline decoration-zinc-400/60 underline-offset-2 hover:text-zinc-900 dark:text-zinc-400 dark:decoration-white/25 dark:hover:text-zinc-200">
+                  {t("issues.listHelpSummary")}
+                </summary>
+                <p className="mt-2 max-w-2xl text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                  {t("issues.listHelp")}
+                </p>
+              </details>
+            </div>
+            <button
+              type="button"
+              aria-expanded={showCreateForm}
+              aria-controls="new-issue-form"
+              onClick={() => setShowCreateForm((value) => !value)}
+              className="btn-primary inline-flex shrink-0 items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold"
+            >
+              + {t("issues.newIssue")}
+            </button>
           </div>
-          <button
-            type="button"
-            aria-expanded={showCreateForm}
-            aria-controls="new-issue-form"
-            onClick={() => setShowCreateForm((value) => !value)}
-            className="btn-primary inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold"
-          >
-            + {t("issues.newIssue")}
-          </button>
         </div>
         {showCreateForm ? (
           <div
             id="new-issue-form"
-            className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/[0.08] dark:bg-[#12141c]/90 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+            className="border-b border-zinc-200 bg-zinc-50 px-4 py-4 dark:border-white/[0.08] dark:bg-[#12141c]/80"
           >
+            <div className="rounded-xl border border-zinc-200 bg-white p-4 dark:border-white/[0.08] dark:bg-[#15171e]/95 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
             <form onSubmit={createIssue} className="grid gap-3 md:grid-cols-2">
               <label className="block text-sm md:col-span-2">
                 <span className="text-zinc-600 dark:text-zinc-400">{t("common.title")}</span>
@@ -417,60 +430,91 @@ export default function IssuesPage() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         ) : null}
-        <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          <select
-            className="input w-full"
-            value={assigneeListFilter}
-            onChange={(e) => setAssigneeListFilter(e.target.value)}
-            aria-label={t("issues.filterByAssignee")}
-          >
-            <option value="">{t("dashboard.allUsers")}</option>
-            <option value={FILTER_ASSIGNEE_UNASSIGNED}>{t("dashboard.unassignedOnly")}</option>
-            {users.map((u) => (
-              <option key={u.id} value={u.id}>
-                {u.name ?? u.email}
-              </option>
-            ))}
-          </select>
-          <select
-            className="input w-full"
-            value={linkFilter}
-            onChange={(e) => setLinkFilter(e.target.value)}
-            aria-label={t("issues.filterByLink")}
-          >
-            <option value="">{t("issues.allLinks")}</option>
-            <option value={FILTER_UNLINKED}>{t("issues.unlinked")}</option>
-            <optgroup label={t("common.customer")}>
-              {customers.map((c) => (
-                <option key={c.id} value={`c:${c.id}`}>
-                  {c.name}
-                </option>
-              ))}
-            </optgroup>
-            <optgroup label={t("common.projects")}>
-              {projects.map((proj) => (
-                <option key={proj.id} value={`p:${proj.id}`}>
-                  {proj.customer ? `${proj.name} (${proj.customer.name})` : proj.name}
-                </option>
-              ))}
-            </optgroup>
-          </select>
-          <input
-            className="input w-full sm:col-span-2 lg:col-span-1"
-            placeholder={t("issues.searchPlaceholder")}
-            value={listQuery}
-            onChange={(e) => setListQuery(e.target.value)}
-          />
+
+        <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-white/[0.08] dark:bg-[#12141c]/80">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:gap-4">
+            <div className="flex w-full min-w-0 flex-col gap-1.5 lg:w-52 lg:shrink-0">
+              <label
+                htmlFor="issues-filter-assignee"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              >
+                {t("issues.filterByAssignee")}
+              </label>
+              <select
+                id="issues-filter-assignee"
+                className="input w-full text-sm"
+                value={assigneeListFilter}
+                onChange={(e) => setAssigneeListFilter(e.target.value)}
+              >
+                <option value="">{t("dashboard.allUsers")}</option>
+                <option value={FILTER_ASSIGNEE_UNASSIGNED}>{t("dashboard.unassignedOnly")}</option>
+                {users.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.email}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="flex w-full min-w-0 flex-col gap-1.5 lg:w-60 lg:shrink-0">
+              <label
+                htmlFor="issues-filter-link"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              >
+                {t("issues.filterByLink")}
+              </label>
+              <select
+                id="issues-filter-link"
+                className="input w-full text-sm"
+                value={linkFilter}
+                onChange={(e) => setLinkFilter(e.target.value)}
+              >
+                <option value="">{t("issues.allLinks")}</option>
+                <option value={FILTER_UNLINKED}>{t("issues.unlinked")}</option>
+                <optgroup label={t("common.customer")}>
+                  {customers.map((c) => (
+                    <option key={c.id} value={`c:${c.id}`}>
+                      {c.name}
+                    </option>
+                  ))}
+                </optgroup>
+                <optgroup label={t("common.projects")}>
+                  {projects.map((proj) => (
+                    <option key={proj.id} value={`p:${proj.id}`}>
+                      {proj.customer ? `${proj.name} (${proj.customer.name})` : proj.name}
+                    </option>
+                  ))}
+                </optgroup>
+              </select>
+            </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <label
+                htmlFor="issues-search"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              >
+                {t("common.search")}
+              </label>
+              <input
+                id="issues-search"
+                className="input w-full text-sm"
+                placeholder={t("issues.searchPlaceholder")}
+                value={listQuery}
+                onChange={(e) => setListQuery(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
+          </div>
         </div>
-        <div className="mt-3 space-y-2">
+
+        <div className="space-y-2 px-4 py-4">
           {listLoading ? (
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("issues.loading")}</p>
           ) : filteredIssues.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("issues.noMatch")}</p>
           ) : (
-            <ul className="panel-surface divide-y divide-zinc-200 rounded-lg dark:divide-white/[0.08]">
+            <ul className="divide-y divide-zinc-200 overflow-hidden rounded-lg border border-zinc-200 dark:divide-white/[0.08] dark:border-white/[0.08]">
               {filteredIssues.map((i) => (
                 <li
                   key={i.id}

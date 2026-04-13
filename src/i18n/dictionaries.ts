@@ -192,8 +192,11 @@ const en: MessageTree = {
     noCustomer: "No customer",
     createIssue: "Create issue",
     allIssues: "All issues",
+    listToolbarHint:
+      "Filter by assignee, link, or search title, symptom, assignee, and ticket ID. Open any row for the full issue page.",
     listHelp:
       "Click an issue to open its page (edit + thread). Filter by assignee (including unassigned only), link, or search title, symptom, assignee, and ticket ID.",
+    listHelpSummary: "More about filters & search",
     linkHint:
       "Optionally link a project, a customer (company), both, or neither for an unlinked issue.",
     customerOptional: "Customer (optional)",
@@ -831,8 +834,11 @@ const zh: MessageTree = {
     noCustomer: "无客户",
     createIssue: "创建问题",
     allIssues: "全部问题",
+    listToolbarHint:
+      "可按负责人、关联筛选，或搜索标题、现象、负责人与工单编号。点击行进入完整问题页。",
     listHelp:
       "点击问题进入详情（编辑与讨论）。可按负责人（含仅未分配）、关联筛选，或搜索标题、现象、负责人与工单编号。",
+    listHelpSummary: "筛选与搜索说明",
     linkHint: "可同时关联项目与客户（公司）、只选其一，或都不选（不关联）。",
     customerOptional: "客户（可选）",
     unlinked: "未关联",
