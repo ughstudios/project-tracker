@@ -814,7 +814,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           {c ? (
             <p className="text-zinc-700 dark:text-zinc-300">
               {t("issueDetail.customerColon")}{" "}
-              <span className="font-medium text-zinc-900 dark:text-zinc-100">{c.name}</span>
+              <Link
+                href={`/customers/${c.id}`}
+                className="font-medium text-zinc-900 dark:text-zinc-100 underline underline-offset-2"
+              >
+                {c.name}
+              </Link>
             </p>
           ) : null}
           {!p && !c ? <p className="text-zinc-700 dark:text-zinc-300">{t("issueDetail.notLinked")}</p> : null}

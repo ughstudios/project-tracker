@@ -6,8 +6,8 @@ import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
 import { getLocalizedText } from "@/lib/translated-content";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 type User = { id: string; name: string | null; email: string | null };
 
@@ -53,10 +53,12 @@ function statusLabel(t: (k: string) => string, status: string) {
 
 const fetchFresh: RequestInit = { credentials: "include", cache: "no-store" };
 
-export default function IssuesPage() {
+function IssuesPageContent() {
   const { t, locale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const customerFromQuery = searchParams.get("customer")?.trim() ?? "";
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
@@ -119,6 +121,12 @@ export default function IssuesPage() {
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, [pathname, loadLists]);
+
+  useEffect(() => {
+    if (pathname !== "/issues") return;
+    if (!customerFromQuery) return;
+    setLinkFilter(`c:${customerFromQuery}`);
+  }, [pathname, customerFromQuery]);
 
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
@@ -610,5 +618,19 @@ export default function IssuesPage() {
         </div>
       </section>
     </div>
+  );
+}
+
+export default function IssuesPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="panel-surface rounded-xl p-4">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</p>
+        </div>
+      }
+    >
+      <IssuesPageContent />
+    </Suspense>
   );
 }

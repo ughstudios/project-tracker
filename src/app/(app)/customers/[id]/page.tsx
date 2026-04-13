@@ -180,12 +180,20 @@ export default function CustomerDetailPage() {
               {t("customerDetail.projectsCount", { count: String(projectCount) })}
             </p>
             {readOnly ? null : (
-              <Link
-                href={`/projects?customer=${encodeURIComponent(customerId)}`}
-                className="link-accent mt-0.5 inline-block text-sm underline"
-              >
-                {t("customers.viewProjectsFor", { name })}
-              </Link>
+              <div className="mt-0.5 flex flex-wrap gap-x-4 gap-y-1">
+                <Link
+                  href={`/projects?customer=${encodeURIComponent(customerId)}`}
+                  className="link-accent inline-block text-sm underline"
+                >
+                  {t("customers.viewProjectsFor", { name })}
+                </Link>
+                <Link
+                  href={`/issues?customer=${encodeURIComponent(customerId)}`}
+                  className="link-accent inline-block text-sm underline"
+                >
+                  {t("customers.viewIssuesFor", { name })}
+                </Link>
+              </div>
             )}
           </div>
           <Link href={readOnly ? "/archive" : "/customers"} className="link-accent text-sm underline">

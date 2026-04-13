@@ -285,6 +285,7 @@ const en: MessageTree = {
     archiveConfirm: 'Archive customer "{name}"?',
     couldNotArchive: "Could not archive customer.",
     viewProjectsFor: "View projects for {name}",
+    viewIssuesFor: "View issues for {name}",
     notFound: "Customer not found or no longer available.",
   },
   projects: {
@@ -953,6 +954,7 @@ const zh: MessageTree = {
     archiveConfirm: '归档客户「{name}」？',
     couldNotArchive: "无法归档客户。",
     viewProjectsFor: "查看「{name}」的项目",
+    viewIssuesFor: "查看「{name}」的工单",
     notFound: "未找到该客户或已不可用。",
   },
   projects: {
