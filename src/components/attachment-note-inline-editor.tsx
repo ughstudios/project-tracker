@@ -95,7 +95,7 @@ export function AttachmentNoteInlineEditor({
           <button
             type="button"
             onClick={startEdit}
-            className="shrink-0 text-xs font-medium text-blue-700 underline"
+            className="link-accent shrink-0 text-xs font-medium underline"
           >
             {uploadNote.trim() ? t("common.editNote") : t("common.addNote")}
           </button>

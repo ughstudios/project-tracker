@@ -123,7 +123,7 @@ export default function CustomersPage() {
                     <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 font-medium">
                       <Link
                         href={`/customers/${encodeURIComponent(c.id)}`}
-                        className="text-blue-700 hover:underline"
+                        className="link-accent underline"
                       >
                         {c.name}
                       </Link>
@@ -131,7 +131,7 @@ export default function CustomersPage() {
                     <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-zinc-700 dark:text-zinc-300">
                       <Link
                         href={`/projects?customer=${encodeURIComponent(c.id)}`}
-                        className="tabular-nums font-medium text-blue-700 hover:underline"
+                        className="link-accent tabular-nums font-medium underline"
                         title={t("customers.viewProjectsFor", { name: c.name })}
                       >
                         {c._count?.projects ?? 0}

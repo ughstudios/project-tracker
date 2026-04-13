@@ -67,10 +67,10 @@ export function AppShell({ user, navAccess, onLogout, children }: Props) {
   const showTab = (id: EmployeeNavTabId) => navAccess[id] !== false;
 
   return (
-    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
+    <div className="min-h-screen bg-zinc-50 dark:bg-[var(--body-bg)]">
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <div className="grid gap-5 lg:grid-cols-[216px_1fr]">
-          <aside className="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-sm lg:min-h-[calc(100vh-3rem)]">
+          <aside className="surface-elevated-dark flex flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm lg:min-h-[calc(100vh-3rem)]">
             <div className="mb-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
               <div className="text-[15px] font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100">
                 {t("nav.appTitle")}

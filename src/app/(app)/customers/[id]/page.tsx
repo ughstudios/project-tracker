@@ -157,7 +157,7 @@ export default function CustomerDetailPage() {
       <div className="space-y-4">
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customers.notFound")}</p>
-          <Link href="/customers" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
+          <Link href="/customers" className="link-accent mt-2 inline-block text-sm underline">
             {t("customerDetail.backToCustomers")}
           </Link>
         </div>
@@ -182,13 +182,13 @@ export default function CustomerDetailPage() {
             {readOnly ? null : (
               <Link
                 href={`/projects?customer=${encodeURIComponent(customerId)}`}
-                className="mt-0.5 inline-block text-sm text-blue-700 hover:underline"
+                className="link-accent mt-0.5 inline-block text-sm underline"
               >
                 {t("customers.viewProjectsFor", { name })}
               </Link>
             )}
           </div>
-          <Link href={readOnly ? "/archive" : "/customers"} className="text-sm text-blue-700 hover:underline">
+          <Link href={readOnly ? "/archive" : "/customers"} className="link-accent text-sm underline">
             {readOnly ? t("issueDetail.backToArchive") : t("customerDetail.backToCustomers")}
           </Link>
         </div>
@@ -259,7 +259,7 @@ export default function CustomerDetailPage() {
                       href={attachmentBlobHref(a.fileUrl, { asDownload: true })}
                       target="_blank"
                       rel="noreferrer"
-                      className="min-w-0 truncate text-blue-700 hover:underline"
+                      className="link-accent min-w-0 truncate underline"
                     >
                       {a.fileName}
                     </a>

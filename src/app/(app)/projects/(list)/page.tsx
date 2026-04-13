@@ -602,7 +602,7 @@ function ProjectsPageContent() {
                     <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{p._count?.issues ?? 0}</td>
                     <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
                       <div className="flex items-center gap-2">
-                        <Link href={`/projects/${p.id}`} className="text-blue-700 hover:underline">
+                        <Link href={`/projects/${p.id}`} className="link-accent underline">
                           {t("projects.open")}
                         </Link>
                         {isAdmin ? (

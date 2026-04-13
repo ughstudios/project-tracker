@@ -296,7 +296,7 @@ export default function ProjectDetailsPage() {
       <div className="space-y-4">
         <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
-          <Link href="/projects" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
+          <Link href="/projects" className="link-accent mt-2 inline-block text-sm underline">
             {t("projectDetail.backToProjects")}
           </Link>
         </div>
@@ -313,7 +313,7 @@ export default function ProjectDetailsPage() {
           <h1 className="text-xl font-semibold">
             {readOnly ? t("projectDetail.viewArchivedTitle") : t("projectDetail.editTitle")}
           </h1>
-          <Link href={readOnly ? "/archive" : "/projects"} className="text-sm text-blue-700 hover:underline">
+          <Link href={readOnly ? "/archive" : "/projects"} className="link-accent text-sm underline">
             {readOnly ? t("issueDetail.backToArchive") : t("projectDetail.backToProjects")}
           </Link>
         </div>
@@ -450,7 +450,7 @@ export default function ProjectDetailsPage() {
                         href={attachmentBlobHref(a.fileUrl, { asDownload: true })}
                         target="_blank"
                         rel="noreferrer"
-                        className="min-w-0 truncate text-blue-700 hover:underline"
+                        className="link-accent min-w-0 truncate underline"
                       >
                         {a.fileName}
                       </a>
@@ -489,7 +489,7 @@ export default function ProjectDetailsPage() {
             <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
               {issues.map((issue) => (
                 <li key={issue.id} className="flex items-center justify-between px-3 py-2 text-sm">
-                  <Link href={`/issues/${issue.id}`} className="min-w-0 text-blue-700 hover:underline">
+                  <Link href={`/issues/${issue.id}`} className="link-accent min-w-0 underline">
                     <span className="block font-mono text-[11px] text-zinc-500 dark:text-zinc-400 break-all">
                       {issue.id}
                     </span>

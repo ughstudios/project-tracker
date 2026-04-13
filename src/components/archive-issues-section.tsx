@@ -103,7 +103,7 @@ export function ArchiveIssuesSection({ issues, staffAdmin, unarchiveAction }: Pr
                   {localizedTitle.text}
                 </Link>{" "}
                 {localizedTitle.usedTranslation ? (
-                  <span className="block text-xs text-blue-700">
+                  <span className="block text-xs text-sky-800 dark:text-sky-400/90">
                     {t("common.autoTranslatedFrom", {
                       language: t(`language.${localizedTitle.sourceLanguage ?? "en"}`),
                     })}

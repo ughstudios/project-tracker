@@ -51,7 +51,7 @@ export function WorkRecordContentView({ content }: { content: string }) {
             ) : (
               <a
                 href={seg.url}
-                className="text-blue-700 underline"
+                className="link-accent underline"
                 target="_blank"
                 rel="noreferrer"
               >

@@ -124,7 +124,7 @@ export function IssueKanban() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="surface-elevated-dark rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("dashboard.filters")}</h2>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
           <input
@@ -174,7 +174,7 @@ export function IssueKanban() {
           </select>
           <button
             type="button"
-            className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200 dark:hover:bg-white/[0.08]"
             onClick={() => {
               setQuery("");
               setAssigneeFilter("");
@@ -190,7 +190,7 @@ export function IssueKanban() {
       <section>
         <div>
           {loading ? (
-            <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-sm text-zinc-600 dark:text-zinc-400 shadow-sm">
+            <div className="surface-elevated-dark rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm dark:text-zinc-400">
               {t("common.loading")}
             </div>
           ) : (
@@ -204,7 +204,7 @@ export function IssueKanban() {
                   return (
                     <section
                       key={status}
-                      className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-3"
+                      className="rounded-xl border border-zinc-200 bg-zinc-50 p-3 dark:border-white/[0.06] dark:bg-[#12141c] dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
                       onDragOver={(e) => {
                         e.preventDefault();
                       }}
@@ -220,20 +220,20 @@ export function IssueKanban() {
                         <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                           {columnTitle(status)}
                         </h3>
-                        <span className="rounded-full bg-white dark:bg-zinc-900 px-2 py-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                        <span className="rounded-full bg-white px-2 py-0.5 text-xs text-zinc-500 dark:bg-white/[0.06] dark:text-zinc-400">
                           {columnIssues.length}
                         </span>
                       </header>
                       <div className="space-y-3">
                         {columnIssues.length === 0 ? (
-                          <p className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-3 text-xs text-zinc-500 dark:text-zinc-400">
+                          <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-3 text-xs text-zinc-500 dark:border-white/10 dark:bg-white/[0.03] dark:text-zinc-500">
                             {t("common.noIssues")}
                           </p>
                         ) : (
                           columnIssues.map((issue) => (
                             <article
                               key={issue.id}
-                              className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-sm"
+                              className="surface-elevated-dark rounded-lg border border-zinc-200 bg-white p-3 shadow-sm"
                               draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.setData("text/issue-id", issue.id);
@@ -273,12 +273,12 @@ export function IssueKanban() {
                                   <>
                               <Link
                                 href={`/issues/${issue.id}`}
-                                className="text-sm font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800"
+                                className="link-accent text-sm font-semibold underline"
                               >
                                 {localizedTitle.text}
                               </Link>
                               {localizedTitle.usedTranslation ? (
-                                <p className="mt-1 text-xs text-blue-700">
+                                <p className="mt-1 text-xs text-sky-800 dark:text-sky-400/90">
                                   {t("common.autoTranslatedFrom", {
                                     language: t(`language.${localizedTitle.sourceLanguage ?? "en"}`),
                                   })}
@@ -306,7 +306,7 @@ export function IssueKanban() {
                                   {issue.id}
                                 </span>
                                 {copiedIssueId === issue.id ? (
-                                  <span className="ml-2 text-emerald-600">{t("common.copied")}</span>
+                                  <span className="ml-2 text-emerald-600 dark:text-emerald-400">{t("common.copied")}</span>
                                 ) : null}
                               </p>
                               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
@@ -374,7 +374,7 @@ export function IssueKanban() {
                                 type="button"
                                 onClick={() => archiveIssue(issue.id, issue.title)}
                                 disabled={archivingIssueId === issue.id}
-                                className="mt-3 rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 disabled:opacity-50"
+                                className="mt-3 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.04] dark:hover:bg-white/[0.08]"
                               >
                                 {archivingIssueId === issue.id
                                   ? t("common.archiving")

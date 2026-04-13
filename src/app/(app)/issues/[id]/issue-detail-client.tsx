@@ -174,7 +174,7 @@ function TranslationPreview({
   if (!localized.usedTranslation) return null;
 
   return (
-    <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-950">
+    <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-950 dark:border-sky-800/50 dark:bg-sky-950/35 dark:text-sky-100">
       <p className="font-medium">
         {t("common.autoTranslatedFrom", {
           language: t(`language.${localized.sourceLanguage ?? "en"}`),
@@ -751,7 +751,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       ) : null}
 
       {issueTranslationActive ? (
-        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950 shadow-sm">
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950 shadow-sm dark:border-sky-800/50 dark:bg-sky-950/35 dark:text-sky-100">
           {t("issueDetail.translationBanner", {
             language: t(`language.${issue.contentLanguage ?? "en"}`),
           })}
@@ -1136,7 +1136,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </div>
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center rounded-lg border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 disabled:border-zinc-300 dark:border-zinc-600 disabled:bg-zinc-300 disabled:text-zinc-600 dark:text-zinc-400 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 disabled:border-zinc-300 disabled:bg-zinc-300 disabled:text-zinc-600 dark:border-sky-600 dark:bg-sky-600 dark:hover:border-sky-500 dark:hover:bg-sky-500 dark:disabled:border-zinc-600 dark:disabled:bg-zinc-600 dark:disabled:text-zinc-400 sm:w-auto"
               onClick={() => void postThread()}
               disabled={postingThread}
             >

@@ -516,7 +516,7 @@ export default function IssuesPage() {
                       sourceLanguage: i.contentLanguage,
                       locale,
                     }).usedTranslation ? (
-                      <span className="mt-0.5 block text-xs text-blue-700">
+                      <span className="mt-0.5 block text-xs text-sky-800 dark:text-sky-400/90">
                         {t("common.autoTranslatedFrom", {
                           language: t(
                             `language.${getLocalizedText({
