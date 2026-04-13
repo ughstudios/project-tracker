@@ -146,7 +146,7 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <div className="panel-surface rounded-xl p-4">
         {t("customerDetail.loading")}
       </div>
     );
@@ -155,7 +155,7 @@ export default function CustomerDetailPage() {
   if (missing) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customers.notFound")}</p>
           <Link href="/customers" className="link-accent mt-2 inline-block text-sm underline">
             {t("customerDetail.backToCustomers")}
@@ -169,7 +169,7 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-xl font-semibold">
@@ -208,7 +208,7 @@ export default function CustomerDetailPage() {
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-4">
+      <section className="panel-surface rounded-xl p-4 space-y-4">
         <h2 className="text-base font-semibold">{t("customerDetail.filesTitle")}</h2>
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customerDetail.filesHelp")}</p>
         {readOnly ? null : (
@@ -251,7 +251,7 @@ export default function CustomerDetailPage() {
           {attachments.length === 0 ? (
             <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("customerDetail.noFiles")}</p>
           ) : (
-            <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+            <ul className="panel-surface mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg">
               {attachments.map((a) => (
                 <li key={a.id} className="px-3 py-2 text-sm">
                   <div className="flex items-center justify-between gap-2">

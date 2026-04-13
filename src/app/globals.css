@@ -61,6 +61,12 @@ html[lang="zh-CN"] body {
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
 }
 
+.input:disabled,
+.input[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 /* File inputs: obvious browse control + clear drop target (all browsers). */
 .input-file-zone {
   display: block;
@@ -159,6 +165,23 @@ html[lang="zh-CN"] body {
   @apply dark:text-sky-400 dark:hover:text-sky-300 dark:decoration-sky-400/40;
 }
 
-@utility surface-elevated-dark {
+/* Shared card/panel chrome (matches Kanban): same dark fill + border + shadow as sidebar */
+@utility panel-surface {
+  @apply border border-zinc-200 bg-white shadow-sm;
   @apply dark:border-white/[0.08] dark:bg-[#15171e] dark:shadow-[0_8px_30px_-12px_rgba(0,0,0,0.55)] dark:ring-1 dark:ring-white/[0.04];
 }
+
+/* Solid primary actions: dark bg in light mode, light surface in dark mode (visible on #15171e panels) */
+@utility btn-primary {
+  @apply bg-zinc-900 text-white hover:bg-zinc-800;
+  @apply dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-white;
+  @apply disabled:cursor-not-allowed disabled:opacity-50;
+}
+
+/* Outline / ghost actions on dark panels (visible border + fill vs #15171e) */
+@utility btn-secondary {
+  @apply border border-zinc-300 bg-white text-zinc-800 hover:bg-zinc-50;
+  @apply dark:border-white/10 dark:bg-white/[0.06] dark:text-zinc-100 dark:hover:bg-white/[0.1];
+  @apply disabled:cursor-not-allowed disabled:opacity-70;
+}
+

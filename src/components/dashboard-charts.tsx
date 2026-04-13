@@ -129,19 +129,19 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
         aria-label={t("dashboard.chartsOverviewAria")}
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statActiveIssues")}
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{issues.length}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statProjects")}
           </p>
           <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{projects.length}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statCustomers")}
           </p>
@@ -159,7 +159,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <section className="panel-surface rounded-xl p-4">
             <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
             <div className="mt-3 h-[280px] w-full min-w-0">
@@ -188,7 +188,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
             </div>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <section className="panel-surface rounded-xl p-4">
             <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
             <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
             <div className="mt-3 h-[280px] w-full min-w-0">
@@ -220,7 +220,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
           </section>
 
           {byProject.length > 0 ? (
-            <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm lg:col-span-2">
+            <section className="panel-surface rounded-xl p-4 lg:col-span-2">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByProjectHint")}</p>
               <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">

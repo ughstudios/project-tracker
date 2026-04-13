@@ -83,7 +83,7 @@ export function WorkRecordsDashboardCharts() {
 
   return (
     <section
-      className="space-y-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm"
+      className="panel-surface space-y-4 rounded-xl p-4"
       aria-label={t("dashboard.workRecordsChartsAria")}
     >
       <div>
@@ -98,7 +98,7 @@ export function WorkRecordsDashboardCharts() {
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
           {summary.byUser.length > 0 ? (
-            <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3">
+            <div className="panel-surface rounded-lg p-3">
               <h3 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
                 {t("dashboard.chartWorkRecordsByAuthor")}
               </h3>
@@ -135,7 +135,7 @@ export function WorkRecordsDashboardCharts() {
             </div>
           ) : null}
 
-          <div className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 lg:col-span-2">
+          <div className="panel-surface rounded-lg p-3 lg:col-span-2">
             <h3 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
               {t("dashboard.chartWorkRecordsByMonth")}
             </h3>

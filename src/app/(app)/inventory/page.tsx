@@ -168,7 +168,7 @@ function StockRow({
           type="button"
           disabled={saving}
           onClick={() => void save()}
-          className="rounded-lg bg-zinc-900 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
+          className="btn-primary rounded-lg px-2 py-1 text-xs font-semibold"
         >
           {saving ? t("common.saving") : t("inventory.saveRow")}
         </button>
@@ -323,12 +323,12 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">{t("inventory.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("inventory.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold">{t("inventory.addSection")}</h2>
         <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("inventory.addHint")}</p>
         <form onSubmit={submitAdd} className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
@@ -463,7 +463,7 @@ export default function InventoryPage() {
             <button
               type="submit"
               disabled={adding}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
+              className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
             >
               {adding ? t("common.saving") : t("inventory.addOrUpdate")}
             </button>
@@ -471,7 +471,7 @@ export default function InventoryPage() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-base font-semibold">{t("inventory.listSection")}</h2>
           <div className="flex flex-wrap gap-2">

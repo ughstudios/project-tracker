@@ -66,13 +66,13 @@ export function EmployeeNavAccessClient({ initialAccess, settingsDbOk }: Props) 
           </p>
         </div>
       ) : null}
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">{t("employeeNavAccess.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("employeeNavAccess.subtitle")}</p>
         <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("employeeNavAccess.tabHelp")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <ul className="divide-y divide-zinc-100">
           {rows.map(({ id, label }) => (
             <li key={id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
@@ -96,7 +96,7 @@ export function EmployeeNavAccessClient({ initialAccess, settingsDbOk }: Props) 
             type="button"
             disabled={saving || !settingsDbOk}
             onClick={() => void save()}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
           >
             {saving ? t("employeeNavAccess.saving") : t("employeeNavAccess.save")}
           </button>

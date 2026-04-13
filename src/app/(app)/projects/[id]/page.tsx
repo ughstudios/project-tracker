@@ -285,7 +285,7 @@ export default function ProjectDetailsPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <div className="panel-surface rounded-xl p-4">
         {t("projectDetail.loading")}
       </div>
     );
@@ -294,7 +294,7 @@ export default function ProjectDetailsPage() {
   if (missing) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
           <Link href="/projects" className="link-accent mt-2 inline-block text-sm underline">
             {t("projectDetail.backToProjects")}
@@ -308,7 +308,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">
             {readOnly ? t("projectDetail.viewArchivedTitle") : t("projectDetail.editTitle")}
@@ -334,7 +334,7 @@ export default function ProjectDetailsPage() {
       ) : null}
 
       <form onSubmit={save} className="space-y-4">
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
+        <section className="panel-surface rounded-xl p-4 grid grid-cols-1 md:grid-cols-3 gap-2">
           <input className="input md:col-span-2" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
           <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)} disabled={readOnly}>
             <option value="">{t("common.selectCustomer")}</option>
@@ -344,7 +344,7 @@ export default function ProjectDetailsPage() {
           </select>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
+        <section className="panel-surface rounded-xl p-4 space-y-2">
           <h2 className="text-base font-semibold">Processors</h2>
           {processors.map((item, idx) => (
             <div key={`p-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -362,7 +362,7 @@ export default function ProjectDetailsPage() {
           {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
+        <section className="panel-surface rounded-xl p-4 space-y-2">
           <h2 className="text-base font-semibold">Receiver cards</h2>
           {receiverCards.map((item, idx) => (
             <div key={`r-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -378,7 +378,7 @@ export default function ProjectDetailsPage() {
           {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
+        <section className="panel-surface rounded-xl p-4 space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.otherProducts")}</h2>
           {otherProducts.map((item, idx) => (
             <div key={`o-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -399,7 +399,7 @@ export default function ProjectDetailsPage() {
           {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-4">
+        <section className="panel-surface rounded-xl p-4 space-y-4">
           <h2 className="text-base font-semibold">{t("projectDetail.filesTitle")}</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.filesHelp")}</p>
           {readOnly ? null : (
@@ -442,7 +442,7 @@ export default function ProjectDetailsPage() {
             {attachments.length === 0 ? (
               <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("projectDetail.noFiles")}</p>
             ) : (
-              <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+              <ul className="panel-surface mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg">
                 {attachments.map((a) => (
                   <li key={a.id} className="px-3 py-2 text-sm">
                     <div className="flex items-center justify-between gap-2">
@@ -480,13 +480,13 @@ export default function ProjectDetailsPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-3">
+        <section className="panel-surface rounded-xl p-4 space-y-3">
           <h2 className="text-base font-semibold">{t("projectDetail.linkedIssues")}</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.linkedIssuesHelp")}</p>
           {issues.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("projectDetail.noLinkedIssues")}</p>
           ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
+            <ul className="panel-surface divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg">
               {issues.map((issue) => (
                 <li key={issue.id} className="flex items-center justify-between px-3 py-2 text-sm">
                   <Link href={`/issues/${issue.id}`} className="link-accent min-w-0 underline">
@@ -504,7 +504,7 @@ export default function ProjectDetailsPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
+        <section className="panel-surface rounded-xl p-4 space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.notesTitle")}</h2>
           {readOnly ? null : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -540,7 +540,7 @@ export default function ProjectDetailsPage() {
         </section>
 
         {readOnly ? null : (
-          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600" disabled={saving}>
+          <button className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold" disabled={saving}>
             {saving ? t("common.saving") : t("projectDetail.saveChanges")}
           </button>
         )}

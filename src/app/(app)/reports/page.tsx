@@ -275,12 +275,15 @@ export default function ReportsPage() {
       </div>
 
       {error ? (
-        <p className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <p
+          className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-200"
+          role="alert"
+        >
           {error}
         </p>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.csvOptionsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {isAdmin === null
@@ -325,12 +328,12 @@ export default function ReportsPage() {
           ) : null}
         </div>
         {showColsWarning ? (
-          <p className="mt-4 text-sm text-amber-800">{t("reports.needOneColumn")}</p>
+          <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">{t("reports.needOneColumn")}</p>
         ) : null}
       </section>
 
       {isAdmin === true ? (
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <section className="panel-surface rounded-xl p-4">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.outstandingTitle")}</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.outstandingHelp")}</p>
           <div className="mt-4 flex flex-wrap items-end gap-3">
@@ -340,14 +343,14 @@ export default function ReportsPage() {
                 type="month"
                 value={outstandingMonth}
                 onChange={(e) => setOutstandingMonth(e.target.value)}
-                className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
+                className="panel-surface rounded-md px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
               />
             </label>
             <button
               type="button"
               onClick={() => void downloadOutstanding()}
               disabled={busy !== null || issueCols.length === 0}
-              className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+              className="btn-primary rounded-md px-3 py-2 text-sm font-medium"
             >
               {busy === "outstanding" ? t("reports.preparing") : t("reports.downloadCsv")}
             </button>
@@ -355,7 +358,7 @@ export default function ReportsPage() {
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.workRecordsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.workRecordsHelp")}</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
@@ -365,7 +368,7 @@ export default function ReportsPage() {
               type="date"
               value={wrFrom}
               onChange={(e) => setWrFrom(e.target.value)}
-              className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
+              className="panel-surface rounded-md px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
             />
           </label>
           <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -374,7 +377,7 @@ export default function ReportsPage() {
               type="date"
               value={wrTo}
               onChange={(e) => setWrTo(e.target.value)}
-              className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
+              className="panel-surface rounded-md px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
             />
           </label>
           {isAdmin === true ? (
@@ -383,7 +386,7 @@ export default function ReportsPage() {
               <select
                 value={wrForUserId}
                 onChange={(e) => setWrForUserId(e.target.value)}
-                className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
+                className="panel-surface rounded-md px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
               >
                 <option value="">{t("reports.selfOnly")}</option>
                 <option value="__all__">{t("reports.everyoneInRange")}</option>
@@ -399,7 +402,7 @@ export default function ReportsPage() {
             type="button"
             onClick={() => void downloadWorkRecords()}
             disabled={busy !== null || workCols.length === 0}
-            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="btn-primary rounded-md px-3 py-2 text-sm font-medium"
           >
             {busy === "workRecords" ? t("reports.preparing") : t("reports.downloadCsv")}
           </button>
@@ -415,7 +418,7 @@ export default function ReportsPage() {
       </section>
 
       {isAdmin === true ? (
-        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <section className="panel-surface rounded-xl p-4">
           <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.exportAllTitle")}</h2>
           <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.exportAllHelp")}</p>
           <button
@@ -424,7 +427,7 @@ export default function ReportsPage() {
             disabled={
               busy !== null || issueCols.length === 0 || workCols.length === 0 || userCols.length === 0
             }
-            className="mt-4 rounded-md bg-zinc-900 px-3 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="btn-primary mt-4 rounded-md px-3 py-2 text-sm font-medium"
           >
             {busy === "exportAll" ? t("reports.preparingAll") : t("reports.downloadAllCsv")}
           </button>

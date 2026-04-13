@@ -100,7 +100,7 @@ export function AdminRolesClient() {
     <div className="space-y-4">
       <dialog
         ref={passwordDialogRef}
-        className="fixed left-1/2 top-1/2 z-[200] max-h-[90dvh] w-[min(calc(100vw-2rem),28rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-xl backdrop:bg-zinc-950/40"
+        className="panel-surface fixed left-1/2 top-1/2 z-[200] max-h-[90dvh] w-[min(calc(100vw-2rem),28rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl p-6 !shadow-xl backdrop:bg-zinc-950/40"
         onClose={() => {
           setPasswordUser(null);
           setPwdNew("");
@@ -148,7 +148,7 @@ export function AdminRolesClient() {
               </button>
               <button
                 type="button"
-                className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-50"
+                className="btn-primary rounded-lg px-3 py-1.5 text-sm font-medium"
                 disabled={passwordSaving}
                 onClick={() => void submitPasswordReset()}
               >
@@ -159,12 +159,12 @@ export function AdminRolesClient() {
         ) : null}
       </dialog>
 
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">{t("adminRoles.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         {loading ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.loading")}</p>
         ) : users.length === 0 ? (

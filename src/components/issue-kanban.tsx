@@ -124,7 +124,7 @@ export function IssueKanban() {
 
   return (
     <div className="space-y-5">
-      <section className="surface-elevated-dark rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold">{t("dashboard.filters")}</h2>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
           <input
@@ -190,7 +190,7 @@ export function IssueKanban() {
       <section>
         <div>
           {loading ? (
-            <div className="surface-elevated-dark rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm dark:text-zinc-400">
+            <div className="panel-surface rounded-xl p-4 text-sm text-zinc-600 dark:text-zinc-400">
               {t("common.loading")}
             </div>
           ) : (
@@ -233,7 +233,7 @@ export function IssueKanban() {
                           columnIssues.map((issue) => (
                             <article
                               key={issue.id}
-                              className="surface-elevated-dark rounded-lg border border-zinc-200 bg-white p-3 shadow-sm"
+                              className="panel-surface rounded-lg p-3"
                               draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.setData("text/issue-id", issue.id);

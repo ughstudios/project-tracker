@@ -205,12 +205,12 @@ function ProjectsPageContent() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">{t("projects.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projects.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold">{t("projects.wizardTitle")}</h2>
         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
           <span className={wizardStep === 1 ? "font-semibold text-zinc-900 dark:text-zinc-100" : ""}>
@@ -500,7 +500,7 @@ function ProjectsPageContent() {
                   e.preventDefault();
                   setWizardStep((s) => (s === 4 ? 4 : (s + 1) as 1 | 2 | 3 | 4));
                 }}
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600"
+                className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
               >
                 {t("common.next")}
               </button>
@@ -508,7 +508,7 @@ function ProjectsPageContent() {
               <button
                 type="submit"
                 disabled={saving}
-                className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
+                className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
               >
                 {saving ? t("common.creating") : t("projects.createProject")}
               </button>
@@ -517,7 +517,7 @@ function ProjectsPageContent() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
           <h2 className="text-base font-semibold">{t("projects.listTitle")}</h2>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-3">
@@ -632,7 +632,7 @@ export default function ProjectsPage() {
   return (
     <Suspense
       fallback={
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <p className="text-sm text-zinc-600 dark:text-zinc-400">Loading…</p>
         </div>
       }

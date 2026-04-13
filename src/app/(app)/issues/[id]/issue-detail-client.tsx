@@ -660,7 +660,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+      <div className="panel-surface rounded-xl p-6">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("issueDetail.loading")}</p>
       </div>
     );
@@ -669,7 +669,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   if (loadError || !issue) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+        <div className="panel-surface rounded-xl p-6">
           <p className="text-sm text-zinc-800 dark:text-zinc-200">{loadError ?? t("issueDetail.notFound")}</p>
           <Link
             href="/issues"
@@ -758,7 +758,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
       ) : null}
 
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">
           {readOnly ? t("issueDetail.viewArchivedTitle") : t("issueDetail.editTitle")}
         </h1>
@@ -797,7 +797,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
       <form
         onSubmit={save}
-        className="space-y-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm"
+        className="panel-surface space-y-4 rounded-xl p-4"
       >
         <h2 className="text-base font-semibold">{t("issueDetail.details")}</h2>
         <div className="grid gap-3 md:grid-cols-2">
@@ -943,14 +943,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
           >
             {saving ? t("common.saving") : t("issueDetail.saveChanges")}
           </button>
         )}
       </form>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issueDetail.attachmentsHelp")}</p>
         {readOnly ? null : (
@@ -1048,7 +1048,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
+      <section className="panel-surface rounded-xl p-5">
         <div className="flex flex-col gap-1">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("issueDetail.thread")}</h2>
           <p className="text-sm text-zinc-600 dark:text-zinc-400">
@@ -1086,7 +1086,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               {threadFiles.map((f, i) => (
                 <li
                   key={`${f.name}-${i}-${f.size}`}
-                  className="flex max-w-full items-center gap-1 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 py-1 pl-3 pr-1 text-xs text-zinc-800 dark:text-zinc-200 shadow-sm"
+                  className="panel-surface flex max-w-full items-center gap-1 rounded-full py-1 pl-3 pr-1 text-xs text-zinc-800 dark:text-zinc-200"
                 >
                   <span className="max-w-[220px] truncate font-medium" title={f.name}>
                     {f.name}
@@ -1174,7 +1174,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 {entry.attachments.length > 0 ? (
                   <div className={entry.content ? "mt-3 space-y-3" : "space-y-3"}>
                     {entry.attachments.map((att) => (
-                      <div key={att.id} className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2">
+                      <div key={att.id} className="panel-surface rounded-md p-2">
                         {isImageExt(att.fileType) ? (
                           <a
                             href={attachmentBlobHref(att.fileUrl)}

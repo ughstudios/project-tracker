@@ -50,7 +50,7 @@ export function AccountSettingsForms({
 
   return (
     <div className="space-y-10">
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+      <section className="panel-surface rounded-xl p-6">
         <h2 className="text-lg font-semibold">{t("account.changeName")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.nameHelp")}</p>
         <form action={nameFormAction} className="mt-4 space-y-4">
@@ -72,14 +72,14 @@ export function AccountSettingsForms({
           <button
             type="submit"
             disabled={namePending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
           >
             {namePending ? t("common.saving") : t("account.updateName")}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+      <section className="panel-surface rounded-xl p-6">
         <h2 className="text-lg font-semibold">{t("account.changePassword")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.passwordHelp")}</p>
         <form action={passwordFormAction} className="mt-4 space-y-4">
@@ -122,14 +122,14 @@ export function AccountSettingsForms({
           <button
             type="submit"
             disabled={passwordPending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
           >
             {passwordPending ? t("common.saving") : t("account.updatePassword")}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+      <section className="panel-surface rounded-xl p-6">
         <h2 className="text-lg font-semibold">{t("account.changeEmail")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {t("account.emailHelp", { email: currentEmail })}
@@ -162,7 +162,7 @@ export function AccountSettingsForms({
           <button
             type="submit"
             disabled={emailPending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
+            className="btn-primary rounded-lg px-4 py-2 text-sm font-semibold"
           >
             {emailPending ? t("common.saving") : t("account.updateEmail")}
           </button>

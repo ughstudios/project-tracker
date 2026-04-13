@@ -25,12 +25,12 @@ export default async function PendingRegistrationsPage() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
+      <div className="panel-surface rounded-xl p-5">
         <h1 className="text-xl font-semibold">{t("pending.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("pending.subtitle")}</p>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
+      <div className="panel-surface rounded-xl p-5">
         {pendingUsers.length === 0 ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("pending.none")}</p>
         ) : (
@@ -58,7 +58,7 @@ export default async function PendingRegistrationsPage() {
                         <button
                           type="submit"
                           formAction={approveRegistration}
-                          className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600"
+                          className="btn-primary rounded-md px-3 py-1.5 text-xs font-semibold"
                         >
                           {t("pending.approve")}
                         </button>

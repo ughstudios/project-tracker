@@ -235,13 +235,13 @@ export default function WorkRecordsPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <header className="panel-surface rounded-xl p-4">
         <h1 className="text-xl font-semibold">{t("workRecords.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("workRecords.subtitle")}</p>
       </header>
 
       {isAdmin ? (
-        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <div className="panel-surface rounded-xl p-4">
           <label className="flex flex-wrap items-center gap-2 text-sm">
             <span className="font-medium text-zinc-700 dark:text-zinc-300">{t("workRecords.adminFilter")}</span>
             <select
@@ -250,7 +250,7 @@ export default function WorkRecordsPage() {
                 setFilterUserId(e.target.value);
                 setPage(1);
               }}
-              className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm"
+              className="input max-w-md text-sm"
             >
               <option value="">{t("workRecords.everyone")}</option>
               {users.map((u) => (
@@ -263,7 +263,7 @@ export default function WorkRecordsPage() {
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="mb-3 text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("workRecords.add")}</h2>
         <form onSubmit={onCreate} className="space-y-3">
           <div className="grid gap-3 sm:grid-cols-2">
@@ -274,7 +274,7 @@ export default function WorkRecordsPage() {
                 required
                 value={formDate}
                 onChange={(e) => setFormDate(e.target.value)}
-                className="mt-1 w-full rounded-md border border-zinc-300 dark:border-zinc-600 px-2 py-1.5 text-sm"
+                className="input mt-1 w-full text-sm"
               />
             </label>
             <label className="block text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -284,7 +284,7 @@ export default function WorkRecordsPage() {
                 type="text"
                 value={formTitle}
                 onChange={(e) => setFormTitle(e.target.value)}
-                className="mt-1 w-full rounded-md border border-zinc-300 dark:border-zinc-600 px-2 py-1.5 text-sm"
+                className="input mt-1 w-full text-sm"
               />
             </label>
           </div>
@@ -298,7 +298,7 @@ export default function WorkRecordsPage() {
               onChange={(e) => setFormContent(e.target.value)}
               onPaste={(e) => void handlePasteImages(e, "form")}
               disabled={pasteBusy || submitting}
-              className="mt-1 w-full rounded-md border border-zinc-300 dark:border-zinc-600 px-2 py-1.5 text-sm disabled:bg-zinc-100 dark:bg-zinc-800"
+              className="input mt-1 min-h-[5.5rem] w-full resize-y text-sm disabled:opacity-60"
             />
             {pasteBusy ? (
               <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("workRecords.pasteUploading")}</p>
@@ -308,14 +308,14 @@ export default function WorkRecordsPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="rounded-md bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:opacity-60"
+            className="btn-primary rounded-md px-3 py-2 text-sm font-semibold disabled:opacity-60"
           >
             {submitting ? t("workRecords.adding") : t("workRecords.add")}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+      <section className="panel-surface rounded-xl p-4">
         {loading ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("common.loading")}</p>
         ) : records.length === 0 ? (
@@ -324,7 +324,7 @@ export default function WorkRecordsPage() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-400">
                   <th className="px-2 py-2 font-medium">{t("workRecords.workDate")}</th>
                   {isAdmin ? (
                     <th className="px-2 py-2 font-medium">{t("workRecords.owner")}</th>
@@ -336,14 +336,14 @@ export default function WorkRecordsPage() {
               </thead>
               <tbody>
                 {records.map((row) => (
-                  <tr key={row.id} className="border-b border-zinc-100 dark:border-zinc-800 align-top">
+                  <tr key={row.id} className="border-b border-zinc-100 align-top dark:border-white/[0.06]">
                     <td className="px-2 py-2">
                       {editingId === row.id ? (
                         <input
                           type="date"
                           value={editDate}
                           onChange={(e) => setEditDate(e.target.value)}
-                          className="w-full rounded border border-zinc-300 dark:border-zinc-600 px-1 py-0.5 text-xs"
+                          className="input w-full py-1.5 text-xs"
                         />
                       ) : (
                         new Date(row.workDate).toLocaleDateString()
@@ -360,7 +360,7 @@ export default function WorkRecordsPage() {
                           type="text"
                           value={editTitle}
                           onChange={(e) => setEditTitle(e.target.value)}
-                          className="w-full rounded border border-zinc-300 dark:border-zinc-600 px-1 py-0.5 text-xs"
+                          className="input w-full py-1.5 text-xs"
                         />
                       ) : (
                         row.title || "—"
@@ -378,7 +378,7 @@ export default function WorkRecordsPage() {
                             onChange={(e) => setEditContent(e.target.value)}
                             onPaste={(e) => void handlePasteImages(e, "edit")}
                             disabled={pasteBusy || savingId === row.id}
-                            className="w-full rounded border border-zinc-300 dark:border-zinc-600 px-1 py-0.5 text-xs disabled:bg-zinc-100 dark:bg-zinc-800"
+                            className="input min-h-[4rem] w-full resize-y py-1.5 text-xs disabled:opacity-60"
                           />
                           {pasteBusy ? (
                             <p className="mt-1 text-[11px] text-zinc-500 dark:text-zinc-400">
@@ -397,7 +397,7 @@ export default function WorkRecordsPage() {
                             type="button"
                             onClick={() => void onSaveEdit(row.id)}
                             disabled={savingId === row.id}
-                            className="rounded bg-zinc-900 px-2 py-1 text-xs font-medium text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:opacity-60"
+                            className="btn-primary rounded px-2 py-1 text-xs font-medium disabled:opacity-60"
                           >
                             {savingId === row.id ? t("workRecords.saving") : t("workRecords.save")}
                           </button>
@@ -421,7 +421,7 @@ export default function WorkRecordsPage() {
                           <button
                             type="button"
                             onClick={() => void onDelete(row.id)}
-                            className="rounded border border-red-200 dark:border-red-800 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50"
+                            className="rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/35"
                           >
                             {t("common.delete")}
                           </button>
@@ -435,7 +435,7 @@ export default function WorkRecordsPage() {
           </div>
         )}
         {!loading && total > 0 && totalPages > 1 ? (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3 dark:border-white/[0.08]">
             <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {t("workRecords.pageSummary", {
                 page: String(page),
@@ -448,7 +448,7 @@ export default function WorkRecordsPage() {
                 type="button"
                 disabled={page <= 1 || loading}
                 onClick={() => setPage((p) => Math.max(1, p - 1))}
-                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200 dark:hover:bg-white/[0.08]"
               >
                 {t("common.previous")}
               </button>
@@ -456,7 +456,7 @@ export default function WorkRecordsPage() {
                 type="button"
                 disabled={page >= totalPages || loading}
                 onClick={() => setPage((p) => p + 1)}
-                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
+                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50 dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200 dark:hover:bg-white/[0.08]"
               >
                 {t("common.next")}
               </button>
