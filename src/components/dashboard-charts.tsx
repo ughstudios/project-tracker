@@ -158,69 +158,9 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
           {t("dashboard.chartsNoIssues")}
         </p>
       ) : (
-        <div className="grid gap-4 lg:grid-cols-2">
-          <section className="panel-surface rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
-            <div className="mt-3 h-[280px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  layout="vertical"
-                  data={byAssignee}
-                  margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                  <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
-                  <YAxis
-                    type="category"
-                    dataKey="name"
-                    width={100}
-                    tick={{ fontSize: 11 }}
-                    interval={0}
-                  />
-                  <Tooltip
-                    contentStyle={chartChrome.tooltipStyle}
-                    formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                  />
-                  <Bar dataKey="count" name={t("dashboard.axisIssues")} fill="#52525b" radius={[0, 4, 4, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-          <section className="panel-surface rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
-            <div className="mt-3 h-[280px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={byStatus}
-                    dataKey="count"
-                    nameKey="name"
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={100}
-                    label={({ name, percent }) =>
-                      `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                    }
-                    labelLine={false}
-                  >
-                    {byStatus.map((entry) => (
-                      <Cell key={entry.key} fill={entry.fill} />
-                    ))}
-                  </Pie>
-                  <Tooltip
-                    contentStyle={chartChrome.tooltipStyle}
-                    formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
+        <div className="space-y-4">
           {byProject.length > 0 ? (
-            <section className="panel-surface rounded-xl p-4 lg:col-span-2">
+            <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByProjectHint")}</p>
               <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
@@ -254,6 +194,68 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
               </div>
             </section>
           ) : null}
+
+          <div className="grid gap-4 lg:grid-cols-2">
+            <section className="panel-surface rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
+              <div className="mt-3 h-[280px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={byAssignee}
+                    margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={100}
+                      tick={{ fontSize: 11 }}
+                      interval={0}
+                    />
+                    <Tooltip
+                      contentStyle={chartChrome.tooltipStyle}
+                      formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                    />
+                    <Bar dataKey="count" name={t("dashboard.axisIssues")} fill="#52525b" radius={[0, 4, 4, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+
+            <section className="panel-surface rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
+              <div className="mt-3 h-[280px] w-full min-w-0">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={byStatus}
+                      dataKey="count"
+                      nameKey="name"
+                      cx="50%"
+                      cy="50%"
+                      outerRadius={100}
+                      label={({ name, percent }) =>
+                        `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
+                      }
+                      labelLine={false}
+                    >
+                      {byStatus.map((entry) => (
+                        <Cell key={entry.key} fill={entry.fill} />
+                      ))}
+                    </Pie>
+                    <Tooltip
+                      contentStyle={chartChrome.tooltipStyle}
+                      formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          </div>
         </div>
       )}
     </div>
