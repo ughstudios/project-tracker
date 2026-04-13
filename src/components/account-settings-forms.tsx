@@ -8,7 +8,7 @@ import {
 import { logoutAction } from "@/app/actions";
 import { useI18n } from "@/i18n/context";
 import { useRouter } from "next/navigation";
-import { useActionState, useEffect } from "react";
+import { useActionState, useEffect, useState } from "react";
 
 type PasswordState = { error?: string; ok?: boolean };
 type EmailState = { error?: string; ok?: boolean };
@@ -33,6 +33,8 @@ export function AccountSettingsForms({
   );
   const [emailState, emailFormAction, emailPending] = useActionState(updateEmailAction, emailInitial);
   const [nameState, nameFormAction, namePending] = useActionState(updateNameAction, nameInitial);
+  const [onboardingResetPending, setOnboardingResetPending] = useState(false);
+  const [onboardingResetError, setOnboardingResetError] = useState(false);
 
   useEffect(() => {
     if (!nameState?.ok) return;
@@ -50,6 +52,37 @@ export function AccountSettingsForms({
 
   return (
     <div className="space-y-10">
+      <section className="panel-surface rounded-xl p-6">
+        <h2 className="text-lg font-semibold">{t("account.introTourTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.showOnboardingAgainHelp")}</p>
+        {onboardingResetError ? (
+          <p className="mt-3 text-sm text-red-600 dark:text-red-400">{t("account.resetOnboardingFailed")}</p>
+        ) : null}
+        <button
+          type="button"
+          disabled={onboardingResetPending}
+          className="btn-secondary mt-4 rounded-lg px-4 py-2 text-sm font-semibold"
+          onClick={async () => {
+            setOnboardingResetError(false);
+            setOnboardingResetPending(true);
+            try {
+              const res = await fetch("/api/account/reset-onboarding", { method: "POST" });
+              if (!res.ok) {
+                setOnboardingResetError(true);
+                return;
+              }
+              router.refresh();
+            } catch {
+              setOnboardingResetError(true);
+            } finally {
+              setOnboardingResetPending(false);
+            }
+          }}
+        >
+          {onboardingResetPending ? t("common.saving") : t("account.showOnboardingAgain")}
+        </button>
+      </section>
+
       <section className="panel-surface rounded-xl p-6">
         <h2 className="text-lg font-semibold">{t("account.changeName")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.nameHelp")}</p>

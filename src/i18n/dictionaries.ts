@@ -616,6 +616,11 @@ const en: MessageTree = {
     newEmail: "New email",
     updateEmail: "Update email",
     emailUpdating: "Updating email and signing you out…",
+    introTourTitle: "Introduction tour",
+    showOnboardingAgain: "Show introduction again",
+    showOnboardingAgainHelp:
+      "Run the introduction steps again after you refresh or open another page.",
+    resetOnboardingFailed: "Could not reset the tour. Try again.",
   },
   onboarding: {
     skip: "Skip tour",
@@ -1272,6 +1277,11 @@ const zh: MessageTree = {
     newEmail: "新邮箱",
     updateEmail: "更新邮箱",
     emailUpdating: "正在更新邮箱并退出登录…",
+    introTourTitle: "入门引导",
+    showOnboardingAgain: "再次显示介绍",
+    showOnboardingAgainHelp:
+      "刷新或打开其他页面后，可再次查看入门介绍步骤。",
+    resetOnboardingFailed: "无法重置引导，请重试。",
   },
   onboarding: {
     skip: "跳过引导",
