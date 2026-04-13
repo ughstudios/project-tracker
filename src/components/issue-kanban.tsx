@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { getLocalizedText } from "@/lib/translated-content";
 import type { IssueBoardIssue } from "@/hooks/use-issue-board-data";
 import { useIssueBoardData } from "@/hooks/use-issue-board-data";
 import Link from "next/link";
@@ -18,7 +19,7 @@ function matchesLinkFilter(issue: IssueBoardIssue, filter: string) {
 }
 
 export function IssueKanban() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { users, projects, customers, issues, loading, loadData } = useIssueBoardData(["/kanban"]);
 
   const [query, setQuery] = useState("");
@@ -27,6 +28,7 @@ export function IssueKanban() {
   const [statusFilter, setStatusFilter] = useState("");
   const [draggingIssueId, setDraggingIssueId] = useState<string | null>(null);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
+  const [copiedIssueId, setCopiedIssueId] = useState<string | null>(null);
 
   const filteredIssues = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -36,12 +38,16 @@ export function IssueKanban() {
         [
           issue.id,
           issue.title,
+          issue.titleTranslated ?? "",
           issue.project?.name ?? "",
           issue.project?.product ?? "",
           issue.customer?.name ?? "",
           issue.symptom,
+          issue.symptomTranslated ?? "",
           issue.cause,
+          issue.causeTranslated ?? "",
           issue.solution,
+          issue.solutionTranslated ?? "",
           issue.rndContact,
           issue.assignee?.name ?? "",
         ]
@@ -94,6 +100,18 @@ export function IssueKanban() {
     const issue = issues.find((item) => item.id === id);
     if (!issue || issue.status === nextStatus) return;
     await updateIssue(id, { status: nextStatus });
+  };
+
+  const copyIssueUrl = async (issueId: string) => {
+    if (typeof window === "undefined" || !navigator.clipboard?.writeText) return;
+    const issueUrl = `${window.location.origin}/issues/${encodeURIComponent(issueId)}`;
+    try {
+      await navigator.clipboard.writeText(issueUrl);
+      setCopiedIssueId(issueId);
+      window.setTimeout(() => setCopiedIssueId((current) => (current === issueId ? null : current)), 1500);
+    } catch {
+      alert(t("common.copyFailed"));
+    }
   };
 
   const statuses = ["OPEN", "IN_PROGRESS", "DONE"] as const;
@@ -226,14 +244,70 @@ export function IssueKanban() {
                                 setDraggingIssueId(null);
                               }}
                             >
+                              {(() => {
+                                const localizedTitle = getLocalizedText({
+                                  original: issue.title,
+                                  translated: issue.titleTranslated,
+                                  sourceLanguage: issue.contentLanguage,
+                                  locale,
+                                });
+                                const localizedSymptom = getLocalizedText({
+                                  original: issue.symptom,
+                                  translated: issue.symptomTranslated,
+                                  sourceLanguage: issue.contentLanguage,
+                                  locale,
+                                });
+                                const localizedCause = getLocalizedText({
+                                  original: issue.cause,
+                                  translated: issue.causeTranslated,
+                                  sourceLanguage: issue.contentLanguage,
+                                  locale,
+                                });
+                                const localizedSolution = getLocalizedText({
+                                  original: issue.solution,
+                                  translated: issue.solutionTranslated,
+                                  sourceLanguage: issue.contentLanguage,
+                                  locale,
+                                });
+                                return (
+                                  <>
                               <Link
                                 href={`/issues/${issue.id}`}
                                 className="text-sm font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800"
                               >
-                                {issue.title}
+                                {localizedTitle.text}
                               </Link>
+                              {localizedTitle.usedTranslation ? (
+                                <p className="mt-1 text-xs text-blue-700">
+                                  {t("common.autoTranslatedFrom", {
+                                    language: t(`language.${localizedTitle.sourceLanguage ?? "en"}`),
+                                  })}
+                                </p>
+                              ) : null}
                               <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
-                                {t("issues.ticketId")}: {issue.id}
+                                {t("issueDetail.opened")}: {new Date(issue.createdAt).toLocaleString()}
+                              </p>
+                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                                {t("issues.ticketId")}:{" "}
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  className="cursor-pointer underline underline-offset-2 hover:text-zinc-700"
+                                  onClick={() => {
+                                    void copyIssueUrl(issue.id);
+                                  }}
+                                  onKeyDown={(e) => {
+                                    if (e.key !== "Enter" && e.key !== " ") return;
+                                    e.preventDefault();
+                                    void copyIssueUrl(issue.id);
+                                  }}
+                                  title={t("issues.copyIssueLink")}
+                                >
+                                  {issue.id}
+                                </span>
+                                {copiedIssueId === issue.id ? (
+                                  <span className="ml-2 text-emerald-600">{t("common.copied")}</span>
+                                ) : null}
                               </p>
                               <p className="mt-1 text-xs text-zinc-500">
                                 {[
@@ -247,7 +321,9 @@ export function IssueKanban() {
                                   .filter(Boolean)
                                   .join(" · ") || t("dashboard.unlinked")}
                               </p>
-                              <p className="mt-2 text-sm text-zinc-700">{issue.symptom}</p>
+                              <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700">
+                                {localizedSymptom.text}
+                              </p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
                                 <select
                                   className="input"
@@ -283,11 +359,11 @@ export function IssueKanban() {
                                 </summary>
                                 <div className="mt-2 space-y-1">
                                   <p>
-                                    <strong>{t("dashboard.cause")}</strong> {issue.cause || "-"}
+                                    <strong>{t("dashboard.cause")}</strong> {localizedCause.text || "-"}
                                   </p>
                                   <p>
                                     <strong>{t("dashboard.solution")}</strong>{" "}
-                                    {issue.solution || "-"}
+                                    {localizedSolution.text || "-"}
                                   </p>
                                   <p>
                                     <strong>{t("dashboard.rnd")}</strong> {issue.rndContact || "-"}
@@ -304,6 +380,9 @@ export function IssueKanban() {
                                   ? t("common.archiving")
                                   : t("common.archive")}
                               </button>
+                                  </>
+                                );
+                              })()}
                             </article>
                           ))
                         )}

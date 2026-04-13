@@ -95,11 +95,15 @@ const en: MessageTree = {
     attachmentUploadNoteRequiredAlert:
       "Please enter a note explaining why you are uploading (required before files can be uploaded).",
     attachmentNoteHeading: "Upload note",
+    autoTranslatedFrom: "Auto-translated from {language}",
     cancel: "Cancel",
     editNote: "Edit note",
     addNote: "Add note",
+    originalText: "Original text",
     attachmentNoteEmpty: "No note yet.",
     attachmentNoteSaveFailed: "Could not save note.",
+    copied: "Copied",
+    copyFailed: "Could not copy to clipboard.",
   },
   logout: {
     logout: "Logout",
@@ -202,6 +206,7 @@ const en: MessageTree = {
     attachmentsOptional: "Attachments (optional)",
     attachmentsOnCreateHelp:
       "Add files now or later on the issue page. Max 100 MB per file; up to 20 files. If you attach files, an upload note is required.",
+    copyIssueLink: "Copy issue link",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -249,6 +254,8 @@ const en: MessageTree = {
     archivedAtLabel: "Archived {at}",
     viewArchivedTitle: "Archived issue",
     threadHelpArchived: "Below are historical replies. You cannot add new messages to archived issues.",
+    translationBanner:
+      "This issue was written in {language}. The app is showing automatic translations where available while keeping the original text in the edit fields.",
     videoPlayFailed: "This video cannot play in the browser.",
     videoDownloadInstead: "Download to open with another app.",
   },
@@ -721,11 +728,15 @@ const zh: MessageTree = {
     attachmentUploadNotePlaceholder: "说明此文件的用途或为何上传（有权限查看该记录的用户均可见）。",
     attachmentUploadNoteRequiredAlert: "请先填写上传说明，再上传文件。",
     attachmentNoteHeading: "上传说明",
+    autoTranslatedFrom: "自动翻译自{language}",
     cancel: "取消",
     editNote: "编辑说明",
     addNote: "添加说明",
+    originalText: "原文",
     attachmentNoteEmpty: "暂无说明。",
     attachmentNoteSaveFailed: "无法保存说明。",
+    copied: "已复制",
+    copyFailed: "无法复制到剪贴板。",
   },
   logout: {
     logout: "退出登录",
@@ -826,6 +837,7 @@ const zh: MessageTree = {
     attachmentsOptional: "附件（可选）",
     attachmentsOnCreateHelp:
       "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个。若添加附件，须填写上传说明。",
+    copyIssueLink: "复制问题链接",
   },
   issueDetail: {
     loading: "正在加载问题…",
@@ -873,6 +885,8 @@ const zh: MessageTree = {
     archivedAtLabel: "归档时间：{at}",
     viewArchivedTitle: "已归档问题",
     threadHelpArchived: "以下为历史回复。已归档问题不可发表新留言。",
+    translationBanner:
+      "此问题原文为{language}。当前界面会尽量显示自动翻译结果，同时保留编辑框中的原始文本。",
     videoPlayFailed: "无法在浏览器内播放此视频。",
     videoDownloadInstead: "请下载后用本地播放器打开。",
   },

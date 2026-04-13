@@ -18,11 +18,17 @@ export type IssueBoardProject = {
 export type IssueBoardCustomer = { id: string; name: string };
 export type IssueBoardIssue = {
   id: string;
+  createdAt: string;
   title: string;
+  titleTranslated: string | null;
   status: string;
   symptom: string;
+  symptomTranslated: string | null;
   cause: string;
+  causeTranslated: string | null;
   solution: string;
+  solutionTranslated: string | null;
+  contentLanguage: string | null;
   rndContact: string;
   project: { id: string; name: string; product: string } | null;
   customer: { id: string; name: string } | null;

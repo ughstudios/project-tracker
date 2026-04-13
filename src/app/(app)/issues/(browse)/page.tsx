@@ -4,6 +4,7 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
+import { getLocalizedText } from "@/lib/translated-content";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -24,9 +25,13 @@ const FILTER_ASSIGNEE_UNASSIGNED = "__unassigned__";
 
 type IssueListItem = {
   id: string;
+  createdAt: string;
   title: string;
+  titleTranslated: string | null;
   status: string;
   symptom: string;
+  symptomTranslated: string | null;
+  contentLanguage: string | null;
   project: { id: string; name: string; product: string } | null;
   customer: { id: string; name: string } | null;
   assignee: { id: string; name: string | null; email: string | null } | null;
@@ -49,7 +54,7 @@ function statusLabel(t: (k: string) => string, status: string) {
 const fetchFresh: RequestInit = { credentials: "include", cache: "no-store" };
 
 export default function IssuesPage() {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const router = useRouter();
   const pathname = usePathname();
   const [users, setUsers] = useState<User[]>([]);
@@ -77,6 +82,7 @@ export default function IssuesPage() {
   const [creating, setCreating] = useState(false);
   const [createAttachmentProgress, setCreateAttachmentProgress] = useState<number | null>(null);
   const [archivingIssueId, setArchivingIssueId] = useState<string | null>(null);
+  const [copiedIssueId, setCopiedIssueId] = useState<string | null>(null);
   const loadLists = useCallback(async () => {
     const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
       fetch("/api/users", fetchFresh),
@@ -128,7 +134,9 @@ export default function IssuesPage() {
         [
           i.id,
           i.title,
+          i.titleTranslated ?? "",
           i.symptom,
+          i.symptomTranslated ?? "",
           i.project?.name ?? "",
           i.customer?.name ?? "",
           i.assignee?.name ?? "",
@@ -221,6 +229,18 @@ export default function IssuesPage() {
       return;
     }
     await loadLists();
+  };
+
+  const copyIssueUrl = async (issueId: string) => {
+    if (typeof window === "undefined" || !navigator.clipboard?.writeText) return;
+    const issueUrl = `${window.location.origin}/issues/${encodeURIComponent(issueId)}`;
+    try {
+      await navigator.clipboard.writeText(issueUrl);
+      setCopiedIssueId(issueId);
+      window.setTimeout(() => setCopiedIssueId((current) => (current === issueId ? null : current)), 1500);
+    } catch {
+      alert(t("common.copyFailed"));
+    }
   };
 
   return (
@@ -454,10 +474,61 @@ export default function IssuesPage() {
                   className="px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between"
                 >
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
-                    <span className="font-medium text-zinc-900">{i.title}</span>
-                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 break-all">
-                      {t("issues.ticketId")}: {i.id}
+                    <span className="font-medium text-zinc-900">
+                      {getLocalizedText({
+                        original: i.title,
+                        translated: i.titleTranslated,
+                        sourceLanguage: i.contentLanguage,
+                        locale,
+                      }).text}
                     </span>
+                    <span className="mt-0.5 block text-xs text-zinc-500">
+                      {t("issueDetail.opened")}: {new Date(i.createdAt).toLocaleString()}
+                    </span>
+                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                      {t("issues.ticketId")}:{" "}
+                      <span
+                        role="button"
+                        tabIndex={0}
+                        className="cursor-pointer underline underline-offset-2 hover:text-zinc-700"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void copyIssueUrl(i.id);
+                        }}
+                        onKeyDown={(e) => {
+                          if (e.key !== "Enter" && e.key !== " ") return;
+                          e.preventDefault();
+                          e.stopPropagation();
+                          void copyIssueUrl(i.id);
+                        }}
+                        title={t("issues.copyIssueLink")}
+                      >
+                        {i.id}
+                      </span>
+                      {copiedIssueId === i.id ? (
+                        <span className="ml-2 text-emerald-600">{t("common.copied")}</span>
+                      ) : null}
+                    </span>
+                    {getLocalizedText({
+                      original: i.title,
+                      translated: i.titleTranslated,
+                      sourceLanguage: i.contentLanguage,
+                      locale,
+                    }).usedTranslation ? (
+                      <span className="mt-0.5 block text-xs text-blue-700">
+                        {t("common.autoTranslatedFrom", {
+                          language: t(
+                            `language.${getLocalizedText({
+                              original: i.title,
+                              translated: i.titleTranslated,
+                              sourceLanguage: i.contentLanguage,
+                              locale,
+                            }).sourceLanguage ?? "en"}`,
+                          ),
+                        })}
+                      </span>
+                    ) : null}
                     <span className="block text-xs text-zinc-500 sm:text-sm">
                       {(() => {
                         const linkPart =
