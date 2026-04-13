@@ -2,8 +2,8 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
-import { isPrivilegedAdmin } from "@/lib/roles";
 import { NextResponse } from "next/server";
 
 export async function GET(
@@ -18,6 +18,7 @@ export async function GET(
   if (denied) return denied;
 
   const { id } = await params;
+  await autoArchiveExpiredDoneIssue(id);
   try {
     const attachmentUploader = { select: { id: true, name: true, email: true } as const };
     const issue = await prisma.issue.findUnique({
@@ -58,6 +59,7 @@ export async function PATCH(
   if (denied) return denied;
 
   const { id } = await params;
+  await autoArchiveExpiredDoneIssue(id);
   const existing = await prisma.issue.findUnique({ where: { id } });
   if (!existing) {
     return NextResponse.json({ error: "Issue not found." }, { status: 404 });
@@ -69,9 +71,6 @@ export async function PATCH(
   const body = (await request.json()) as Record<string, unknown>;
 
   if (body.archive === true) {
-    if (!isPrivilegedAdmin(session.user.role)) {
-      return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-    }
     const archivedIssue = await prisma.issue.update({
       where: { id },
       data: { archivedAt: new Date() },

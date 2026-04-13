@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -12,6 +13,8 @@ export async function GET() {
   }
   const denied = await guardEmployeeNavApi(session, TABS_ISSUE_DATA);
   if (denied) return denied;
+
+  await autoArchiveExpiredDoneIssues();
 
   const issues = await prisma.issue.findMany({
     where: { archivedAt: null } as Record<string, null>,

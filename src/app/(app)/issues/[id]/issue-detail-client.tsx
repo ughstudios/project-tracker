@@ -5,7 +5,6 @@ import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
-import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -176,7 +175,6 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [threadUploadNote, setThreadUploadNote] = useState("");
   const [threadUploadProgress, setThreadUploadProgress] = useState<number | null>(null);
   const issueFileInputRef = useRef<HTMLInputElement>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const [archiving, setArchiving] = useState(false);
   const [threadEntries, setThreadEntries] = useState<ThreadEntry[]>([]);
   const [threadPage, setThreadPage] = useState(1);
@@ -247,7 +245,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       setThreadPage(1);
       setThreadTotal(0);
       try {
-        const [issueRes, threadRes, usersRes, projectsRes, customersRes, sessionRes] =
+        const [issueRes, threadRes, usersRes, projectsRes, customersRes] =
           await Promise.all([
             fetch(`/api/issues/${encodeURIComponent(issueId)}`, fetchInit),
             fetch(
@@ -257,13 +255,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             fetch("/api/users", fetchInit),
             fetch("/api/projects", fetchInit),
             fetch("/api/customers", fetchInit),
-            fetch("/api/auth/session", fetchInit),
           ]);
         if (cancelled) return;
-        if (sessionRes.ok) {
-          const session = (await sessionRes.json()) as { user?: { role?: string } };
-          setIsAdmin(isPrivilegedAdmin(session.user?.role));
-        }
         if (usersRes.ok) setUsers((await usersRes.json()) as User[]);
         if (projectsRes.ok) setProjects((await projectsRes.json()) as ProjectSummary[]);
         if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
@@ -626,7 +619,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         >
           ← {readOnly ? t("issueDetail.backToArchive") : t("nav.issues")}
         </Link>
-        {isAdmin && !readOnly ? (
+        {!readOnly ? (
           <button
             type="button"
             onClick={() => void archive()}

@@ -5,6 +5,7 @@ import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
 import { blobPublicUrlMatchesPathname } from "@/lib/blob-url-verify";
 import { isBlobStorageEnabled, isLikelyVercelBlobUrl } from "@/lib/file-storage";
+import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { maxClientBlobUploadBytes, perFileExceedsBlobProductLimitMessage } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
 import path from "node:path";
@@ -33,6 +34,7 @@ export async function POST(
   }
 
   const { id: issueId, entryId } = await params;
+  await autoArchiveExpiredDoneIssue(issueId);
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
     select: { id: true, title: true, archivedAt: true },

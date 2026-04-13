@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -19,6 +20,7 @@ export async function GET(
   if (denied) return denied;
 
   const { id: issueId } = await params;
+  await autoArchiveExpiredDoneIssue(issueId);
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
     select: { id: true },
@@ -77,6 +79,7 @@ export async function POST(
   if (denied) return denied;
 
   const { id: issueId } = await params;
+  await autoArchiveExpiredDoneIssue(issueId);
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
     select: { id: true, title: true, archivedAt: true },

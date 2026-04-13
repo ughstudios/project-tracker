@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { ArchiveIssuesSection } from "@/components/archive-issues-section";
 import { getServerTranslator } from "@/i18n/server";
 import { writeAuditLog } from "@/lib/audit";
+import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
@@ -61,9 +62,18 @@ async function unarchiveIssue(formData: FormData) {
   const id = String(formData.get("id") ?? "");
   if (!id) return;
 
+  const existing = await prisma.issue.findUnique({
+    where: { id },
+    select: { id: true, title: true, status: true },
+  });
+  if (!existing) return;
+
   const issue = await prisma.issue.update({
     where: { id },
-    data: { archivedAt: null },
+    data: {
+      archivedAt: null,
+      ...(existing.status === "DONE" ? { doneAt: new Date() } : {}),
+    },
     select: { id: true, title: true },
   });
   await writeAuditLog({
@@ -81,6 +91,8 @@ export default async function ArchivePage() {
   if (!session?.user) redirect("/login");
   const staffAdmin = isPrivilegedAdmin(session.user.role);
   const t = await getServerTranslator();
+
+  await autoArchiveExpiredDoneIssues();
 
   const [customers, projects, issues] = await Promise.all([
     prisma.customer.findMany({

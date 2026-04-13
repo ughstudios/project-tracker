@@ -1,3 +1,4 @@
+import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 
 export type BlobClientUploadPayload = {
@@ -112,6 +113,7 @@ export async function authorizeBlobClientPayload(
     case "issue": {
       const id = payload.issueId ?? "";
       if (!id) return { error: "issueId is required.", status: 400 };
+      await autoArchiveExpiredDoneIssue(id);
       const issue = await prisma.issue.findUnique({
         where: { id },
         select: { id: true, archivedAt: true },
@@ -127,6 +129,7 @@ export async function authorizeBlobClientPayload(
       if (!issueId || !threadEntryId) {
         return { error: "issueId and threadEntryId are required.", status: 400 };
       }
+      await autoArchiveExpiredDoneIssue(issueId);
       const issue = await prisma.issue.findUnique({
         where: { id: issueId },
         select: { id: true, archivedAt: true },

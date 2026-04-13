@@ -3,6 +3,7 @@ import { parseRequiredUploadNote } from "@/lib/attachment-upload-note";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { removeUploadFileIfPresent } from "@/lib/issue-files";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -23,6 +24,7 @@ export async function PATCH(
   if (denied) return denied;
 
   const { id: issueId, entryId, attachmentId } = await params;
+  await autoArchiveExpiredDoneIssue(issueId);
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
     select: { id: true, archivedAt: true, title: true },
@@ -79,6 +81,7 @@ export async function DELETE(
   if (denied) return denied;
 
   const { id: issueId, entryId, attachmentId } = await params;
+  await autoArchiveExpiredDoneIssue(issueId);
   const issue = await prisma.issue.findUnique({
     where: { id: issueId },
     select: { id: true, archivedAt: true },

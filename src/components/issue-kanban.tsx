@@ -3,6 +3,7 @@
 import { useI18n } from "@/i18n/context";
 import type { IssueBoardIssue } from "@/hooks/use-issue-board-data";
 import { useIssueBoardData } from "@/hooks/use-issue-board-data";
+import Link from "next/link";
 import { useMemo, useState } from "react";
 
 const FILTER_UNLINKED = "__unlinked__";
@@ -18,8 +19,7 @@ function matchesLinkFilter(issue: IssueBoardIssue, filter: string) {
 
 export function IssueKanban() {
   const { t } = useI18n();
-  const { users, projects, customers, issues, loading, isAdmin, loadData } =
-    useIssueBoardData(["/kanban"]);
+  const { users, projects, customers, issues, loading, loadData } = useIssueBoardData(["/kanban"]);
 
   const [query, setQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("");
@@ -226,7 +226,12 @@ export function IssueKanban() {
                                 setDraggingIssueId(null);
                               }}
                             >
-                              <p className="text-sm font-semibold text-zinc-800">{issue.title}</p>
+                              <Link
+                                href={`/issues/${issue.id}`}
+                                className="text-sm font-semibold text-zinc-800 hover:underline"
+                              >
+                                {issue.title}
+                              </Link>
                               <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
                                 {t("issues.ticketId")}: {issue.id}
                               </p>
@@ -289,18 +294,16 @@ export function IssueKanban() {
                                   </p>
                                 </div>
                               </details>
-                              {isAdmin ? (
-                                <button
-                                  type="button"
-                                  onClick={() => archiveIssue(issue.id, issue.title)}
-                                  disabled={archivingIssueId === issue.id}
-                                  className="mt-3 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50"
-                                >
-                                  {archivingIssueId === issue.id
-                                    ? t("common.archiving")
-                                    : t("common.archive")}
-                                </button>
-                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => archiveIssue(issue.id, issue.title)}
+                                disabled={archivingIssueId === issue.id}
+                                className="mt-3 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50"
+                              >
+                                {archivingIssueId === issue.id
+                                  ? t("common.archiving")
+                                  : t("common.archive")}
+                              </button>
                             </article>
                           ))
                         )}
