@@ -58,7 +58,7 @@ export async function GET(
     },
   });
 
-  if (!project || project.archivedAt) {
+  if (!project) {
     return NextResponse.json({ error: "Project not found." }, { status: 404 });
   }
 

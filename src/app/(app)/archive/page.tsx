@@ -6,6 +6,7 @@ import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 
 async function unarchiveCustomer(formData: FormData) {
@@ -144,9 +145,12 @@ export default async function ArchivePage() {
           <ul className="mt-2 space-y-1 text-sm">
             {customers.map((c) => (
               <li key={c.id} className="flex items-center justify-between gap-2">
-                <span>
+                <Link
+                  href={`/customers/${c.id}`}
+                  className="underline decoration-zinc-400 underline-offset-2 hover:decoration-zinc-700"
+                >
                   {c.name} - {c.archivedAt ? new Date(c.archivedAt).toLocaleString() : ""}
-                </span>
+                </Link>
                 {staffAdmin ? (
                   <form action={unarchiveCustomer}>
                     <input type="hidden" name="id" value={c.id} />
@@ -172,10 +176,13 @@ export default async function ArchivePage() {
           <ul className="mt-2 space-y-1 text-sm">
             {projects.map((p) => (
               <li key={p.id} className="flex items-center justify-between gap-2">
-                <span>
+                <Link
+                  href={`/projects/${p.id}`}
+                  className="underline decoration-zinc-400 underline-offset-2 hover:decoration-zinc-700"
+                >
                   {p.name} ({p.product}) - {p.customer.name} -{" "}
                   {p.archivedAt ? new Date(p.archivedAt).toLocaleString() : ""}
-                </span>
+                </Link>
                 {staffAdmin ? (
                   <form action={unarchiveProject}>
                     <input type="hidden" name="id" value={p.id} />

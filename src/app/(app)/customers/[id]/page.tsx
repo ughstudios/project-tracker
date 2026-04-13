@@ -37,6 +37,7 @@ export default function CustomerDetailPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fileUploadNote, setFileUploadNote] = useState("");
+  const [archivedAt, setArchivedAt] = useState<string | null>(null);
   const load = useCallback(async (mode: "full" | "customerOnly" = "full") => {
     if (mode === "full") {
       setLoading(true);
@@ -55,10 +56,12 @@ export default function CustomerDetailPage() {
     }
     const data = (await res.json()) as {
       name: string;
+      archivedAt?: string | null;
       attachments?: CustomerAttachment[];
       _count?: { projects: number };
     };
     setName(data.name ?? "");
+    setArchivedAt(data.archivedAt ?? null);
     setAttachments(
       (data.attachments ?? []).map((a) => ({
         ...a,
@@ -162,6 +165,8 @@ export default function CustomerDetailPage() {
     );
   }
 
+  const readOnly = Boolean(archivedAt);
+
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
@@ -174,51 +179,71 @@ export default function CustomerDetailPage() {
             <p className="mt-1 text-sm text-zinc-700">
               {t("customerDetail.projectsCount", { count: String(projectCount) })}
             </p>
-            <Link
-              href={`/projects?customer=${encodeURIComponent(customerId)}`}
-              className="mt-0.5 inline-block text-sm text-blue-700 hover:underline"
-            >
-              {t("customers.viewProjectsFor", { name })}
-            </Link>
+            {readOnly ? null : (
+              <Link
+                href={`/projects?customer=${encodeURIComponent(customerId)}`}
+                className="mt-0.5 inline-block text-sm text-blue-700 hover:underline"
+              >
+                {t("customers.viewProjectsFor", { name })}
+              </Link>
+            )}
           </div>
-          <Link href="/customers" className="text-sm text-blue-700 hover:underline">
-            {t("customerDetail.backToCustomers")}
+          <Link href={readOnly ? "/archive" : "/customers"} className="text-sm text-blue-700 hover:underline">
+            {readOnly ? t("issueDetail.backToArchive") : t("customerDetail.backToCustomers")}
           </Link>
         </div>
       </header>
 
+      {readOnly ? (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm"
+          role="status"
+        >
+          <p>{t("customerDetail.archivedReadOnlyBanner")}</p>
+          <p className="mt-1 text-xs text-amber-900/90">
+            {t("customerDetail.archivedAtLabel", {
+              at: new Date(archivedAt ?? "").toLocaleString(),
+            })}
+          </p>
+        </div>
+      ) : null}
+
       <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
         <h2 className="text-base font-semibold">{t("customerDetail.filesTitle")}</h2>
         <p className="text-sm text-zinc-600">{t("customerDetail.filesHelp")}</p>
-        <label className="block max-w-xl text-sm">
-          <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
-          <textarea
-            className="input mt-1 min-h-[64px] w-full"
-            value={fileUploadNote}
-            onChange={(e) => setFileUploadNote(e.target.value)}
-            placeholder={t("common.attachmentUploadNotePlaceholder")}
-            disabled={uploading}
-          />
-        </label>
-        <div className="input-file-zone mt-3 max-w-xl">
-          <input
-            type="file"
-            multiple
-            disabled={uploading}
-            className="input-file"
-            onChange={(e) => {
-              const el = e.currentTarget;
-              void uploadAttachments(el.files).then((ok) => {
-                if (ok) el.value = "";
-              });
-            }}
-          />
-        </div>
-        <UploadProgressBar
-          value={uploadProgress}
-          label={t("customerDetail.uploading")}
-          className="mt-2 max-w-xl"
-        />
+        {readOnly ? null : (
+          <>
+            <label className="block max-w-xl text-sm">
+              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <textarea
+                className="input mt-1 min-h-[64px] w-full"
+                value={fileUploadNote}
+                onChange={(e) => setFileUploadNote(e.target.value)}
+                placeholder={t("common.attachmentUploadNotePlaceholder")}
+                disabled={uploading}
+              />
+            </label>
+            <div className="input-file-zone mt-3 max-w-xl">
+              <input
+                type="file"
+                multiple
+                disabled={uploading}
+                className="input-file"
+                onChange={(e) => {
+                  const el = e.currentTarget;
+                  void uploadAttachments(el.files).then((ok) => {
+                    if (ok) el.value = "";
+                  });
+                }}
+              />
+            </div>
+            <UploadProgressBar
+              value={uploadProgress}
+              label={t("customerDetail.uploading")}
+              className="mt-2 max-w-xl"
+            />
+          </>
+        )}
         <div>
           <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
             {t("customerDetail.uploadedFiles", { count: String(attachments.length) })}
@@ -240,18 +265,21 @@ export default function CustomerDetailPage() {
                     </a>
                     <div className="flex shrink-0 items-center gap-2">
                       <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
-                      <button
-                        type="button"
-                        className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
-                        onClick={() => void deleteAttachment(a.id)}
-                      >
-                        {t("common.delete")}
-                      </button>
+                      {readOnly ? null : (
+                        <button
+                          type="button"
+                          className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                          onClick={() => void deleteAttachment(a.id)}
+                        >
+                          {t("common.delete")}
+                        </button>
+                      )}
                     </div>
                   </div>
                   <AttachmentNoteInlineEditor
                     uploadNote={a.uploadNote}
                     borderClassName="border-zinc-100"
+                    readOnly={readOnly}
                     onSave={(note) => saveCustomerAttachmentNote(a.id, note)}
                   />
                 </li>

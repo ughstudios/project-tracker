@@ -313,6 +313,7 @@ const en: MessageTree = {
   projectDetail: {
     loading: "Loading…",
     editTitle: "Edit Project",
+    viewArchivedTitle: "Archived Project",
     backToProjects: "Back to Projects",
     processors: "Processors",
     receivers: "Receiver cards",
@@ -337,6 +338,9 @@ const en: MessageTree = {
     couldNotAddNote: "Could not add note.",
     couldNotUpload: "Could not upload file.",
     confirmRemoveAttachment: "Remove this file from the project?",
+    archivedReadOnlyBanner:
+      "This project is archived. You can review it here, but editing, uploads, note changes, and deletions are disabled.",
+    archivedAtLabel: "Archived {at}",
   },
   customerDetail: {
     loading: "Loading…",
@@ -351,6 +355,9 @@ const en: MessageTree = {
     noFiles: "No files uploaded yet.",
     confirmRemoveAttachment: "Remove this file from the customer?",
     couldNotUpload: "Could not upload file.",
+    archivedReadOnlyBanner:
+      "This customer is archived. You can review it here, but uploads, note changes, and deletions are disabled.",
+    archivedAtLabel: "Archived {at}",
   },
   adminRoles: {
     title: "Admin roles",
@@ -930,6 +937,7 @@ const zh: MessageTree = {
   projectDetail: {
     loading: "加载中…",
     editTitle: "编辑项目",
+    viewArchivedTitle: "已归档项目",
     backToProjects: "返回项目列表",
     processors: "处理器",
     receivers: "接收卡",
@@ -953,6 +961,8 @@ const zh: MessageTree = {
     couldNotAddNote: "无法添加备注。",
     couldNotUpload: "无法上传文件。",
     confirmRemoveAttachment: "从项目中移除此文件？",
+    archivedReadOnlyBanner: "此项目已归档。可在此查阅内容，但不可编辑、上传、修改备注或删除。",
+    archivedAtLabel: "归档时间：{at}",
   },
   customerDetail: {
     loading: "加载中…",
@@ -967,6 +977,8 @@ const zh: MessageTree = {
     noFiles: "尚未上传文件。",
     confirmRemoveAttachment: "从客户记录中移除此文件？",
     couldNotUpload: "无法上传文件。",
+    archivedReadOnlyBanner: "此客户已归档。可在此查阅内容，但不可上传、修改备注或删除。",
+    archivedAtLabel: "归档时间：{at}",
   },
   adminRoles: {
     title: "管理员角色",

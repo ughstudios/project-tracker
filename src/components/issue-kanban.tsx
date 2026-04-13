@@ -228,7 +228,7 @@ export function IssueKanban() {
                             >
                               <Link
                                 href={`/issues/${issue.id}`}
-                                className="text-sm font-semibold text-zinc-800 hover:underline"
+                                className="text-sm font-semibold text-blue-700 underline underline-offset-2 hover:text-blue-800"
                               >
                                 {issue.title}
                               </Link>

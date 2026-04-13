@@ -58,6 +58,7 @@ export default function ProjectDetailsPage() {
   const projectId = routeSegmentId(params.id);
 
   const [loading, setLoading] = useState(true);
+  const [missing, setMissing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [productGroups, setProductGroups] = useState<Array<{ group: string; items: string[] }>>(
@@ -76,10 +77,12 @@ export default function ProjectDetailsPage() {
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fileUploadNote, setFileUploadNote] = useState("");
+  const [archivedAt, setArchivedAt] = useState<string | null>(null);
 
   type ProjectPayload = {
     name: string;
     customerId: string;
+    archivedAt?: string | null;
     processorConfigs: ProcessorConfig[];
     receiverCardConfigs: ReceiverCardConfig[];
     otherProductConfigs: OtherProductConfig[];
@@ -91,6 +94,7 @@ export default function ProjectDetailsPage() {
   const applyProjectPayload = useCallback((project: ProjectPayload) => {
     setName(project.name ?? "");
     setCustomerId(project.customerId ?? "");
+    setArchivedAt(project.archivedAt ?? null);
     setProcessors(project.processorConfigs?.length ? project.processorConfigs : [{ model: "", firmware: "", quantity: 1 }]);
     setReceiverCards(
       project.receiverCardConfigs?.length
@@ -115,6 +119,7 @@ export default function ProjectDetailsPage() {
   const load = useCallback(
     async (mode: "full" | "projectOnly" = "full") => {
       if (mode === "full") setLoading(true);
+      if (mode === "full") setMissing(false);
 
       if (mode === "projectOnly") {
         const projectRes = await fetch(
@@ -133,6 +138,7 @@ export default function ProjectDetailsPage() {
         fetch("/api/products", apiFetch),
       ]);
       if (!projectRes.ok) {
+        setMissing(true);
         setLoading(false);
         return;
       }
@@ -285,21 +291,52 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  if (missing) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+          <p className="text-sm text-zinc-600">{t("projects.noneFound")}</p>
+          <Link href="/projects" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
+            {t("projectDetail.backToProjects")}
+          </Link>
+        </div>
+      </div>
+    );
+  }
+
+  const readOnly = Boolean(archivedAt);
+
   return (
     <div className="space-y-4">
       <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-semibold">Edit Project</h1>
-          <Link href="/projects" className="text-sm text-blue-700 hover:underline">
-            Back to Projects
+          <h1 className="text-xl font-semibold">
+            {readOnly ? t("projectDetail.viewArchivedTitle") : t("projectDetail.editTitle")}
+          </h1>
+          <Link href={readOnly ? "/archive" : "/projects"} className="text-sm text-blue-700 hover:underline">
+            {readOnly ? t("issueDetail.backToArchive") : t("projectDetail.backToProjects")}
           </Link>
         </div>
       </header>
 
+      {readOnly ? (
+        <div
+          className="rounded-xl border border-amber-200 bg-amber-50/90 px-4 py-3 text-sm text-amber-950 shadow-sm"
+          role="status"
+        >
+          <p>{t("projectDetail.archivedReadOnlyBanner")}</p>
+          <p className="mt-1 text-xs text-amber-900/90">
+            {t("projectDetail.archivedAtLabel", {
+              at: new Date(archivedAt ?? "").toLocaleString(),
+            })}
+          </p>
+        </div>
+      ) : null}
+
       <form onSubmit={save} className="space-y-4">
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
-          <input className="input md:col-span-2" value={name} onChange={(e) => setName(e.target.value)} />
-          <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+          <input className="input md:col-span-2" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
+          <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)} disabled={readOnly}>
             <option value="">{t("common.selectCustomer")}</option>
             {customers.map((c) => (
               <option key={c.id} value={c.id}>{c.name}</option>
@@ -311,89 +348,93 @@ export default function ProjectDetailsPage() {
           <h2 className="text-base font-semibold">Processors</h2>
           {processors.map((item, idx) => (
             <div key={`p-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
-              <select className="input" value={item.model} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
+              <select className="input" value={item.model} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))} disabled={readOnly}>
                 <option value="">{t("common.selectModel")}</option>
                 {productGroups.filter((g) => processorGroups.has(g.group)).flatMap((g) => g.items).map((m) => (
                   <option key={m} value={m}>{m}</option>
                 ))}
               </select>
-              <input className="input" placeholder="Firmware" value={item.firmware} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, firmware: e.target.value } : x))} />
-              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
-              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>
+              <input className="input" placeholder="Firmware" value={item.firmware} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, firmware: e.target.value } : x))} disabled={readOnly} />
+              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
             </div>
           ))}
-          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">Receiver cards</h2>
           {receiverCards.map((item, idx) => (
             <div key={`r-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
-              <select className="input" value={item.model} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
+              <select className="input" value={item.model} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))} disabled={readOnly}>
                 <option value="">{t("common.selectModel")}</option>
                 {receiverCardModels.map((m) => <option key={m} value={m}>{m}</option>)}
               </select>
-              <input className="input" placeholder={t("common.version")} value={item.version} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, version: e.target.value } : x))} />
-              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
-              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>
+              <input className="input" placeholder={t("common.version")} value={item.version} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, version: e.target.value } : x))} disabled={readOnly} />
+              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>}
             </div>
           ))}
-          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.otherProducts")}</h2>
           {otherProducts.map((item, idx) => (
             <div key={`o-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
-              <select className="input" value={item.category} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, category: e.target.value, model: "" } : x))}>
+              <select className="input" value={item.category} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, category: e.target.value, model: "" } : x))} disabled={readOnly}>
                 <option value="">{t("common.selectCategory")}</option>
                 {otherGroups.map((g) => <option key={g.group} value={g.group}>{g.group}</option>)}
               </select>
-              <select className="input" value={item.model} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))}>
+              <select className="input" value={item.model} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, model: e.target.value } : x))} disabled={readOnly}>
                 <option value="">Select product</option>
                 {(otherGroups.find((g) => g.group === item.category)?.items ?? []).map((m) => (
                   <option key={`${item.category}:${m}`} value={m}>{m}</option>
                 ))}
               </select>
-              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} />
-              <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>
+              <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
             </div>
           ))}
-          <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>}
         </section>
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
           <h2 className="text-base font-semibold">{t("projectDetail.filesTitle")}</h2>
           <p className="text-sm text-zinc-600">{t("projectDetail.filesHelp")}</p>
-          <label className="block max-w-xl text-sm">
-            <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
-            <textarea
-              className="input mt-1 min-h-[64px] w-full"
-              value={fileUploadNote}
-              onChange={(e) => setFileUploadNote(e.target.value)}
-              placeholder={t("common.attachmentUploadNotePlaceholder")}
-              disabled={uploading}
-            />
-          </label>
-          <div className="input-file-zone mt-3 max-w-xl">
-            <input
-              type="file"
-              multiple
-              disabled={uploading}
-              className="input-file"
-              onChange={(e) => {
-                const el = e.currentTarget;
-                void uploadAttachments(el.files).then((ok) => {
-                  if (ok) el.value = "";
-                });
-              }}
-            />
-          </div>
-          <UploadProgressBar
-            value={uploadProgress}
-            label={t("projectDetail.uploading")}
-            className="mt-2 max-w-xl"
-          />
+          {readOnly ? null : (
+            <>
+              <label className="block max-w-xl text-sm">
+                <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+                <textarea
+                  className="input mt-1 min-h-[64px] w-full"
+                  value={fileUploadNote}
+                  onChange={(e) => setFileUploadNote(e.target.value)}
+                  placeholder={t("common.attachmentUploadNotePlaceholder")}
+                  disabled={uploading}
+                />
+              </label>
+              <div className="input-file-zone mt-3 max-w-xl">
+                <input
+                  type="file"
+                  multiple
+                  disabled={uploading}
+                  className="input-file"
+                  onChange={(e) => {
+                    const el = e.currentTarget;
+                    void uploadAttachments(el.files).then((ok) => {
+                      if (ok) el.value = "";
+                    });
+                  }}
+                />
+              </div>
+              <UploadProgressBar
+                value={uploadProgress}
+                label={t("projectDetail.uploading")}
+                className="mt-2 max-w-xl"
+              />
+            </>
+          )}
           <div>
             <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
               {t("projectDetail.uploadedFiles", { count: String(attachments.length) })}
@@ -415,18 +456,21 @@ export default function ProjectDetailsPage() {
                       </a>
                       <div className="flex shrink-0 items-center gap-2">
                         <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
-                        <button
-                          type="button"
-                          className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
-                          onClick={() => void deleteProjectAttachment(a.id)}
-                        >
-                          {t("common.delete")}
-                        </button>
+                        {readOnly ? null : (
+                          <button
+                            type="button"
+                            className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                            onClick={() => void deleteProjectAttachment(a.id)}
+                          >
+                            {t("common.delete")}
+                          </button>
+                        )}
                       </div>
                     </div>
                     <AttachmentNoteInlineEditor
                       uploadNote={a.uploadNote}
                       borderClassName="border-zinc-100"
+                      readOnly={readOnly}
                       onSave={(note) => saveProjectAttachmentNote(a.id, note)}
                     />
                   </li>
@@ -462,23 +506,25 @@ export default function ProjectDetailsPage() {
 
         <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.notesTitle")}</h2>
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
-            <textarea
-              className="input min-h-[120px] w-full flex-1 resize-y sm:min-h-[100px]"
-              rows={5}
-              placeholder={t("projectDetail.notePlaceholder")}
-              value={noteInput}
-              onChange={(e) => setNoteInput(e.target.value)}
-            />
-            <button
-              type="button"
-              className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
-              onClick={addNote}
-              disabled={addingNote}
-            >
-              {addingNote ? t("projectDetail.adding") : t("projectDetail.addNote")}
-            </button>
-          </div>
+          {readOnly ? null : (
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
+              <textarea
+                className="input min-h-[120px] w-full flex-1 resize-y sm:min-h-[100px]"
+                rows={5}
+                placeholder={t("projectDetail.notePlaceholder")}
+                value={noteInput}
+                onChange={(e) => setNoteInput(e.target.value)}
+              />
+              <button
+                type="button"
+                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                onClick={addNote}
+                disabled={addingNote}
+              >
+                {addingNote ? t("projectDetail.adding") : t("projectDetail.addNote")}
+              </button>
+            </div>
+          )}
           <ul className="space-y-1">
             {notes.map((n) => (
               <li key={n.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm">
@@ -493,9 +539,11 @@ export default function ProjectDetailsPage() {
           </ul>
         </section>
 
-        <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700" disabled={saving}>
-          {saving ? t("common.saving") : t("projectDetail.saveChanges")}
-        </button>
+        {readOnly ? null : (
+          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700" disabled={saving}>
+            {saving ? t("common.saving") : t("projectDetail.saveChanges")}
+          </button>
+        )}
       </form>
     </div>
   );

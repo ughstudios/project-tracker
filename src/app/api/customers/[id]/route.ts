@@ -26,7 +26,7 @@ export async function GET(
     },
   });
 
-  if (!customer || customer.archivedAt) {
+  if (!customer) {
     return NextResponse.json({ error: "Customer not found." }, { status: 404 });
   }
 
