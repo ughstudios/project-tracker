@@ -257,6 +257,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [threadPage, setThreadPage] = useState(1);
   const [threadTotal, setThreadTotal] = useState(0);
   const [threadListLoading, setThreadListLoading] = useState(false);
+  const [copiedIssueId, setCopiedIssueId] = useState<string | null>(null);
   const loadThreadPage = useCallback(
     async (page: number | "last") => {
       setThreadListLoading(true);
@@ -387,6 +388,18 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       cancelled = true;
     };
   }, [issueId, syncDraftFromIssue, t]);
+
+  const copyIssueUrl = async (id: string) => {
+    if (typeof window === "undefined" || !navigator.clipboard?.writeText) return;
+    const issueUrl = `${window.location.origin}/issues/${encodeURIComponent(id)}`;
+    try {
+      await navigator.clipboard.writeText(issueUrl);
+      setCopiedIssueId(id);
+      window.setTimeout(() => setCopiedIssueId((current) => (current === id ? null : current)), 1500);
+    } catch {
+      alert(t("common.copyFailed"));
+    }
+  };
 
   const refreshIssue = async () => {
     const res = await fetch(
@@ -764,7 +777,26 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </h1>
         <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
           <span className="font-medium text-zinc-700 dark:text-zinc-300">{t("issues.ticketId")}:</span>{" "}
-          <span className="font-mono text-[11px] text-zinc-800 dark:text-zinc-200 break-all">{issue.id}</span>
+          <span
+            role="button"
+            tabIndex={0}
+            className="cursor-pointer font-mono text-[11px] text-sky-700 underline underline-offset-2 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300 break-all"
+            onClick={(e) => {
+              e.preventDefault();
+              void copyIssueUrl(issue.id);
+            }}
+            onKeyDown={(e) => {
+              if (e.key !== "Enter" && e.key !== " ") return;
+              e.preventDefault();
+              void copyIssueUrl(issue.id);
+            }}
+            title={t("issues.copyIssueLink")}
+          >
+            {issue.id}
+          </span>
+          {copiedIssueId === issue.id ? (
+            <span className="ml-2 text-emerald-600 dark:text-emerald-400">{t("common.copied")}</span>
+          ) : null}
         </p>
         <div className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
           {p ? (
