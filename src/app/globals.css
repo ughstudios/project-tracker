@@ -10,7 +10,8 @@
   --body-bg: #f3f4f6;
 }
 
-.dark {
+.dark,
+html.dark {
   color-scheme: dark;
   /* Soft blue-gray canvas (avoids pure black + harsh contrast) */
   --background: #13151c;
@@ -59,6 +60,26 @@ html[lang="zh-CN"] body {
 .dark .input:focus {
   border-color: rgba(56, 189, 248, 0.45);
   box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.12);
+}
+
+/*
+ * Native <select> popovers (especially Windows + Chrome/Edge) may stay light while the
+ * control uses dark text — force dark scheme on the control and give options panel colors.
+ */
+.dark select {
+  color-scheme: dark;
+}
+
+.dark select option,
+.dark select optgroup {
+  background-color: #15171e;
+  color: #e8e8ed;
+}
+
+.dark select option:checked,
+.dark select option:hover {
+  background-color: rgba(56, 189, 248, 0.22);
+  color: #f4f4f5;
 }
 
 .input:disabled,

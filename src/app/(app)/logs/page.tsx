@@ -62,13 +62,13 @@ export default function LogsPage() {
   return (
     <div className="space-y-4">
       <header className="panel-surface rounded-xl p-4">
-        <h1 className="text-xl font-semibold">{t("logs.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("logs.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("logs.subtitle")}</p>
       </header>
 
       <section className="panel-surface rounded-xl p-4">
         {error ? (
-          <p className="text-sm text-red-700">{error}</p>
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
         ) : loading ? (
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("common.loadingLogs")}</p>
         ) : logs.length === 0 ? (
@@ -78,30 +78,33 @@ export default function LogsPage() {
             <div className="overflow-x-auto">
               <table className="w-full min-w-[980px] border-collapse text-sm">
                 <thead>
-                  <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.when")}</th>
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.actor")}</th>
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.action")}</th>
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.entity")}</th>
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.details")}</th>
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.updatedAt")}</th>
+                  <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
+                    <th className="px-2 py-2 font-medium">{t("common.when")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.actor")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.action")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.entity")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.details")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.updatedAt")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {logs.map((log) => (
-                    <tr key={log.id} className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40">
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                    <tr
+                      key={log.id}
+                      className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                    >
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                         {new Date(log.createdAt).toLocaleString()}
                       </td>
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                         {log.actor?.name ?? log.actor?.email ?? t("common.unknown")}
                       </td>
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{log.action}</td>
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{log.action}</td>
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                         {log.entityType} ({log.entityId})
                       </td>
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{log.description}</td>
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{log.description}</td>
+                      <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                         {new Date(log.updatedAt).toLocaleString()}
                       </td>
                     </tr>
@@ -110,7 +113,7 @@ export default function LogsPage() {
               </table>
             </div>
             {!loading && total > 0 && totalPages > 1 ? (
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+              <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-200 pt-3 dark:border-white/[0.08]">
                 <p className="text-xs text-zinc-500 dark:text-zinc-400">
                   {t("logs.pageSummary", {
                     page: String(page),
@@ -123,7 +126,7 @@ export default function LogsPage() {
                     type="button"
                     disabled={page <= 1 || loading}
                     onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
+                    className="btn-secondary rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   >
                     {t("common.previous")}
                   </button>
@@ -131,7 +134,7 @@ export default function LogsPage() {
                     type="button"
                     disabled={page >= totalPages || loading}
                     onClick={() => setPage((p) => p + 1)}
-                    className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
+                    className="btn-secondary rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-50"
                   >
                     {t("common.next")}
                   </button>

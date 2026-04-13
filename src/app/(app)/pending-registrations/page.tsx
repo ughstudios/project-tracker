@@ -26,7 +26,7 @@ export default async function PendingRegistrationsPage() {
   return (
     <section className="space-y-4">
       <div className="panel-surface rounded-xl p-5">
-        <h1 className="text-xl font-semibold">{t("pending.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("pending.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("pending.subtitle")}</p>
       </div>
 
@@ -35,9 +35,9 @@ export default async function PendingRegistrationsPage() {
           <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("pending.none")}</p>
         ) : (
           <div className="overflow-x-auto">
-            <table className="min-w-full text-sm">
+            <table className="min-w-full border-collapse text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-zinc-500 dark:text-zinc-400">
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
                   <th className="px-2 py-2 font-medium">{t("common.name")}</th>
                   <th className="px-2 py-2 font-medium">{t("common.email")}</th>
                   <th className="px-2 py-2 font-medium">{t("pending.requested")}</th>
@@ -48,10 +48,15 @@ export default async function PendingRegistrationsPage() {
               </thead>
               <tbody>
                 {pendingUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-zinc-100 dark:border-zinc-800">
-                    <td className="px-2 py-2">{user.name}</td>
-                    <td className="px-2 py-2">{user.email}</td>
-                    <td className="px-2 py-2">{new Date(user.createdAt).toLocaleString()}</td>
+                  <tr
+                    key={user.id}
+                    className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                  >
+                    <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">{user.name}</td>
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{user.email}</td>
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
+                      {new Date(user.createdAt).toLocaleString()}
+                    </td>
                     <td className="min-w-[12rem] whitespace-nowrap px-2 py-2 align-top">
                       <form className="flex flex-col gap-2 sm:inline-flex sm:flex-row sm:flex-wrap sm:items-center sm:gap-2">
                         <input type="hidden" name="userId" value={user.id} />

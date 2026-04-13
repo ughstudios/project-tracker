@@ -246,14 +246,14 @@ export default function IssuesPage() {
   return (
     <div className="space-y-4">
       <header className="panel-surface rounded-xl p-4">
-        <h1 className="text-xl font-semibold">{t("issues.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("issues.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.subtitle")}</p>
       </header>
 
       <section className="panel-surface rounded-xl p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h2 className="text-base font-semibold">{t("issues.allIssues")}</h2>
+            <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("issues.allIssues")}</h2>
             <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.listHelp")}</p>
           </div>
           <button
@@ -261,13 +261,16 @@ export default function IssuesPage() {
             aria-expanded={showCreateForm}
             aria-controls="new-issue-form"
             onClick={() => setShowCreateForm((value) => !value)}
-            className="btn-secondary inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold"
+            className="btn-primary inline-flex items-center justify-center rounded-lg px-3 py-2 text-sm font-semibold"
           >
             + {t("issues.newIssue")}
           </button>
         </div>
         {showCreateForm ? (
-          <div id="new-issue-form" className="mt-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-4">
+          <div
+            id="new-issue-form"
+            className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4 dark:border-white/[0.08] dark:bg-[#12141c]/90 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]"
+          >
             <form onSubmit={createIssue} className="grid gap-3 md:grid-cols-2">
               <label className="block text-sm md:col-span-2">
                 <span className="text-zinc-600 dark:text-zinc-400">{t("common.title")}</span>
@@ -467,30 +470,33 @@ export default function IssuesPage() {
           ) : filteredIssues.length === 0 ? (
             <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("issues.noMatch")}</p>
           ) : (
-            <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700">
+            <ul className="panel-surface divide-y divide-zinc-200 rounded-lg dark:divide-white/[0.08]">
               {filteredIssues.map((i) => (
                 <li
                   key={i.id}
-                  className="px-3 py-3 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 sm:flex sm:items-center sm:justify-between"
+                  className="px-3 py-3 hover:bg-zinc-50 dark:hover:bg-white/[0.04] sm:flex sm:items-center sm:justify-between sm:gap-3"
                 >
-                  <Link href={`/issues/${i.id}`} className="block min-w-0">
-                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
+                  <div className="min-w-0 flex-1">
+                    <Link
+                      href={`/issues/${i.id}`}
+                      className="link-accent text-base font-semibold underline"
+                    >
                       {getLocalizedText({
                         original: i.title,
                         translated: i.titleTranslated,
                         sourceLanguage: i.contentLanguage,
                         locale,
                       }).text}
-                    </span>
+                    </Link>
                     <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
                       {t("issueDetail.opened")}: {new Date(i.createdAt).toLocaleString()}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 break-all">
+                    <span className="mt-0.5 block break-all font-mono text-[11px] leading-snug text-zinc-500 dark:text-zinc-400">
                       {t("issues.ticketId")}:{" "}
                       <span
                         role="button"
                         tabIndex={0}
-                        className="cursor-pointer underline underline-offset-2 hover:text-zinc-700 dark:text-zinc-300"
+                        className="cursor-pointer font-mono text-sky-700 underline underline-offset-2 hover:text-sky-800 dark:text-sky-400 dark:hover:text-sky-300"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -507,7 +513,7 @@ export default function IssuesPage() {
                         {i.id}
                       </span>
                       {copiedIssueId === i.id ? (
-                        <span className="ml-2 text-emerald-600">{t("common.copied")}</span>
+                        <span className="ml-2 text-emerald-600 dark:text-emerald-400">{t("common.copied")}</span>
                       ) : null}
                     </span>
                     {getLocalizedText({
@@ -544,10 +550,10 @@ export default function IssuesPage() {
                       })()}
                       {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
                     </span>
-                  </Link>
+                  </div>
                   <button
                     type="button"
-                    className="mt-2 rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 sm:mt-0"
+                    className="btn-secondary mt-2 shrink-0 rounded-lg px-3 py-1.5 text-xs font-medium sm:mt-0"
                     onClick={() => archiveIssue(i.id, i.title)}
                     disabled={archivingIssueId === i.id}
                   >

@@ -76,12 +76,12 @@ export default function CustomersPage() {
   return (
     <div className="space-y-4">
       <header className="panel-surface rounded-xl p-4">
-        <h1 className="text-xl font-semibold">{t("customers.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("customers.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("customers.subtitle")}</p>
       </header>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold">{t("customers.createSection")}</h2>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("customers.createSection")}</h2>
         <form onSubmit={create} className="mt-3 flex flex-col gap-2 md:flex-row">
           <input
             className="input flex-1"
@@ -100,7 +100,7 @@ export default function CustomersPage() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold">{t("customers.listSection")}</h2>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("customers.listSection")}</h2>
         {loading ? (
           <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("customers.loading")}</p>
         ) : customers.length === 0 ? (
@@ -109,39 +109,42 @@ export default function CustomersPage() {
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[520px] border-collapse text-sm">
               <thead>
-                <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.customer")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.projects")}</th>
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
+                  <th className="px-2 py-2 font-medium">{t("common.customer")}</th>
+                  <th className="px-2 py-2 font-medium">{t("common.projects")}</th>
                   {isAdmin ? (
-                    <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.actions")}</th>
+                    <th className="px-2 py-2 font-medium">{t("common.actions")}</th>
                   ) : null}
                 </tr>
               </thead>
               <tbody>
                 {customers.map((c) => (
-                  <tr key={c.id} className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40">
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 font-medium">
+                  <tr
+                    key={c.id}
+                    className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                  >
+                    <td className="px-2 py-2">
                       <Link
                         href={`/customers/${encodeURIComponent(c.id)}`}
-                        className="link-accent underline"
+                        className="link-accent font-medium underline underline-offset-2"
                       >
                         {c.name}
                       </Link>
                     </td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-zinc-700 dark:text-zinc-300">
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                       <Link
                         href={`/projects?customer=${encodeURIComponent(c.id)}`}
-                        className="link-accent tabular-nums font-medium underline"
+                        className="link-accent tabular-nums font-medium underline underline-offset-2"
                         title={t("customers.viewProjectsFor", { name: c.name })}
                       >
                         {c._count?.projects ?? 0}
                       </Link>
                     </td>
                     {isAdmin ? (
-                      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                      <td className="px-2 py-2">
                         <button
                           type="button"
-                          className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
+                          className="btn-secondary rounded px-2 py-1 text-xs font-medium disabled:opacity-60"
                           onClick={() => archiveCustomer(c.id, c.name)}
                           disabled={archivingId === c.id}
                         >

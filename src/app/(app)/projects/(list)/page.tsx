@@ -206,12 +206,12 @@ function ProjectsPageContent() {
   return (
     <div className="space-y-4">
       <header className="panel-surface rounded-xl p-4">
-        <h1 className="text-xl font-semibold">{t("projects.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("projects.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("projects.subtitle")}</p>
       </header>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold">{t("projects.wizardTitle")}</h2>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("projects.wizardTitle")}</h2>
         <div className="mt-2 flex items-center gap-2 text-xs text-zinc-600 dark:text-zinc-400">
           <span className={wizardStep === 1 ? "font-semibold text-zinc-900 dark:text-zinc-100" : ""}>
             {t("projects.step1")}
@@ -252,7 +252,7 @@ function ProjectsPageContent() {
                   </option>
                 ))}
               </select>
-              <p className="md:col-span-4 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 px-3 py-2 text-xs text-zinc-600 dark:text-zinc-400">
+              <p className="md:col-span-4 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600 dark:border-white/[0.08] dark:bg-[#12141c]/90 dark:text-zinc-400 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)]">
                 {t("projects.productDerivedHint")}
               </p>
             </>
@@ -310,7 +310,7 @@ function ProjectsPageContent() {
                   />
                   <button
                     type="button"
-                    className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                    className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                     onClick={() =>
                       setProcessors((prev) =>
                         prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev,
@@ -323,7 +323,7 @@ function ProjectsPageContent() {
               ))}
               <button
                 type="button"
-                className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                 onClick={() =>
                   setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])
                 }
@@ -379,7 +379,7 @@ function ProjectsPageContent() {
                   />
                   <button
                     type="button"
-                    className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                    className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                     onClick={() =>
                       setReceiverCards((prev) =>
                         prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev,
@@ -392,7 +392,7 @@ function ProjectsPageContent() {
               ))}
               <button
                 type="button"
-                className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                 onClick={() =>
                   setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])
                 }
@@ -456,7 +456,7 @@ function ProjectsPageContent() {
                   />
                   <button
                     type="button"
-                    className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                    className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                     onClick={() =>
                       setOtherProducts((prev) =>
                         prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev,
@@ -469,7 +469,7 @@ function ProjectsPageContent() {
               ))}
               <button
                 type="button"
-                className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
+                className="btn-secondary rounded-lg px-3 py-2 text-sm font-medium"
                 onClick={() =>
                   setOtherProducts((prev) => [
                     ...prev,
@@ -489,7 +489,7 @@ function ProjectsPageContent() {
               onClick={() =>
                 setWizardStep((s) => (s === 1 ? 1 : (s - 1) as 1 | 2 | 3 | 4))
               }
-              className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
+              className="btn-secondary rounded-lg px-4 py-2 text-sm font-medium disabled:opacity-50"
             >
               {t("projects.back")}
             </button>
@@ -519,7 +519,7 @@ function ProjectsPageContent() {
 
       <section className="panel-surface rounded-xl p-4">
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between">
-          <h2 className="text-base font-semibold">{t("projects.listTitle")}</h2>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("projects.listTitle")}</h2>
           <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:items-end sm:gap-3">
             <div className="flex min-w-0 flex-col gap-1 sm:min-w-[11rem]">
               <label htmlFor="projects-customer-filter" className="text-xs font-medium text-zinc-600 dark:text-zinc-400">
@@ -556,22 +556,25 @@ function ProjectsPageContent() {
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[800px] border-collapse text-sm">
               <thead>
-                <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("projects.colProject")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("projects.colProduct")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("projects.colCustomer")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("projects.colHardware")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("projects.colIssues")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.actions")}</th>
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
+                  <th className="px-2 py-2 font-medium">{t("projects.colProject")}</th>
+                  <th className="px-2 py-2 font-medium">{t("projects.colProduct")}</th>
+                  <th className="px-2 py-2 font-medium">{t("projects.colCustomer")}</th>
+                  <th className="px-2 py-2 font-medium">{t("projects.colHardware")}</th>
+                  <th className="px-2 py-2 font-medium">{t("projects.colIssues")}</th>
+                  <th className="px-2 py-2 font-medium">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>
                 {filtered.map((p) => (
-                  <tr key={p.id} className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40">
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 font-medium">{p.name}</td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{p.product}</td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{p.customer?.name ?? "-"}</td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                  <tr
+                    key={p.id}
+                    className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                  >
+                    <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">{p.name}</td>
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{p.product}</td>
+                    <td className="px-2 py-2 text-zinc-700 dark:text-zinc-300">{p.customer?.name ?? "-"}</td>
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
                       <div className="space-y-1 text-xs">
                         <div>
                           <span className="font-semibold">{t("projects.processors")}</span>{" "}
@@ -599,16 +602,16 @@ function ProjectsPageContent() {
                         </div>
                       </div>
                     </td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{p._count?.issues ?? 0}</td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
-                      <div className="flex items-center gap-2">
-                        <Link href={`/projects/${p.id}`} className="link-accent underline">
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{p._count?.issues ?? 0}</td>
+                    <td className="px-2 py-2">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Link href={`/projects/${p.id}`} className="link-accent text-sm font-medium underline underline-offset-2">
                           {t("projects.open")}
                         </Link>
                         {isAdmin ? (
                           <button
                             type="button"
-                            className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
+                            className="btn-secondary rounded px-2 py-1 text-xs font-medium disabled:opacity-60"
                             onClick={() => archiveProject(p.id, p.name)}
                             disabled={archivingProjectId === p.id}
                           >

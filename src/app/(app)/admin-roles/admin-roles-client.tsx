@@ -160,7 +160,7 @@ export function AdminRolesClient() {
       </dialog>
 
       <header className="panel-surface rounded-xl p-4">
-        <h1 className="text-xl font-semibold">{t("adminRoles.title")}</h1>
+        <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">{t("adminRoles.title")}</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.subtitle")}</p>
       </header>
 
@@ -173,17 +173,20 @@ export function AdminRolesClient() {
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead>
-                <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.name")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.email")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("adminRoles.roleColumn")}</th>
-                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("adminRoles.passwordColumn")}</th>
+                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
+                  <th className="px-2 py-2 font-medium">{t("common.name")}</th>
+                  <th className="px-2 py-2 font-medium">{t("common.email")}</th>
+                  <th className="px-2 py-2 font-medium">{t("adminRoles.roleColumn")}</th>
+                  <th className="px-2 py-2 font-medium">{t("adminRoles.passwordColumn")}</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40">
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
+                  <tr
+                    key={u.id}
+                    className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                  >
+                    <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
                       {u.name}
                       {u.id === meId ? (
                         <span className="ml-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
@@ -191,8 +194,8 @@ export function AdminRolesClient() {
                         </span>
                       ) : null}
                     </td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-zinc-700 dark:text-zinc-300">{u.email}</td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{u.email}</td>
+                    <td className="px-2 py-2">
                       {peerSuperLocked(u) ? (
                         <span className="text-zinc-600 dark:text-zinc-400">{t("adminRoles.peerSuperLocked")}</span>
                       ) : (
@@ -208,10 +211,10 @@ export function AdminRolesClient() {
                         </select>
                       )}
                     </td>
-                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+                    <td className="px-2 py-2">
                       <button
                         type="button"
-                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 underline decoration-zinc-400 underline-offset-2 hover:text-zinc-700 dark:text-zinc-300 disabled:opacity-50"
+                        className="link-accent text-sm font-medium underline disabled:opacity-50"
                         disabled={passwordSaving}
                         onClick={() => openPasswordDialog(u)}
                       >

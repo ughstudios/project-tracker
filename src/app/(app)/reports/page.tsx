@@ -79,35 +79,35 @@ function ColumnGroup<T extends string>({
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{title}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-300">{title}</h3>
         <button
           type="button"
           onClick={() =>
             onChange(canonical.filter((k) => !excludeFromBulkAll?.has(k)) as T[])
           }
-          className="text-xs font-medium text-zinc-600 dark:text-zinc-400 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:decoration-zinc-600 dark:hover:text-zinc-100"
+          className="link-accent text-xs font-medium underline"
         >
           {t("reports.selectAllCols")}
         </button>
         <button
           type="button"
           onClick={() => onChange([])}
-          className="text-xs font-medium text-zinc-600 dark:text-zinc-400 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:decoration-zinc-600 dark:hover:text-zinc-100"
+          className="link-accent text-xs font-medium underline"
         >
           {t("reports.clearCols")}
         </button>
       </div>
-      <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2 md:grid-cols-3">
+      <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2 md:grid-cols-3">
         {canonical.map((key) => {
           const checked = selected.includes(key);
           return (
             <li key={key}>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800">
+              <label className="flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-white/[0.08] dark:bg-[#12141c]/90 dark:text-zinc-100 dark:shadow-[inset_0_1px_0_0_rgba(255,255,255,0.04)] dark:hover:bg-white/[0.06]">
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => onChange(toggleOrdered(canonical, selected, key))}
-                  className="rounded border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
+                  className="size-4 shrink-0 rounded border-zinc-300 accent-sky-600 dark:border-white/20 dark:accent-sky-400"
                 />
                 <span>{t(`${labelPrefix}.${key}`)}</span>
               </label>
@@ -294,7 +294,7 @@ export default function ReportsPage() {
         </p>
         <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{t("reports.idColumnsHint")}</p>
 
-        <div className="mt-6 flex flex-col gap-6 border-t border-zinc-100 dark:border-zinc-800 pt-6">
+        <div className="mt-6 flex flex-col gap-6 border-t border-zinc-200 pt-6 dark:border-white/[0.08]">
           {isAdmin === true ? (
             <ColumnGroup
               title={t("reports.pickIssueCols")}
