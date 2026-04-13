@@ -517,22 +517,24 @@ function ProjectsPageContent() {
         </form>
       </section>
 
-      <section className="panel-surface rounded-xl p-4">
-        <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-4 sm:gap-y-2">
-          <h2 className="shrink-0 text-base font-semibold leading-none text-zinc-900 dark:text-zinc-100">
-            {t("projects.listTitle")}
-          </h2>
-          <div className="flex min-w-0 flex-1 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
-            <div className="flex min-w-0 flex-col gap-1.5 sm:flex-row sm:items-center sm:gap-2">
+      <section className="panel-surface overflow-hidden rounded-xl p-0">
+        <div className="border-b border-zinc-200 px-4 py-4 dark:border-white/[0.08]">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("projects.listTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("projects.listToolbarHint")}</p>
+        </div>
+
+        <div className="border-b border-zinc-200 bg-zinc-50 px-4 py-3 dark:border-white/[0.08] dark:bg-[#12141c]/80">
+          <div className="mx-auto flex w-full max-w-none flex-col gap-3 sm:flex-row sm:items-end sm:gap-4">
+            <div className="flex w-full min-w-0 flex-col gap-1.5 sm:w-56 sm:shrink-0">
               <label
                 htmlFor="projects-customer-filter"
-                className="shrink-0 text-xs font-medium text-zinc-600 dark:text-zinc-400"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
               >
                 {t("projects.filterByCustomer")}
               </label>
               <select
                 id="projects-customer-filter"
-                className="input w-full min-w-0 sm:w-[13rem]"
+                className="input w-full text-sm"
                 value={customerFilterId}
                 onChange={(e) => setCustomerFilter(e.target.value)}
               >
@@ -544,42 +546,73 @@ function ProjectsPageContent() {
                 ))}
               </select>
             </div>
-            <input
-              className="input w-full min-w-0 sm:min-w-[12rem] sm:max-w-md sm:flex-1"
-              placeholder={t("projects.searchPh")}
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              aria-label={t("projects.searchPh")}
-            />
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <label
+                htmlFor="projects-search"
+                className="text-xs font-medium text-zinc-600 dark:text-zinc-400"
+              >
+                {t("common.search")}
+              </label>
+              <input
+                id="projects-search"
+                className="input w-full text-sm"
+                placeholder={t("projects.searchPh")}
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                autoComplete="off"
+              />
+            </div>
           </div>
         </div>
-        {loading ? (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("common.loading")}</p>
-        ) : filtered.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
-        ) : (
-          <div className="mt-3 overflow-x-auto">
-            <table className="w-full min-w-[800px] border-collapse text-sm">
-              <thead>
-                <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
-                  <th className="px-2 py-2 font-medium">{t("projects.colProject")}</th>
-                  <th className="px-2 py-2 font-medium">{t("projects.colProduct")}</th>
-                  <th className="px-2 py-2 font-medium">{t("projects.colCustomer")}</th>
-                  <th className="px-2 py-2 font-medium">{t("projects.colHardware")}</th>
-                  <th className="px-2 py-2 font-medium">{t("projects.colIssues")}</th>
-                  <th className="px-2 py-2 font-medium">{t("common.actions")}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filtered.map((p) => (
-                  <tr
-                    key={p.id}
-                    className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
-                  >
-                    <td className="px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">{p.name}</td>
-                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{p.product}</td>
-                    <td className="px-2 py-2 text-zinc-700 dark:text-zinc-300">{p.customer?.name ?? "-"}</td>
-                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
+
+        <div className="px-4 py-4">
+          {loading ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("common.loading")}</p>
+          ) : filtered.length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
+          ) : (
+            <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-white/[0.08]">
+              <table className="w-full min-w-[880px] table-fixed border-collapse text-sm">
+                <colgroup>
+                  <col className="w-[22%]" />
+                  <col className="w-[12%]" />
+                  <col className="w-[14%]" />
+                  <col className="w-[30%]" />
+                  <col className="w-[7%]" />
+                  <col className="w-[15%]" />
+                </colgroup>
+                <thead>
+                  <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-zinc-300">
+                    <th className="px-3 py-2.5 font-medium">{t("projects.colProject")}</th>
+                    <th className="px-3 py-2.5 font-medium">{t("projects.colProduct")}</th>
+                    <th className="px-3 py-2.5 font-medium">{t("projects.colCustomer")}</th>
+                    <th className="px-3 py-2.5 font-medium">{t("projects.colHardware")}</th>
+                    <th className="px-3 py-2.5 text-right font-medium">{t("projects.colIssues")}</th>
+                    <th className="px-3 py-2.5 font-medium">{t("common.actions")}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map((p) => (
+                    <tr
+                      key={p.id}
+                      className="border-b border-zinc-100 align-top hover:bg-zinc-50 dark:border-white/[0.06] dark:hover:bg-white/[0.04]"
+                    >
+                      <td className="px-3 py-2.5 font-medium text-zinc-900 dark:text-zinc-100">
+                        <span className="line-clamp-2 break-words" title={p.name}>
+                          {p.name}
+                        </span>
+                      </td>
+                    <td className="px-3 py-2.5 text-zinc-800 dark:text-zinc-200">
+                      <span className="line-clamp-2 break-words" title={p.product}>
+                        {p.product}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-zinc-700 dark:text-zinc-300">
+                      <span className="line-clamp-2 break-words" title={p.customer?.name ?? undefined}>
+                        {p.customer?.name ?? "-"}
+                      </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-zinc-800 dark:text-zinc-200">
                       <div className="space-y-1 text-xs">
                         <div>
                           <span className="font-semibold">{t("projects.processors")}</span>{" "}
@@ -607,8 +640,10 @@ function ProjectsPageContent() {
                         </div>
                       </div>
                     </td>
-                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">{p._count?.issues ?? 0}</td>
-                    <td className="px-2 py-2">
+                    <td className="px-3 py-2.5 text-right tabular-nums text-zinc-800 dark:text-zinc-200">
+                      {p._count?.issues ?? 0}
+                    </td>
+                    <td className="px-3 py-2.5">
                       <div className="flex flex-wrap items-center gap-1.5">
                         <Link
                           href={`/projects/${p.id}`}
@@ -633,7 +668,8 @@ function ProjectsPageContent() {
               </tbody>
             </table>
           </div>
-        )}
+          )}
+        </div>
       </section>
     </div>
   );
