@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { LanguageToggle } from "@/components/language-toggle";
 import { useI18n } from "@/i18n/context";
 
 const STEP_KEYS = ["onboarding.s1", "onboarding.s2", "onboarding.s3", "onboarding.s4"] as const;
@@ -94,9 +95,12 @@ export function OnboardingWizard({ onboardingCompleted }: Props) {
         tabIndex={-1}
         className="panel-surface max-h-[min(90vh,640px)] w-full max-w-lg overflow-y-auto rounded-xl p-6 shadow-lg outline-none ring-2 ring-zinc-900/10 dark:ring-white/10"
       >
-        <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-          {t("onboarding.stepOf", { current: String(step + 1), total: String(total) })}
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+            {t("onboarding.stepOf", { current: String(step + 1), total: String(total) })}
+          </p>
+          <LanguageToggle className="shrink-0" />
+        </div>
         <h2 id="onboarding-wizard-title" className="mt-2 text-xl font-semibold text-zinc-900 dark:text-zinc-100">
           {title}
         </h2>

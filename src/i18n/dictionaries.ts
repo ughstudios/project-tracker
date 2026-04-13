@@ -637,11 +637,11 @@ const en: MessageTree = {
     },
     s3: {
       title: "Where to find things",
-      body: "The sidebar is your map:\n\n• Dashboard — charts and a high-level view of active work\n• Kanban — drag cards to change status or assignee\n• Issues — filter and search the list; open a row for the full page\n• Customers & Projects — profiles, attachments, and notes\n• Work records — a personal work journal (who can see what depends on your role)\n• Reports — CSV exports; Archive — read-only history\n\nSome sections may be hidden for your account if an admin limited employee page access.",
+      body: "The sidebar is your map:\n\n• Dashboard — charts and a high-level view of active work\n• Kanban — drag cards to change status or assignee\n• Issues — filter and search the list; open a row for the full page\n• Customers & Projects — profiles, attachments, and notes\n• Work records — a personal work journal (who can see what depends on your role)\n• Reports — CSV exports\n• Archive — read-only history\n\nSome sections may be hidden for your account if an admin limited employee page access.",
     },
     s4: {
       title: "Make it yours",
-      body: "Use Appearance and Language at the bottom of the sidebar. Open Account to change your display name, password, or sign-in email.",
+      body: "Switch language anytime using the control at the top of this panel, or later from the bottom of the sidebar. Appearance (light / dark / system) stays in the sidebar once you finish. Open Account to change your display name, password, or sign-in email.",
     },
   },
   errors: {
@@ -1298,11 +1298,11 @@ const zh: MessageTree = {
     },
     s3: {
       title: "各功能在哪里",
-      body: "左侧导航是总览：\n\n• 工作台 — 图表与活跃工作概况\n• 看板 — 拖动卡片调整状态或负责人\n• 问题 — 筛选与搜索列表；点击行进入完整页面\n• 客户与项目 — 档案、附件与备注\n• 工作记录 — 个人工作日志（可见范围因角色而异）\n• 报表 — CSV 导出；归档 — 只读历史\n\n若管理员限制了员工页面权限，部分入口可能对您的账号不可见。",
+      body: "左侧导航是总览：\n\n• 工作台 — 图表与活跃工作概况\n• 看板 — 拖动卡片调整状态或负责人\n• 问题 — 筛选与搜索列表；点击行进入完整页面\n• 客户与项目 — 档案、附件与备注\n• 工作记录 — 个人工作日志（可见范围因角色而异）\n• 报表 — CSV 导出\n• 归档 — 只读历史\n\n若管理员限制了员工页面权限，部分入口可能对您的账号不可见。",
     },
     s4: {
       title: "个性化设置",
-      body: "侧栏底部可切换外观与语言。在「账户」中可修改显示名称、密码或登录邮箱。",
+      body: "可随时使用本页顶部的语言切换；结束后也可在侧栏底部切换。外观（浅色 / 深色 / 跟随系统）在结束引导后仍在侧栏底部。在「账户」中可修改显示名称、密码或登录邮箱。",
     },
   },
   errors: {
