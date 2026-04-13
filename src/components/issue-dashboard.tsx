@@ -10,7 +10,7 @@ export function IssueDashboard() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-sm text-zinc-600 dark:text-zinc-400 shadow-sm">
         {t("common.loading")}
       </div>
     );

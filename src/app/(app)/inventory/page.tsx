@@ -109,19 +109,19 @@ function StockRow({
   };
 
   return (
-    <tr className="odd:bg-white even:bg-zinc-50/50 align-top">
-      <td className="border border-zinc-200 px-2 py-2 text-xs font-medium text-zinc-700">
+    <tr className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40 align-top">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-xs font-medium text-zinc-700 dark:text-zinc-300">
         {kindLabel(line.kind)}
       </td>
-      <td className="border border-zinc-200 px-2 py-2">
-        <div className="font-medium text-zinc-900">{line.model}</div>
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
+        <div className="font-medium text-zinc-900 dark:text-zinc-100">{line.model}</div>
         {line.kind === "OTHER" ? (
-          <div className="text-xs text-zinc-500">
+          <div className="text-xs text-zinc-500 dark:text-zinc-400">
             {t("inventory.category")}: {line.category}
           </div>
         ) : null}
       </td>
-      <td className="border border-zinc-200 px-2 py-2">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
         {line.kind === "PROCESSOR" ? (
           <input
             className="input w-full min-w-[100px] text-sm"
@@ -135,10 +135,10 @@ function StockRow({
             onChange={(e) => setReceiverVersion(e.target.value)}
           />
         ) : (
-          <span className="text-sm text-zinc-400">—</span>
+          <span className="text-sm text-zinc-400 dark:text-zinc-500">—</span>
         )}
       </td>
-      <td className="border border-zinc-200 px-2 py-2">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
         <input
           type="number"
           min={0}
@@ -147,7 +147,7 @@ function StockRow({
           onChange={(e) => setQuantity(e.target.value)}
         />
       </td>
-      <td className="border border-zinc-200 px-2 py-2">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
         <input
           className="input w-full min-w-[120px] text-sm"
           value={location}
@@ -155,7 +155,7 @@ function StockRow({
           placeholder={t("inventory.locationPh")}
         />
       </td>
-      <td className="border border-zinc-200 px-2 py-2">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
         <input
           className="input w-full min-w-[140px] text-sm"
           value={notes}
@@ -163,12 +163,12 @@ function StockRow({
           placeholder={t("inventory.notesPh")}
         />
       </td>
-      <td className="border border-zinc-200 px-2 py-2 whitespace-nowrap">
+      <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 whitespace-nowrap">
         <button
           type="button"
           disabled={saving}
           onClick={() => void save()}
-          className="rounded-lg bg-zinc-900 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+          className="rounded-lg bg-zinc-900 px-2 py-1 text-xs font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
         >
           {saving ? t("common.saving") : t("inventory.saveRow")}
         </button>
@@ -176,7 +176,7 @@ function StockRow({
           type="button"
           disabled={deleting}
           onClick={() => void remove()}
-          className="ml-1 rounded-lg border border-zinc-300 px-2 py-1 text-xs font-semibold text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+          className="ml-1 rounded-lg border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 disabled:opacity-50"
         >
           {deleting ? t("inventory.deleting") : t("common.delete")}
         </button>
@@ -323,17 +323,17 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("inventory.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("inventory.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("inventory.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("inventory.addSection")}</h2>
-        <p className="mt-1 text-xs text-zinc-500">{t("inventory.addHint")}</p>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("inventory.addHint")}</p>
         <form onSubmit={submitAdd} className="mt-3 grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-zinc-600">{t("inventory.kind")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("inventory.kind")}</span>
             <select
               className="input"
               value={formKind}
@@ -352,7 +352,7 @@ export default function InventoryPage() {
 
           {formKind === "OTHER" ? (
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-zinc-600">{t("inventory.category")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("inventory.category")}</span>
               <select
                 className="input"
                 value={formCategory}
@@ -372,7 +372,7 @@ export default function InventoryPage() {
           ) : null}
 
           <label className="flex flex-col gap-1 text-sm md:col-span-2 lg:col-span-1">
-            <span className="text-zinc-600">{t("inventory.model")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("inventory.model")}</span>
             <select
               className="input"
               required
@@ -406,7 +406,7 @@ export default function InventoryPage() {
 
           {formKind === "PROCESSOR" ? (
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-zinc-600">{t("common.firmware")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("common.firmware")}</span>
               <input
                 className="input"
                 value={formFirmware}
@@ -418,7 +418,7 @@ export default function InventoryPage() {
 
           {formKind === "RECEIVER_CARD" ? (
             <label className="flex flex-col gap-1 text-sm">
-              <span className="text-zinc-600">{t("projects.cardVersion")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("projects.cardVersion")}</span>
               <input
                 className="input"
                 value={formReceiverVersion}
@@ -429,7 +429,7 @@ export default function InventoryPage() {
           ) : null}
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-zinc-600">{t("common.quantity")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.quantity")}</span>
             <input
               type="number"
               min={0}
@@ -440,7 +440,7 @@ export default function InventoryPage() {
           </label>
 
           <label className="flex flex-col gap-1 text-sm">
-            <span className="text-zinc-600">{t("inventory.location")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("inventory.location")}</span>
             <input
               className="input"
               value={formLocation}
@@ -450,7 +450,7 @@ export default function InventoryPage() {
           </label>
 
           <label className="flex flex-col gap-1 text-sm md:col-span-2">
-            <span className="text-zinc-600">{t("common.details")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.details")}</span>
             <input
               className="input"
               value={formNotes}
@@ -463,7 +463,7 @@ export default function InventoryPage() {
             <button
               type="submit"
               disabled={adding}
-              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+              className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
             >
               {adding ? t("common.saving") : t("inventory.addOrUpdate")}
             </button>
@@ -471,7 +471,7 @@ export default function InventoryPage() {
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <h2 className="text-base font-semibold">{t("inventory.listSection")}</h2>
           <div className="flex flex-wrap gap-2">
@@ -495,23 +495,23 @@ export default function InventoryPage() {
         </div>
 
         {loading ? (
-          <p className="mt-3 text-sm text-zinc-600">{t("inventory.loading")}</p>
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("inventory.loading")}</p>
         ) : filtered.length === 0 ? (
-          <p className="mt-3 text-sm text-zinc-600">{t("inventory.none")}</p>
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("inventory.none")}</p>
         ) : (
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[720px] border-collapse text-sm">
               <thead>
-                <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
-                  <th className="border border-zinc-200 px-2 py-2">{t("inventory.kind")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("inventory.model")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">
+                <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("inventory.kind")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("inventory.model")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
                     {t("common.firmware")} / {t("projects.cardVersion")}
                   </th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("common.quantity")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("inventory.location")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("common.details")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("common.actions")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.quantity")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("inventory.location")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.details")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.actions")}</th>
                 </tr>
               </thead>
               <tbody>

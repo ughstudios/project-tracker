@@ -23,9 +23,9 @@ export default async function LoginPage({
     <main className="mx-auto flex min-h-screen w-full max-w-md flex-col px-6 py-4">
       <GuestLanguageBar />
       <div className="flex flex-1 items-center">
-        <div className="w-full rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+        <div className="w-full rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
           <h1 className="text-2xl font-semibold">{t("login.title")}</h1>
-          <p className="mt-1 text-sm text-zinc-600">{t("login.subtitle")}</p>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("login.subtitle")}</p>
           <LoginForm bannerMessage={bannerMessage} />
         </div>
       </div>

@@ -146,7 +146,7 @@ export default function CustomerDetailPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         {t("customerDetail.loading")}
       </div>
     );
@@ -155,8 +155,8 @@ export default function CustomerDetailPage() {
   if (missing) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-zinc-600">{t("customers.notFound")}</p>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customers.notFound")}</p>
           <Link href="/customers" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
             {t("customerDetail.backToCustomers")}
           </Link>
@@ -169,14 +169,14 @@ export default function CustomerDetailPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
             <h1 className="text-xl font-semibold">
               {t("customerDetail.title")}: {name}
             </h1>
-            <p className="mt-1 text-sm text-zinc-600">{t("customerDetail.subtitle")}</p>
-            <p className="mt-1 text-sm text-zinc-700">
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("customerDetail.subtitle")}</p>
+            <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">
               {t("customerDetail.projectsCount", { count: String(projectCount) })}
             </p>
             {readOnly ? null : (
@@ -208,13 +208,13 @@ export default function CustomerDetailPage() {
         </div>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-4">
         <h2 className="text-base font-semibold">{t("customerDetail.filesTitle")}</h2>
-        <p className="text-sm text-zinc-600">{t("customerDetail.filesHelp")}</p>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customerDetail.filesHelp")}</p>
         {readOnly ? null : (
           <>
             <label className="block max-w-xl text-sm">
-              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
               <textarea
                 className="input mt-1 min-h-[64px] w-full"
                 value={fileUploadNote}
@@ -245,13 +245,13 @@ export default function CustomerDetailPage() {
           </>
         )}
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
             {t("customerDetail.uploadedFiles", { count: String(attachments.length) })}
           </p>
           {attachments.length === 0 ? (
-            <p className="mt-2 text-sm text-zinc-500">{t("customerDetail.noFiles")}</p>
+            <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("customerDetail.noFiles")}</p>
           ) : (
-            <ul className="mt-2 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
+            <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
               {attachments.map((a) => (
                 <li key={a.id} className="px-3 py-2 text-sm">
                   <div className="flex items-center justify-between gap-2">
@@ -264,11 +264,11 @@ export default function CustomerDetailPage() {
                       {a.fileName}
                     </a>
                     <div className="flex shrink-0 items-center gap-2">
-                      <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
+                      <span className="text-zinc-500 dark:text-zinc-400">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
                       {readOnly ? null : (
                         <button
                           type="button"
-                          className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                          className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-0.5 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
                           onClick={() => void deleteAttachment(a.id)}
                         >
                           {t("common.delete")}
@@ -278,7 +278,7 @@ export default function CustomerDetailPage() {
                   </div>
                   <AttachmentNoteInlineEditor
                     uploadNote={a.uploadNote}
-                    borderClassName="border-zinc-100"
+                    borderClassName="border-zinc-100 dark:border-zinc-800"
                     readOnly={readOnly}
                     onSave={(note) => saveCustomerAttachmentNote(a.id, note)}
                   />

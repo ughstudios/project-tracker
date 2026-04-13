@@ -33,6 +33,12 @@ const en: MessageTree = {
     en: "English",
     zh: "中文",
   },
+  theme: {
+    label: "Appearance",
+    light: "Light theme",
+    dark: "Dark theme",
+    system: "Match system",
+  },
   common: {
     user: "User",
     unknown: "Unknown",
@@ -667,6 +673,12 @@ const zh: MessageTree = {
     label: "语言",
     en: "English",
     zh: "中文",
+  },
+  theme: {
+    label: "外观",
+    light: "浅色",
+    dark: "深色",
+    system: "跟随系统",
   },
   common: {
     user: "用户",

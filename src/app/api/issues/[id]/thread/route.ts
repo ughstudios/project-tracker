@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { translateThreadContent } from "@/lib/issue-content-translation";
 import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -105,11 +106,17 @@ export async function POST(
     return NextResponse.json({ error: "Message is required." }, { status: 400 });
   }
 
+  const translatedContent = content
+    ? await translateThreadContent(content)
+    : { contentLanguage: null, contentTranslated: null };
+
   const entry = await prisma.issueThreadEntry.create({
     data: {
       issueId,
       authorId: session.user.id,
       content,
+      contentTranslated: translatedContent.contentTranslated,
+      contentLanguage: translatedContent.contentLanguage,
     },
     include: {
       author: uploaderSelect,

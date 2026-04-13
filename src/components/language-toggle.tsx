@@ -71,8 +71,8 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
       className={[
         "inline-flex h-9 w-9 items-center justify-center rounded-lg transition-colors",
         locale === code
-          ? "bg-zinc-900 text-white"
-          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200",
+          ? "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+          : "bg-zinc-100 text-zinc-700 hover:bg-zinc-200 dark:bg-zinc-800 dark:text-zinc-300 dark:hover:bg-zinc-700",
       ].join(" ")}
     >
       <Glyph className="h-5 w-5" />
@@ -85,7 +85,7 @@ export function LanguageToggle({ className = "" }: { className?: string }) {
       aria-label={t("language.label")}
       className={`flex flex-wrap items-center gap-2 ${className}`}
     >
-      <GlobeIcon className="h-4 w-4 shrink-0 text-zinc-500" aria-hidden />
+      <GlobeIcon className="h-4 w-4 shrink-0 text-zinc-500 dark:text-zinc-400" aria-hidden />
       <div className="flex gap-1">
         {btn("en", EnGlyph, t("language.en"))}
         {btn("zh", ZhGlyph, t("language.zh"))}

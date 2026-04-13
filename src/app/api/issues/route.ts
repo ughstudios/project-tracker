@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { translateIssueContent } from "@/lib/issue-content-translation";
 import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -105,12 +106,24 @@ export async function POST(request: Request) {
     }
   }
 
+  const translatedContent = await translateIssueContent({
+    title: title.trim(),
+    symptom: symptom.trim(),
+    cause: (cause ?? "").trim(),
+    solution: (solution ?? "").trim(),
+  });
+
   const issue = await prisma.issue.create({
     data: {
       title: title.trim(),
+      titleTranslated: translatedContent.titleTranslated,
       symptom: symptom.trim(),
+      symptomTranslated: translatedContent.symptomTranslated,
       cause: (cause ?? "").trim(),
+      causeTranslated: translatedContent.causeTranslated,
       solution: (solution ?? "").trim(),
+      solutionTranslated: translatedContent.solutionTranslated,
+      contentLanguage: translatedContent.contentLanguage,
       rndContact: (rndContact ?? "").trim(),
       projectId: project?.id ?? null,
       customerId: customer?.id ?? null,

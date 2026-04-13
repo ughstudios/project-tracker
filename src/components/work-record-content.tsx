@@ -45,7 +45,7 @@ export function WorkRecordContentView({ content }: { content: string }) {
                 <img
                   src={attachmentBlobHref(seg.url)}
                   alt={seg.alt || "Pasted image"}
-                  className="max-h-56 max-w-full rounded border border-zinc-200 object-contain"
+                  className="max-h-56 max-w-full rounded border border-zinc-200 dark:border-zinc-700 object-contain"
                 />
               </a>
             ) : (

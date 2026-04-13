@@ -118,10 +118,15 @@ export default async function ArchivePage() {
       select: {
         id: true,
         title: true,
+        titleTranslated: true,
         status: true,
         symptom: true,
+        symptomTranslated: true,
         cause: true,
+        causeTranslated: true,
         solution: true,
+        solutionTranslated: true,
+        contentLanguage: true,
         rndContact: true,
         archivedAt: true,
         project: { select: { name: true } },
@@ -132,15 +137,15 @@ export default async function ArchivePage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("archive.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("archive.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("archive.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("archive.customers")}</h2>
         {customers.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">{t("archive.noCustomers")}</p>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t("archive.noCustomers")}</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {customers.map((c) => (
@@ -156,7 +161,7 @@ export default async function ArchivePage() {
                     <input type="hidden" name="id" value={c.id} />
                     <button
                       type="submit"
-                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                      className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
                     >
                       {t("common.unarchive")}
                     </button>
@@ -168,10 +173,10 @@ export default async function ArchivePage() {
         )}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("archive.projects")}</h2>
         {projects.length === 0 ? (
-          <p className="mt-2 text-sm text-zinc-600">{t("archive.noProjects")}</p>
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">{t("archive.noProjects")}</p>
         ) : (
           <ul className="mt-2 space-y-1 text-sm">
             {projects.map((p) => (
@@ -188,7 +193,7 @@ export default async function ArchivePage() {
                     <input type="hidden" name="id" value={p.id} />
                     <button
                       type="submit"
-                      className="rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100"
+                      className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
                     >
                       {t("common.unarchive")}
                     </button>
@@ -200,15 +205,20 @@ export default async function ArchivePage() {
         )}
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <ArchiveIssuesSection
           issues={issues.map((i) => ({
             id: i.id,
             title: i.title,
+            titleTranslated: i.titleTranslated,
             status: i.status,
             symptom: i.symptom,
+            symptomTranslated: i.symptomTranslated,
             cause: i.cause,
+            causeTranslated: i.causeTranslated,
             solution: i.solution,
+            solutionTranslated: i.solutionTranslated,
+            contentLanguage: i.contentLanguage,
             rndContact: i.rndContact,
             archivedAt: i.archivedAt ? i.archivedAt.toISOString() : null,
             project: i.project,

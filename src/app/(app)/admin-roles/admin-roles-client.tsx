@@ -100,7 +100,7 @@ export function AdminRolesClient() {
     <div className="space-y-4">
       <dialog
         ref={passwordDialogRef}
-        className="fixed left-1/2 top-1/2 z-[200] max-h-[90dvh] w-[min(calc(100vw-2rem),28rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-6 shadow-xl backdrop:bg-zinc-950/40"
+        className="fixed left-1/2 top-1/2 z-[200] max-h-[90dvh] w-[min(calc(100vw-2rem),28rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-xl backdrop:bg-zinc-950/40"
         onClose={() => {
           setPasswordUser(null);
           setPwdNew("");
@@ -109,12 +109,12 @@ export function AdminRolesClient() {
       >
         {passwordUser ? (
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold text-zinc-900">
+            <h2 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">
               {t("adminRoles.passwordDialogTitle", { name: passwordUser.name })}
             </h2>
-            <p className="text-sm text-zinc-600">{t("adminRoles.passwordDialogHelp")}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.passwordDialogHelp")}</p>
             <div className="space-y-2">
-              <label className="block text-sm font-medium text-zinc-800">
+              <label className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
                 {t("adminRoles.newPassword")}
                 <input
                   type="password"
@@ -125,7 +125,7 @@ export function AdminRolesClient() {
                   disabled={passwordSaving}
                 />
               </label>
-              <label className="block text-sm font-medium text-zinc-800">
+              <label className="block text-sm font-medium text-zinc-800 dark:text-zinc-200">
                 {t("adminRoles.confirmPassword")}
                 <input
                   type="password"
@@ -140,7 +140,7 @@ export function AdminRolesClient() {
             <div className="flex flex-wrap justify-end gap-2 pt-2">
               <button
                 type="button"
-                className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm font-medium text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
                 disabled={passwordSaving}
                 onClick={() => closePasswordDialog()}
               >
@@ -159,42 +159,42 @@ export function AdminRolesClient() {
         ) : null}
       </dialog>
 
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("adminRoles.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("adminRoles.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         {loading ? (
-          <p className="text-sm text-zinc-600">{t("adminRoles.loading")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.loading")}</p>
         ) : users.length === 0 ? (
-          <p className="text-sm text-zinc-600">{t("adminRoles.none")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("adminRoles.none")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[760px] border-collapse text-sm">
               <thead>
-                <tr className="bg-zinc-100 text-left text-xs uppercase tracking-wide text-zinc-600">
-                  <th className="border border-zinc-200 px-2 py-2">{t("common.name")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("common.email")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("adminRoles.roleColumn")}</th>
-                  <th className="border border-zinc-200 px-2 py-2">{t("adminRoles.passwordColumn")}</th>
+                <tr className="bg-zinc-100 dark:bg-zinc-800 text-left text-xs uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.name")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("common.email")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("adminRoles.roleColumn")}</th>
+                  <th className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">{t("adminRoles.passwordColumn")}</th>
                 </tr>
               </thead>
               <tbody>
                 {users.map((u) => (
-                  <tr key={u.id} className="odd:bg-white even:bg-zinc-50/50">
-                    <td className="border border-zinc-200 px-2 py-2 font-medium text-zinc-900">
+                  <tr key={u.id} className="odd:bg-white dark:bg-zinc-900 dark:odd:bg-zinc-900 even:bg-zinc-50 dark:bg-zinc-950/50 dark:even:bg-zinc-800/40">
+                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 font-medium text-zinc-900 dark:text-zinc-100">
                       {u.name}
                       {u.id === meId ? (
-                        <span className="ml-1 text-xs font-normal text-zinc-500">
+                        <span className="ml-1 text-xs font-normal text-zinc-500 dark:text-zinc-400">
                           ({t("adminRoles.you")})
                         </span>
                       ) : null}
                     </td>
-                    <td className="border border-zinc-200 px-2 py-2 text-zinc-700">{u.email}</td>
-                    <td className="border border-zinc-200 px-2 py-2">
+                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2 text-zinc-700 dark:text-zinc-300">{u.email}</td>
+                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
                       {peerSuperLocked(u) ? (
-                        <span className="text-zinc-600">{t("adminRoles.peerSuperLocked")}</span>
+                        <span className="text-zinc-600 dark:text-zinc-400">{t("adminRoles.peerSuperLocked")}</span>
                       ) : (
                         <select
                           className="input max-w-[220px] text-sm"
@@ -208,10 +208,10 @@ export function AdminRolesClient() {
                         </select>
                       )}
                     </td>
-                    <td className="border border-zinc-200 px-2 py-2">
+                    <td className="border border-zinc-200 dark:border-zinc-700 px-2 py-2">
                       <button
                         type="button"
-                        className="text-sm font-medium text-zinc-900 underline decoration-zinc-400 underline-offset-2 hover:text-zinc-700 disabled:opacity-50"
+                        className="text-sm font-medium text-zinc-900 dark:text-zinc-100 underline decoration-zinc-400 underline-offset-2 hover:text-zinc-700 dark:text-zinc-300 disabled:opacity-50"
                         disabled={passwordSaving}
                         onClick={() => openPasswordDialog(u)}
                       >

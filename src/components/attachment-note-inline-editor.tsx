@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 type Props = {
   uploadNote: string;
   onSave: (note: string) => Promise<boolean>;
-  /** e.g. border-zinc-200 vs border-zinc-100 for nested cards */
+  /** e.g. border-zinc-200 dark:border-zinc-700 vs border-zinc-100 dark:border-zinc-800 for nested cards */
   borderClassName?: string;
   /** When true, show note text only (no edit/save). */
   readOnly?: boolean;
@@ -15,7 +15,7 @@ type Props = {
 export function AttachmentNoteInlineEditor({
   uploadNote,
   onSave,
-  borderClassName = "border-zinc-200",
+  borderClassName = "border-zinc-200 dark:border-zinc-700",
   readOnly = false,
 }: Props) {
   const { t } = useI18n();
@@ -55,7 +55,7 @@ export function AttachmentNoteInlineEditor({
   if (editing) {
     return (
       <div className={`mt-2 border-t pt-2 ${borderClassName}`}>
-        <p className="text-xs font-medium text-zinc-700">{t("common.attachmentNoteHeading")}</p>
+        <p className="text-xs font-medium text-zinc-700 dark:text-zinc-300">{t("common.attachmentNoteHeading")}</p>
         <textarea
           className="input mt-1 min-h-[72px] w-full text-xs"
           value={draft}
@@ -67,7 +67,7 @@ export function AttachmentNoteInlineEditor({
             type="button"
             disabled={saving}
             onClick={() => void save()}
-            className="rounded border border-zinc-300 bg-white px-2 py-1 text-xs font-medium hover:bg-zinc-50"
+            className="rounded border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-2 py-1 text-xs font-medium hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
           >
             {saving ? t("common.saving") : t("common.save")}
           </button>
@@ -75,7 +75,7 @@ export function AttachmentNoteInlineEditor({
             type="button"
             disabled={saving}
             onClick={cancel}
-            className="rounded border border-zinc-200 bg-white px-2 py-1 text-xs text-zinc-600 hover:bg-zinc-50"
+            className="rounded border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1 text-xs text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
           >
             {t("common.cancel")}
           </button>
@@ -87,8 +87,8 @@ export function AttachmentNoteInlineEditor({
   return (
     <div className={`mt-2 border-t pt-2 ${borderClassName}`}>
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <p className="min-w-0 flex-1 whitespace-pre-wrap text-xs text-zinc-600">
-          <span className="font-medium text-zinc-700">{t("common.attachmentNoteHeading")}: </span>
+        <p className="min-w-0 flex-1 whitespace-pre-wrap text-xs text-zinc-600 dark:text-zinc-400">
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">{t("common.attachmentNoteHeading")}: </span>
           {uploadNote.trim() || t("common.attachmentNoteEmpty")}
         </p>
         {readOnly ? null : (

@@ -206,10 +206,15 @@ model AuditLog {
 model Issue {
   id             String   @id @default(cuid())
   title          String
+  titleTranslated String?
   status         String   @default("OPEN")
   symptom        String
+  symptomTranslated String?
   cause          String
+  causeTranslated String?
   solution       String
+  solutionTranslated String?
+  contentLanguage String?
   rndContact     String
   doneAt         DateTime?
   archivedAt     DateTime?
@@ -232,6 +237,8 @@ model Issue {
 model IssueThreadEntry {
   id        String   @id @default(cuid())
   content   String
+  contentTranslated String?
+  contentLanguage String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

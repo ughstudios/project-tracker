@@ -2,6 +2,7 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import { translateIssueContent } from "@/lib/issue-content-translation";
 import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -147,13 +148,34 @@ export async function PATCH(
     );
   }
 
+  const contentChanged =
+    title !== existing.title ||
+    symptom !== existing.symptom ||
+    cause !== existing.cause ||
+    solution !== existing.solution;
+
+  const translatedContent = contentChanged
+    ? await translateIssueContent({ title, symptom, cause, solution })
+    : {
+        contentLanguage: existing.contentLanguage,
+        titleTranslated: existing.titleTranslated,
+        symptomTranslated: existing.symptomTranslated,
+        causeTranslated: existing.causeTranslated,
+        solutionTranslated: existing.solutionTranslated,
+      };
+
   const issue = await prisma.issue.update({
     where: { id },
     data: {
       title,
+      titleTranslated: translatedContent.titleTranslated,
       symptom,
+      symptomTranslated: translatedContent.symptomTranslated,
       cause,
+      causeTranslated: translatedContent.causeTranslated,
       solution,
+      solutionTranslated: translatedContent.solutionTranslated,
+      contentLanguage: translatedContent.contentLanguage,
       rndContact,
       projectId,
       customerId,

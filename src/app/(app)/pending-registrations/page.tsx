@@ -25,19 +25,19 @@ export default async function PendingRegistrationsPage() {
 
   return (
     <section className="space-y-4">
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
         <h1 className="text-xl font-semibold">{t("pending.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("pending.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("pending.subtitle")}</p>
       </div>
 
-      <div className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
         {pendingUsers.length === 0 ? (
-          <p className="text-sm text-zinc-600">{t("pending.none")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("pending.none")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="border-b border-zinc-200 text-left text-zinc-500">
+                <tr className="border-b border-zinc-200 dark:border-zinc-700 text-left text-zinc-500 dark:text-zinc-400">
                   <th className="px-2 py-2 font-medium">{t("common.name")}</th>
                   <th className="px-2 py-2 font-medium">{t("common.email")}</th>
                   <th className="px-2 py-2 font-medium">{t("pending.requested")}</th>
@@ -48,7 +48,7 @@ export default async function PendingRegistrationsPage() {
               </thead>
               <tbody>
                 {pendingUsers.map((user) => (
-                  <tr key={user.id} className="border-b border-zinc-100">
+                  <tr key={user.id} className="border-b border-zinc-100 dark:border-zinc-800">
                     <td className="px-2 py-2">{user.name}</td>
                     <td className="px-2 py-2">{user.email}</td>
                     <td className="px-2 py-2">{new Date(user.createdAt).toLocaleString()}</td>
@@ -58,14 +58,14 @@ export default async function PendingRegistrationsPage() {
                         <button
                           type="submit"
                           formAction={approveRegistration}
-                          className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700"
+                          className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600"
                         >
                           {t("pending.approve")}
                         </button>
                         <button
                           type="submit"
                           formAction={rejectAndDeleteRegistration}
-                          className="rounded-md border border-red-200 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100"
+                          className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 px-3 py-1.5 text-xs font-semibold text-red-800 hover:bg-red-100 dark:bg-red-950/40 dark:hover:bg-red-950/50"
                         >
                           {t("pending.rejectDelete")}
                         </button>

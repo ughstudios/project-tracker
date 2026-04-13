@@ -50,9 +50,9 @@ export function AccountSettingsForms({
 
   return (
     <div className="space-y-10">
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold">{t("account.changeName")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("account.nameHelp")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.nameHelp")}</p>
         <form action={nameFormAction} className="mt-4 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">{t("account.displayName")}</label>
@@ -64,24 +64,24 @@ export function AccountSettingsForms({
               maxLength={200}
               autoComplete="name"
               defaultValue={currentName}
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
-          {nameState?.error ? <p className="text-sm text-red-600">{nameState.error}</p> : null}
+          {nameState?.error ? <p className="text-sm text-red-600 dark:text-red-400">{nameState.error}</p> : null}
           {nameState?.ok ? <p className="text-sm text-emerald-700">{t("account.nameOk")}</p> : null}
           <button
             type="submit"
             disabled={namePending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
           >
             {namePending ? t("common.saving") : t("account.updateName")}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold">{t("account.changePassword")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("account.passwordHelp")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("account.passwordHelp")}</p>
         <form action={passwordFormAction} className="mt-4 space-y-4">
           <div>
             <label className="mb-1 block text-sm font-medium">{t("account.currentPassword")}</label>
@@ -90,7 +90,7 @@ export function AccountSettingsForms({
               type="password"
               required
               autoComplete="current-password"
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
           <div>
@@ -101,7 +101,7 @@ export function AccountSettingsForms({
               required
               minLength={8}
               autoComplete="new-password"
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
           <div>
@@ -112,26 +112,26 @@ export function AccountSettingsForms({
               required
               minLength={8}
               autoComplete="new-password"
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
-          {passwordState?.error ? <p className="text-sm text-red-600">{passwordState.error}</p> : null}
+          {passwordState?.error ? <p className="text-sm text-red-600 dark:text-red-400">{passwordState.error}</p> : null}
           {passwordState?.ok ? (
             <p className="text-sm text-emerald-700">{t("account.passwordOk")}</p>
           ) : null}
           <button
             type="submit"
             disabled={passwordPending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
           >
             {passwordPending ? t("common.saving") : t("account.updatePassword")}
           </button>
         </form>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
         <h2 className="text-lg font-semibold">{t("account.changeEmail")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {t("account.emailHelp", { email: currentEmail })}
         </p>
         <form action={emailFormAction} className="mt-4 space-y-4">
@@ -142,7 +142,7 @@ export function AccountSettingsForms({
               type="password"
               required
               autoComplete="current-password"
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
           <div>
@@ -152,17 +152,17 @@ export function AccountSettingsForms({
               type="email"
               required
               autoComplete="email"
-              className="w-full max-w-md rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+              className="w-full max-w-md rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
             />
           </div>
-          {emailState?.error ? <p className="text-sm text-red-600">{emailState.error}</p> : null}
+          {emailState?.error ? <p className="text-sm text-red-600 dark:text-red-400">{emailState.error}</p> : null}
           {emailPending ? (
-            <p className="text-sm text-zinc-600">{t("account.emailUpdating")}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("account.emailUpdating")}</p>
           ) : null}
           <button
             type="submit"
             disabled={emailPending}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
           >
             {emailPending ? t("common.saving") : t("account.updateEmail")}
           </button>

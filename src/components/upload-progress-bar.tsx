@@ -17,7 +17,7 @@ export function UploadProgressBar({
 
   return (
     <div className={`space-y-1 ${className}`}>
-      {label ? <p className="text-xs font-medium text-zinc-600">{label}</p> : null}
+      {label ? <p className="text-xs font-medium text-zinc-600 dark:text-zinc-400">{label}</p> : null}
       <div
         className="h-2 w-full overflow-hidden rounded-full bg-zinc-200"
         role="progressbar"
@@ -38,7 +38,7 @@ export function UploadProgressBar({
           />
         )}
       </div>
-      {!indeterminate ? <p className="text-xs tabular-nums text-zinc-500">{value}%</p> : null}
+      {!indeterminate ? <p className="text-xs tabular-nums text-zinc-500 dark:text-zinc-400">{value}%</p> : null}
     </div>
   );
 }

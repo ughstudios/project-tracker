@@ -124,7 +124,7 @@ export function IssueKanban() {
 
   return (
     <div className="space-y-5">
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("dashboard.filters")}</h2>
         <div className="mt-3 grid grid-cols-1 gap-2 md:grid-cols-5">
           <input
@@ -174,7 +174,7 @@ export function IssueKanban() {
           </select>
           <button
             type="button"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
             onClick={() => {
               setQuery("");
               setAssigneeFilter("");
@@ -190,7 +190,7 @@ export function IssueKanban() {
       <section>
         <div>
           {loading ? (
-            <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-600 shadow-sm">
+            <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-sm text-zinc-600 dark:text-zinc-400 shadow-sm">
               {t("common.loading")}
             </div>
           ) : (
@@ -204,7 +204,7 @@ export function IssueKanban() {
                   return (
                     <section
                       key={status}
-                      className="rounded-xl border border-zinc-200 bg-zinc-50 p-3"
+                      className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-3"
                       onDragOver={(e) => {
                         e.preventDefault();
                       }}
@@ -217,23 +217,23 @@ export function IssueKanban() {
                       }}
                     >
                       <header className="mb-3 flex items-center justify-between">
-                        <h3 className="text-sm font-semibold text-zinc-700">
+                        <h3 className="text-sm font-semibold text-zinc-700 dark:text-zinc-300">
                           {columnTitle(status)}
                         </h3>
-                        <span className="rounded-full bg-white px-2 py-0.5 text-xs text-zinc-500">
+                        <span className="rounded-full bg-white dark:bg-zinc-900 px-2 py-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                           {columnIssues.length}
                         </span>
                       </header>
                       <div className="space-y-3">
                         {columnIssues.length === 0 ? (
-                          <p className="rounded-lg border border-dashed border-zinc-300 bg-white p-3 text-xs text-zinc-500">
+                          <p className="rounded-lg border border-dashed border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 p-3 text-xs text-zinc-500 dark:text-zinc-400">
                             {t("common.noIssues")}
                           </p>
                         ) : (
                           columnIssues.map((issue) => (
                             <article
                               key={issue.id}
-                              className="rounded-lg border border-zinc-200 bg-white p-3 shadow-sm"
+                              className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-sm"
                               draggable
                               onDragStart={(e) => {
                                 e.dataTransfer.setData("text/issue-id", issue.id);
@@ -284,15 +284,15 @@ export function IssueKanban() {
                                   })}
                                 </p>
                               ) : null}
-                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 break-all">
                                 {t("issueDetail.opened")}: {new Date(issue.createdAt).toLocaleString()}
                               </p>
-                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                              <p className="mt-1 font-mono text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 break-all">
                                 {t("issues.ticketId")}:{" "}
                                 <span
                                   role="button"
                                   tabIndex={0}
-                                  className="cursor-pointer underline underline-offset-2 hover:text-zinc-700"
+                                  className="cursor-pointer underline underline-offset-2 hover:text-zinc-700 dark:text-zinc-300"
                                   onClick={() => {
                                     void copyIssueUrl(issue.id);
                                   }}
@@ -309,7 +309,7 @@ export function IssueKanban() {
                                   <span className="ml-2 text-emerald-600">{t("common.copied")}</span>
                                 ) : null}
                               </p>
-                              <p className="mt-1 text-xs text-zinc-500">
+                              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
                                 {[
                                   issue.project
                                     ? `${issue.project.name} - ${issue.project.product}`
@@ -321,7 +321,7 @@ export function IssueKanban() {
                                   .filter(Boolean)
                                   .join(" · ") || t("dashboard.unlinked")}
                               </p>
-                              <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700">
+                              <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-300">
                                 {localizedSymptom.text}
                               </p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
@@ -353,7 +353,7 @@ export function IssueKanban() {
                                   <option value="DONE">{t("issueStatus.DONE")}</option>
                                 </select>
                               </div>
-                              <details className="mt-3 text-xs text-zinc-600">
+                              <details className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
                                 <summary className="cursor-pointer select-none">
                                   {t("common.details")}
                                 </summary>
@@ -374,7 +374,7 @@ export function IssueKanban() {
                                 type="button"
                                 onClick={() => archiveIssue(issue.id, issue.title)}
                                 disabled={archivingIssueId === issue.id}
-                                className="mt-3 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 disabled:opacity-50"
+                                className="mt-3 rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 disabled:opacity-50"
                               >
                                 {archivingIssueId === issue.id
                                   ? t("common.archiving")

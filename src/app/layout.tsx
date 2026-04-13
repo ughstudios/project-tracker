@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "@/components/theme-provider";
 import { I18nProvider } from "@/i18n/context";
 import { getDictionary } from "@/i18n/dictionaries";
 import { getLocale, getServerTranslator } from "@/i18n/server";
@@ -37,12 +38,15 @@ export default async function RootLayout({
   return (
     <html
       lang={htmlLang}
+      suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="flex min-h-full flex-col font-sans">
-        <I18nProvider initialLocale={locale} dict={dict}>
-          {children}
-        </I18nProvider>
+        <ThemeProvider>
+          <I18nProvider initialLocale={locale} dict={dict}>
+            {children}
+          </I18nProvider>
+        </ThemeProvider>
         <Analytics />
         <SpeedInsights />
       </body>

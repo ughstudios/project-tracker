@@ -245,32 +245,32 @@ export default function IssuesPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("issues.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("issues.subtitle")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.subtitle")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <h2 className="text-base font-semibold">{t("issues.allIssues")}</h2>
-            <p className="mt-1 text-sm text-zinc-600">{t("issues.listHelp")}</p>
+            <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issues.listHelp")}</p>
           </div>
           <button
             type="button"
             aria-expanded={showCreateForm}
             aria-controls="new-issue-form"
             onClick={() => setShowCreateForm((value) => !value)}
-            className="inline-flex items-center justify-center rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
+            className="inline-flex items-center justify-center rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
           >
             + {t("issues.newIssue")}
           </button>
         </div>
         {showCreateForm ? (
-          <div id="new-issue-form" className="mt-4 rounded-xl border border-zinc-200 bg-zinc-50 p-4">
+          <div id="new-issue-form" className="mt-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-4">
             <form onSubmit={createIssue} className="grid gap-3 md:grid-cols-2">
               <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600">{t("common.title")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.title")}</span>
                 <input
                   className="input mt-1 w-full"
                   value={formTitle}
@@ -278,9 +278,9 @@ export default function IssuesPage() {
                   required
                 />
               </label>
-              <p className="text-xs text-zinc-500 md:col-span-2">{t("issues.linkHint")}</p>
+              <p className="text-xs text-zinc-500 dark:text-zinc-400 md:col-span-2">{t("issues.linkHint")}</p>
               <label className="block text-sm">
-                <span className="text-zinc-600">{t("issues.projectOptional")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("issues.projectOptional")}</span>
                 <select
                   className="input mt-1 w-full"
                   value={formProjectId}
@@ -297,7 +297,7 @@ export default function IssuesPage() {
                 </select>
               </label>
               <label className="block text-sm">
-                <span className="text-zinc-600">{t("issues.customerOptional")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("issues.customerOptional")}</span>
                 <select
                   className="input mt-1 w-full"
                   value={formCustomerId}
@@ -312,7 +312,7 @@ export default function IssuesPage() {
                 </select>
               </label>
               <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600">{t("common.assignee")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.assignee")}</span>
                 <select
                   className="input mt-1 w-full"
                   value={formAssigneeId}
@@ -327,7 +327,7 @@ export default function IssuesPage() {
                 </select>
               </label>
               <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600">{t("common.symptom")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.symptom")}</span>
                 <textarea
                   className="input mt-1 min-h-[72px] w-full"
                   value={formSymptom}
@@ -336,7 +336,7 @@ export default function IssuesPage() {
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-zinc-600">{t("common.cause")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.cause")}</span>
                 <textarea
                   className="input mt-1 min-h-[64px] w-full"
                   value={formCause}
@@ -344,7 +344,7 @@ export default function IssuesPage() {
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-zinc-600">{t("common.solution")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.solution")}</span>
                 <textarea
                   className="input mt-1 min-h-[64px] w-full"
                   value={formSolution}
@@ -352,7 +352,7 @@ export default function IssuesPage() {
                 />
               </label>
               <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600">{t("common.rndContact")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.rndContact")}</span>
                 <input
                   className="input mt-1 w-full"
                   value={formRnd}
@@ -360,8 +360,8 @@ export default function IssuesPage() {
                 />
               </label>
               <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600">{t("issues.attachmentsOptional")}</span>
-                <p className="mt-0.5 text-xs text-zinc-500">{t("issues.attachmentsOnCreateHelp")}</p>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("issues.attachmentsOptional")}</span>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("issues.attachmentsOnCreateHelp")}</p>
                 <div className="input-file-zone mt-1 max-w-xl">
                   <input
                     ref={createFileInputRef}
@@ -375,7 +375,7 @@ export default function IssuesPage() {
                 {formFiles.length > 0 ? (
                   <>
                     <label className="mt-2 block text-sm">
-                      <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+                      <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
                       <textarea
                         className="input mt-1 min-h-[64px] w-full"
                         value={formAttachmentUploadNote}
@@ -385,7 +385,7 @@ export default function IssuesPage() {
                         required
                       />
                     </label>
-                    <p className="mt-1 text-xs text-zinc-600">
+                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
                       {formFiles.map((f) => f.name).join(", ")}
                     </p>
                   </>
@@ -400,7 +400,7 @@ export default function IssuesPage() {
                 <button
                   type="submit"
                   disabled={creating}
-                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+                  className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
                 >
                   {creating ? t("common.creating") : t("issues.createIssue")}
                 </button>
@@ -408,7 +408,7 @@ export default function IssuesPage() {
                   type="button"
                   onClick={() => setShowCreateForm(false)}
                   disabled={creating}
-                  className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-semibold text-zinc-800 hover:bg-zinc-100 disabled:opacity-50"
+                  className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-4 py-2 text-sm font-semibold text-zinc-800 dark:text-zinc-200 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 disabled:opacity-50"
                 >
                   {t("common.cancel")}
                 </button>
@@ -463,18 +463,18 @@ export default function IssuesPage() {
         </div>
         <div className="mt-3 space-y-2">
           {listLoading ? (
-            <p className="text-sm text-zinc-600">{t("issues.loading")}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("issues.loading")}</p>
           ) : filteredIssues.length === 0 ? (
-            <p className="text-sm text-zinc-500">{t("issues.noMatch")}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("issues.noMatch")}</p>
           ) : (
-            <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200">
+            <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700">
               {filteredIssues.map((i) => (
                 <li
                   key={i.id}
-                  className="px-3 py-3 hover:bg-zinc-50 sm:flex sm:items-center sm:justify-between"
+                  className="px-3 py-3 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 sm:flex sm:items-center sm:justify-between"
                 >
                   <Link href={`/issues/${i.id}`} className="block min-w-0">
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-900 dark:text-zinc-100">
                       {getLocalizedText({
                         original: i.title,
                         translated: i.titleTranslated,
@@ -482,15 +482,15 @@ export default function IssuesPage() {
                         locale,
                       }).text}
                     </span>
-                    <span className="mt-0.5 block text-xs text-zinc-500">
+                    <span className="mt-0.5 block text-xs text-zinc-500 dark:text-zinc-400">
                       {t("issueDetail.opened")}: {new Date(i.createdAt).toLocaleString()}
                     </span>
-                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 break-all">
+                    <span className="mt-0.5 block font-mono text-[11px] leading-snug text-zinc-500 dark:text-zinc-400 break-all">
                       {t("issues.ticketId")}:{" "}
                       <span
                         role="button"
                         tabIndex={0}
-                        className="cursor-pointer underline underline-offset-2 hover:text-zinc-700"
+                        className="cursor-pointer underline underline-offset-2 hover:text-zinc-700 dark:text-zinc-300"
                         onClick={(e) => {
                           e.preventDefault();
                           e.stopPropagation();
@@ -529,7 +529,7 @@ export default function IssuesPage() {
                         })}
                       </span>
                     ) : null}
-                    <span className="block text-xs text-zinc-500 sm:text-sm">
+                    <span className="block text-xs text-zinc-500 dark:text-zinc-400 sm:text-sm">
                       {(() => {
                         const linkPart =
                           [
@@ -547,7 +547,7 @@ export default function IssuesPage() {
                   </Link>
                   <button
                     type="button"
-                    className="mt-2 rounded border border-zinc-300 px-2 py-1 text-xs hover:bg-zinc-100 sm:mt-0"
+                    className="mt-2 rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 sm:mt-0"
                     onClick={() => archiveIssue(i.id, i.title)}
                     disabled={archivingIssueId === i.id}
                   >

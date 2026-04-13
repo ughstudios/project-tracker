@@ -79,20 +79,20 @@ function ColumnGroup<T extends string>({
   return (
     <div className="min-w-0">
       <div className="flex flex-wrap items-center gap-2">
-        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500">{title}</h3>
+        <h3 className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{title}</h3>
         <button
           type="button"
           onClick={() =>
             onChange(canonical.filter((k) => !excludeFromBulkAll?.has(k)) as T[])
           }
-          className="text-xs font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
+          className="text-xs font-medium text-zinc-600 dark:text-zinc-400 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:decoration-zinc-600 dark:hover:text-zinc-100"
         >
           {t("reports.selectAllCols")}
         </button>
         <button
           type="button"
           onClick={() => onChange([])}
-          className="text-xs font-medium text-zinc-600 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900"
+          className="text-xs font-medium text-zinc-600 dark:text-zinc-400 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-900 dark:decoration-zinc-600 dark:hover:text-zinc-100"
         >
           {t("reports.clearCols")}
         </button>
@@ -102,12 +102,12 @@ function ColumnGroup<T extends string>({
           const checked = selected.includes(key);
           return (
             <li key={key}>
-              <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-sm text-zinc-800 hover:bg-zinc-50">
+              <label className="flex cursor-pointer items-center gap-2 rounded-md px-1 py-0.5 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800">
                 <input
                   type="checkbox"
                   checked={checked}
                   onChange={() => onChange(toggleOrdered(canonical, selected, key))}
-                  className="rounded border-zinc-300 text-zinc-900"
+                  className="rounded border-zinc-300 dark:border-zinc-600 text-zinc-900 dark:text-zinc-100"
                 />
                 <span>{t(`${labelPrefix}.${key}`)}</span>
               </label>
@@ -264,8 +264,8 @@ export default function ReportsPage() {
   return (
     <div className="min-w-0 space-y-8">
       <div>
-        <h1 className="text-xl font-semibold tracking-tight text-zinc-900">{t("reports.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">
+        <h1 className="text-xl font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">{t("reports.title")}</h1>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {isAdmin === null
             ? t("common.loading")
             : isAdmin
@@ -275,23 +275,23 @@ export default function ReportsPage() {
       </div>
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
+        <p className="rounded-md border border-red-200 dark:border-red-800 bg-red-50 px-3 py-2 text-sm text-red-800" role="alert">
           {error}
         </p>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900">{t("reports.csvOptionsTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.csvOptionsTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
           {isAdmin === null
             ? t("common.loading")
             : isAdmin
               ? t("reports.csvOptionsHelp")
               : t("reports.csvOptionsHelpEmployee")}
         </p>
-        <p className="mt-3 text-xs text-zinc-500">{t("reports.idColumnsHint")}</p>
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{t("reports.idColumnsHint")}</p>
 
-        <div className="mt-6 flex flex-col gap-6 border-t border-zinc-100 pt-6">
+        <div className="mt-6 flex flex-col gap-6 border-t border-zinc-100 dark:border-zinc-800 pt-6">
           {isAdmin === true ? (
             <ColumnGroup
               title={t("reports.pickIssueCols")}
@@ -330,17 +330,17 @@ export default function ReportsPage() {
       </section>
 
       {isAdmin === true ? (
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-zinc-900">{t("reports.outstandingTitle")}</h2>
-          <p className="mt-1 text-sm text-zinc-600">{t("reports.outstandingHelp")}</p>
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.outstandingTitle")}</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.outstandingHelp")}</p>
           <div className="mt-4 flex flex-wrap items-end gap-3">
-            <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+            <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
               {t("reports.month")}
               <input
                 type="month"
                 value={outstandingMonth}
                 onChange={(e) => setOutstandingMonth(e.target.value)}
-                className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+                className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
               />
             </label>
             <button
@@ -355,35 +355,35 @@ export default function ReportsPage() {
         </section>
       ) : null}
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-        <h2 className="text-sm font-semibold text-zinc-900">{t("reports.workRecordsTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("reports.workRecordsHelp")}</p>
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+        <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.workRecordsTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.workRecordsHelp")}</p>
         <div className="mt-4 flex flex-wrap items-end gap-3">
-          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
             {t("reports.fromDate")}
             <input
               type="date"
               value={wrFrom}
               onChange={(e) => setWrFrom(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+              className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
             />
           </label>
-          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600">
+          <label className="flex flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
             {t("reports.toDate")}
             <input
               type="date"
               value={wrTo}
               onChange={(e) => setWrTo(e.target.value)}
-              className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+              className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
             />
           </label>
           {isAdmin === true ? (
-            <label className="flex min-w-[200px] flex-col gap-1 text-xs font-medium text-zinc-600">
+            <label className="flex min-w-[200px] flex-col gap-1 text-xs font-medium text-zinc-600 dark:text-zinc-400">
               {t("reports.personOptional")}
               <select
                 value={wrForUserId}
                 onChange={(e) => setWrForUserId(e.target.value)}
-                className="rounded-md border border-zinc-200 bg-white px-2 py-1.5 text-sm text-zinc-900"
+                className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 px-2 py-1.5 text-sm text-zinc-900 dark:text-zinc-100"
               >
                 <option value="">{t("reports.selfOnly")}</option>
                 <option value="__all__">{t("reports.everyoneInRange")}</option>
@@ -404,7 +404,7 @@ export default function ReportsPage() {
             {busy === "workRecords" ? t("reports.preparing") : t("reports.downloadCsv")}
           </button>
         </div>
-        <p className="mt-3 text-xs text-zinc-500">
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">
           {isAdmin === false ? t("reports.workRecordsSelfNote") : null}
           {isAdmin === true && wrForUserId === "" ? t("reports.workRecordsAdminSelfNote") : null}
           {isAdmin === true && wrForUserId === "__all__" ? t("reports.workRecordsAdminAllNote") : null}
@@ -415,9 +415,9 @@ export default function ReportsPage() {
       </section>
 
       {isAdmin === true ? (
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <h2 className="text-sm font-semibold text-zinc-900">{t("reports.exportAllTitle")}</h2>
-          <p className="mt-1 text-sm text-zinc-600">{t("reports.exportAllHelp")}</p>
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <h2 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("reports.exportAllTitle")}</h2>
+          <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("reports.exportAllHelp")}</p>
           <button
             type="button"
             onClick={() => void downloadExportAll()}

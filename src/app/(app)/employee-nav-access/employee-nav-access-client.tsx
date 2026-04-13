@@ -66,21 +66,21 @@ export function EmployeeNavAccessClient({ initialAccess, settingsDbOk }: Props) 
           </p>
         </div>
       ) : null}
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">{t("employeeNavAccess.title")}</h1>
-        <p className="mt-1 text-sm text-zinc-600">{t("employeeNavAccess.subtitle")}</p>
-        <p className="mt-2 text-sm text-zinc-500">{t("employeeNavAccess.tabHelp")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("employeeNavAccess.subtitle")}</p>
+        <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("employeeNavAccess.tabHelp")}</p>
       </header>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <ul className="divide-y divide-zinc-100">
           {rows.map(({ id, label }) => (
             <li key={id} className="flex flex-wrap items-center justify-between gap-3 py-3 first:pt-0 last:pb-0">
-              <span className="font-medium text-zinc-900">{label}</span>
-              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600">
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{label}</span>
+              <label className="flex cursor-pointer items-center gap-2 text-sm text-zinc-600 dark:text-zinc-400">
                 <input
                   type="checkbox"
-                  className="h-4 w-4 rounded border-zinc-300"
+                  className="h-4 w-4 rounded border-zinc-300 dark:border-zinc-600"
                   checked={access[id]}
                   disabled={!settingsDbOk}
                   onChange={(e) => setAccess((prev) => ({ ...prev, [id]: e.target.checked }))}
@@ -96,11 +96,11 @@ export function EmployeeNavAccessClient({ initialAccess, settingsDbOk }: Props) 
             type="button"
             disabled={saving || !settingsDbOk}
             onClick={() => void save()}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
           >
             {saving ? t("employeeNavAccess.saving") : t("employeeNavAccess.save")}
           </button>
-          {message ? <span className="text-sm text-zinc-600">{message}</span> : null}
+          {message ? <span className="text-sm text-zinc-600 dark:text-zinc-400">{message}</span> : null}
         </div>
       </section>
     </div>

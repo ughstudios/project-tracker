@@ -285,7 +285,7 @@ export default function ProjectDetailsPage() {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         {t("projectDetail.loading")}
       </div>
     );
@@ -294,8 +294,8 @@ export default function ProjectDetailsPage() {
   if (missing) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-sm text-zinc-600">{t("projects.noneFound")}</p>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
           <Link href="/projects" className="mt-2 inline-block text-sm text-blue-700 hover:underline">
             {t("projectDetail.backToProjects")}
           </Link>
@@ -308,7 +308,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <div className="space-y-4">
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-semibold">
             {readOnly ? t("projectDetail.viewArchivedTitle") : t("projectDetail.editTitle")}
@@ -334,7 +334,7 @@ export default function ProjectDetailsPage() {
       ) : null}
 
       <form onSubmit={save} className="space-y-4">
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm grid grid-cols-1 md:grid-cols-3 gap-2">
           <input className="input md:col-span-2" value={name} onChange={(e) => setName(e.target.value)} disabled={readOnly} />
           <select className="input" value={customerId} onChange={(e) => setCustomerId(e.target.value)} disabled={readOnly}>
             <option value="">{t("common.selectCustomer")}</option>
@@ -344,7 +344,7 @@ export default function ProjectDetailsPage() {
           </select>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">Processors</h2>
           {processors.map((item, idx) => (
             <div key={`p-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -356,13 +356,13 @@ export default function ProjectDetailsPage() {
               </select>
               <input className="input" placeholder="Firmware" value={item.firmware} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, firmware: e.target.value } : x))} disabled={readOnly} />
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setProcessors((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
-              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setProcessors((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
             </div>
           ))}
-          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>}
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setProcessors((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}>{t("projects.addProcessorLine")}</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">Receiver cards</h2>
           {receiverCards.map((item, idx) => (
             <div key={`r-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -372,13 +372,13 @@ export default function ProjectDetailsPage() {
               </select>
               <input className="input" placeholder={t("common.version")} value={item.version} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, version: e.target.value } : x))} disabled={readOnly} />
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setReceiverCards((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
-              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>}
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>Remove</button>}
             </div>
           ))}
-          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>}
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setReceiverCards((prev) => [...prev, { model: "", version: "", quantity: 1 }])}>{t("projects.addReceiverLine")}</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.otherProducts")}</h2>
           {otherProducts.map((item, idx) => (
             <div key={`o-${idx}`} className="grid grid-cols-1 md:grid-cols-4 gap-2">
@@ -393,19 +393,19 @@ export default function ProjectDetailsPage() {
                 ))}
               </select>
               <input className="input" type="number" min={1} value={item.quantity} onChange={(e) => setOtherProducts((prev) => prev.map((x, i) => i === idx ? { ...x, quantity: Number(e.target.value || 1) } : x))} disabled={readOnly} />
-              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
+              {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => prev.length > 1 ? prev.filter((_, i) => i !== idx) : prev)}>{t("common.remove")}</button>}
             </div>
           ))}
-          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>}
+          {readOnly ? null : <button type="button" className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm" onClick={() => setOtherProducts((prev) => [...prev, { category: "", model: "", quantity: 1 }])}>+ Add other product line</button>}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-4">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-4">
           <h2 className="text-base font-semibold">{t("projectDetail.filesTitle")}</h2>
-          <p className="text-sm text-zinc-600">{t("projectDetail.filesHelp")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.filesHelp")}</p>
           {readOnly ? null : (
             <>
               <label className="block max-w-xl text-sm">
-                <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+                <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
                 <textarea
                   className="input mt-1 min-h-[64px] w-full"
                   value={fileUploadNote}
@@ -436,13 +436,13 @@ export default function ProjectDetailsPage() {
             </>
           )}
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">
               {t("projectDetail.uploadedFiles", { count: String(attachments.length) })}
             </p>
             {attachments.length === 0 ? (
-              <p className="mt-2 text-sm text-zinc-500">{t("projectDetail.noFiles")}</p>
+              <p className="mt-2 text-sm text-zinc-500 dark:text-zinc-400">{t("projectDetail.noFiles")}</p>
             ) : (
-              <ul className="mt-2 divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
+              <ul className="mt-2 divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
                 {attachments.map((a) => (
                   <li key={a.id} className="px-3 py-2 text-sm">
                     <div className="flex items-center justify-between gap-2">
@@ -455,11 +455,11 @@ export default function ProjectDetailsPage() {
                         {a.fileName}
                       </a>
                       <div className="flex shrink-0 items-center gap-2">
-                        <span className="text-zinc-500">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
+                        <span className="text-zinc-500 dark:text-zinc-400">{Math.round((a.fileSize ?? 0) / 1024)} KB</span>
                         {readOnly ? null : (
                           <button
                             type="button"
-                            className="rounded border border-zinc-300 px-2 py-0.5 text-xs hover:bg-zinc-100"
+                            className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-0.5 text-xs hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800"
                             onClick={() => void deleteProjectAttachment(a.id)}
                           >
                             {t("common.delete")}
@@ -469,7 +469,7 @@ export default function ProjectDetailsPage() {
                     </div>
                     <AttachmentNoteInlineEditor
                       uploadNote={a.uploadNote}
-                      borderClassName="border-zinc-100"
+                      borderClassName="border-zinc-100 dark:border-zinc-800"
                       readOnly={readOnly}
                       onSave={(note) => saveProjectAttachmentNote(a.id, note)}
                     />
@@ -480,22 +480,22 @@ export default function ProjectDetailsPage() {
           </div>
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-3">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-3">
           <h2 className="text-base font-semibold">{t("projectDetail.linkedIssues")}</h2>
-          <p className="text-sm text-zinc-600">{t("projectDetail.linkedIssuesHelp")}</p>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projectDetail.linkedIssuesHelp")}</p>
           {issues.length === 0 ? (
-            <p className="text-sm text-zinc-500">{t("projectDetail.noLinkedIssues")}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("projectDetail.noLinkedIssues")}</p>
           ) : (
-            <ul className="divide-y divide-zinc-200 rounded-lg border border-zinc-200 bg-white">
+            <ul className="divide-y divide-zinc-200 dark:divide-zinc-700 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900">
               {issues.map((issue) => (
                 <li key={issue.id} className="flex items-center justify-between px-3 py-2 text-sm">
                   <Link href={`/issues/${issue.id}`} className="min-w-0 text-blue-700 hover:underline">
-                    <span className="block font-mono text-[11px] text-zinc-500 break-all">
+                    <span className="block font-mono text-[11px] text-zinc-500 dark:text-zinc-400 break-all">
                       {issue.id}
                     </span>
                     <span className="block font-medium">{issue.title}</span>
                   </Link>
-                  <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
+                  <span className="rounded-full bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-xs text-zinc-700 dark:text-zinc-300">
                     {issue.status}
                   </span>
                 </li>
@@ -504,7 +504,7 @@ export default function ProjectDetailsPage() {
           )}
         </section>
 
-        <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm space-y-2">
+        <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm space-y-2">
           <h2 className="text-base font-semibold">{t("projectDetail.notesTitle")}</h2>
           {readOnly ? null : (
             <div className="flex flex-col gap-2 sm:flex-row sm:items-end">
@@ -517,7 +517,7 @@ export default function ProjectDetailsPage() {
               />
               <button
                 type="button"
-                className="shrink-0 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm"
+                className="shrink-0 rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-2 text-sm"
                 onClick={addNote}
                 disabled={addingNote}
               >
@@ -527,20 +527,20 @@ export default function ProjectDetailsPage() {
           )}
           <ul className="space-y-1">
             {notes.map((n) => (
-              <li key={n.id} className="rounded border border-zinc-200 bg-zinc-50 px-2 py-1 text-sm">
+              <li key={n.id} className="rounded border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 px-2 py-1 text-sm">
                 <div className="whitespace-pre-wrap">{n.content}</div>
-                <div className="text-[11px] text-zinc-500">
+                <div className="text-[11px] text-zinc-500 dark:text-zinc-400">
                   {n.author?.name ?? n.author?.email ?? t("common.unknown")}{" "}
                   {n.createdAt ? `• ${new Date(n.createdAt).toLocaleString()}` : ""}
                 </div>
               </li>
             ))}
-            {notes.length === 0 ? <li className="text-sm text-zinc-500">{t("common.noNotes")}</li> : null}
+            {notes.length === 0 ? <li className="text-sm text-zinc-500 dark:text-zinc-400">{t("common.noNotes")}</li> : null}
           </ul>
         </section>
 
         {readOnly ? null : (
-          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700" disabled={saving}>
+          <button className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600" disabled={saving}>
             {saving ? t("common.saving") : t("projectDetail.saveChanges")}
           </button>
         )}

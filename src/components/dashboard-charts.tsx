@@ -2,6 +2,7 @@
 
 import { WorkRecordsDashboardCharts } from "@/components/work-records-dashboard-charts";
 import { useI18n } from "@/i18n/context";
+import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import {
   Bar,
@@ -46,6 +47,7 @@ type Props = {
 
 export function DashboardCharts({ issues, projects, customers }: Props) {
   const { t } = useI18n();
+  const { resolvedTheme } = useTheme();
 
   const { byAssignee, byStatus, byProject } = useMemo(() => {
     const labelForStatus = (key: string) => {
@@ -107,12 +109,19 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
     return { byAssignee, byStatus, byProject };
   }, [issues, t]);
 
-  const tooltipStyle = {
-    backgroundColor: "white",
-    border: "1px solid #e4e4e7",
-    borderRadius: "8px",
-    fontSize: "12px",
-  };
+  const chartChrome = useMemo(() => {
+    const dark = resolvedTheme === "dark";
+    return {
+      gridStroke: dark ? "#3f3f46" : "#e4e4e7",
+      tooltipStyle: {
+        backgroundColor: dark ? "#18181b" : "white",
+        border: dark ? "1px solid #3f3f46" : "1px solid #e4e4e7",
+        borderRadius: "8px",
+        fontSize: "12px",
+        color: dark ? "#fafafa" : "#18181b",
+      } as const,
+    };
+  }, [resolvedTheme]);
 
   return (
     <div className="space-y-4">
@@ -120,23 +129,23 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
         aria-label={t("dashboard.chartsOverviewAria")}
         className="grid grid-cols-1 gap-3 sm:grid-cols-3"
       >
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statActiveIssues")}
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">{issues.length}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{issues.length}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statProjects")}
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">{projects.length}</p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{projects.length}</p>
         </div>
-        <div className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+          <p className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
             {t("dashboard.statCustomers")}
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900">
+          <p className="mt-1 text-2xl font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">
             {customers.length}
           </p>
         </div>
@@ -145,14 +154,14 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
       <WorkRecordsDashboardCharts />
 
       {issues.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+        <p className="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-950 p-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           {t("dashboard.chartsNoIssues")}
         </p>
       ) : (
         <div className="grid gap-4 lg:grid-cols-2">
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-zinc-800">{t("dashboard.chartByAssignee")}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">{t("dashboard.chartByAssigneeHint")}</p>
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
             <div className="mt-3 h-[280px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart
@@ -160,7 +169,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                   data={byAssignee}
                   margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                 >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
                   <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                   <YAxis
                     type="category"
@@ -170,7 +179,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                     interval={0}
                   />
                   <Tooltip
-                    contentStyle={tooltipStyle}
+                    contentStyle={chartChrome.tooltipStyle}
                     formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                   />
                   <Bar dataKey="count" name={t("dashboard.axisIssues")} fill="#52525b" radius={[0, 4, 4, 0]} />
@@ -179,9 +188,9 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
             </div>
           </section>
 
-          <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-zinc-800">{t("dashboard.chartByStatus")}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500">{t("dashboard.chartByStatusHint")}</p>
+          <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
             <div className="mt-3 h-[280px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -202,7 +211,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                     ))}
                   </Pie>
                   <Tooltip
-                    contentStyle={tooltipStyle}
+                    contentStyle={chartChrome.tooltipStyle}
                     formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                   />
                 </PieChart>
@@ -211,9 +220,9 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
           </section>
 
           {byProject.length > 0 ? (
-            <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm lg:col-span-2">
-              <h3 className="text-sm font-semibold text-zinc-800">{t("dashboard.chartByProject")}</h3>
-              <p className="mt-0.5 text-xs text-zinc-500">{t("dashboard.chartByProjectHint")}</p>
+            <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm lg:col-span-2">
+              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByProjectHint")}</p>
               <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
@@ -221,7 +230,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                     data={byProject}
                     margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" stroke="#e4e4e7" />
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
                     <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
                     <YAxis
                       type="category"
@@ -231,7 +240,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                       interval={0}
                     />
                     <Tooltip
-                      contentStyle={tooltipStyle}
+                      contentStyle={chartChrome.tooltipStyle}
                       formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                     />
                     <Bar

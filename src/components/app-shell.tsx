@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useI18n } from "@/i18n/context";
 import { LanguageToggle } from "@/components/language-toggle";
+import { ThemeToggle } from "@/components/theme-toggle";
 import type { EmployeeNavTabId } from "@/lib/employee-nav-shared";
 import { isPrivilegedAdmin, isSuperAdmin } from "@/lib/roles";
 
@@ -36,8 +37,8 @@ function NavItem({
       className={[
         "block rounded-md border-l-2 border-transparent py-1.5 pl-2 pr-1.5 text-sm leading-snug transition-colors",
         active
-          ? "border-l-zinc-700 bg-zinc-100 font-medium text-zinc-900"
-          : "font-normal text-zinc-600 hover:border-l-zinc-200 hover:bg-zinc-50 hover:text-zinc-900",
+          ? "border-l-zinc-700 dark:border-l-zinc-300 bg-zinc-100 dark:bg-zinc-800 font-medium text-zinc-900 dark:text-zinc-100"
+          : "font-normal text-zinc-600 dark:text-zinc-400 hover:border-l-zinc-200 dark:hover:border-l-zinc-600 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-zinc-900 dark:hover:text-zinc-100",
       ].join(" ")}
     >
       {label}
@@ -46,13 +47,13 @@ function NavItem({
 }
 
 function NavRule() {
-  return <div className="my-2 h-px bg-zinc-100" aria-hidden />;
+  return <div className="my-2 h-px bg-zinc-100 dark:bg-zinc-800" aria-hidden />;
 }
 
 function NavSection({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="mt-3 first:mt-0">
-      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500">{label}</p>
+      <p className="mb-1 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{label}</p>
       <div className="flex flex-col gap-px pl-0.5">{children}</div>
     </div>
   );
@@ -66,20 +67,20 @@ export function AppShell({ user, navAccess, onLogout, children }: Props) {
   const showTab = (id: EmployeeNavTabId) => navAccess[id] !== false;
 
   return (
-    <div className="min-h-screen bg-zinc-50">
+    <div className="min-h-screen bg-zinc-50 dark:bg-zinc-950">
       <div className="mx-auto w-full max-w-7xl px-4 py-6">
         <div className="grid gap-5 lg:grid-cols-[216px_1fr]">
-          <aside className="flex flex-col rounded-xl border border-zinc-200 bg-white p-3 shadow-sm lg:min-h-[calc(100vh-3rem)]">
-            <div className="mb-3 border-b border-zinc-100 pb-3">
-              <div className="text-[15px] font-semibold leading-tight tracking-tight text-zinc-900">
+          <aside className="flex flex-col rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-3 shadow-sm lg:min-h-[calc(100vh-3rem)]">
+            <div className="mb-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
+              <div className="text-[15px] font-semibold leading-tight tracking-tight text-zinc-900 dark:text-zinc-100">
                 {t("nav.appTitle")}
               </div>
               <div
-                className="mt-2 truncate text-[11px] leading-snug text-zinc-500"
+                className="mt-2 truncate text-[11px] leading-snug text-zinc-500 dark:text-zinc-400"
                 title={user.email ? `${user.name ?? ""} ${user.email}`.trim() : undefined}
               >
-                <span className="font-medium text-zinc-600">{user.name ?? t("common.user")}</span>
-                {user.email ? <span className="mt-0.5 block truncate text-zinc-400">{user.email}</span> : null}
+                <span className="font-medium text-zinc-600 dark:text-zinc-400">{user.name ?? t("common.user")}</span>
+                {user.email ? <span className="mt-0.5 block truncate text-zinc-400 dark:text-zinc-500">{user.email}</span> : null}
               </div>
             </div>
 
@@ -143,8 +144,11 @@ export function AppShell({ user, navAccess, onLogout, children }: Props) {
               ) : null}
             </nav>
 
-            <div className="mt-4 border-t border-zinc-200 pt-3">
-              <LanguageToggle className="justify-start" />
+            <div className="mt-4 border-t border-zinc-200 pt-3 dark:border-zinc-700">
+              <ThemeToggle className="justify-start" />
+              <div className="mt-3">
+                <LanguageToggle className="justify-start" />
+              </div>
               <div className="mt-3">{onLogout}</div>
             </div>
           </aside>

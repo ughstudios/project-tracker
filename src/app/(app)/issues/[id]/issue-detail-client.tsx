@@ -3,8 +3,10 @@
 import { AttachmentNoteInlineEditor } from "@/components/attachment-note-inline-editor";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
+import type { Locale } from "@/i18n/types";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
+import { getLocalizedText } from "@/lib/translated-content";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -33,6 +35,8 @@ type IssueFileAttachment = {
 type ThreadEntry = {
   id: string;
   content: string;
+  contentTranslated: string | null;
+  contentLanguage: string | null;
   createdAt: string;
   author: { id: string; name: string | null; email: string | null };
   attachments: IssueFileAttachment[];
@@ -41,10 +45,15 @@ type ThreadEntry = {
 type IssueDetail = {
   id: string;
   title: string;
+  titleTranslated: string | null;
   status: string;
   symptom: string;
+  symptomTranslated: string | null;
   cause: string;
+  causeTranslated: string | null;
   solution: string;
+  solutionTranslated: string | null;
+  contentLanguage: string | null;
   rndContact: string;
   createdAt: string;
   archivedAt: string | null;
@@ -143,9 +152,77 @@ const fetchInit: RequestInit = {
   cache: "no-store",
 };
 
+function TranslationPreview({
+  original,
+  translated,
+  sourceLanguage,
+  locale,
+  t,
+}: {
+  original: string;
+  translated: string | null;
+  sourceLanguage: string | null;
+  locale: Locale;
+  t: (key: string, vars?: Record<string, string>) => string;
+}) {
+  const localized = getLocalizedText({
+    original,
+    translated,
+    sourceLanguage,
+    locale,
+  });
+  if (!localized.usedTranslation) return null;
+
+  return (
+    <div className="mt-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 text-sm text-blue-950">
+      <p className="font-medium">
+        {t("common.autoTranslatedFrom", {
+          language: t(`language.${localized.sourceLanguage ?? "en"}`),
+        })}
+      </p>
+      <p className="mt-1 whitespace-pre-wrap">{localized.text}</p>
+    </div>
+  );
+}
+
+function ThreadContent({
+  content,
+  contentTranslated,
+  contentLanguage,
+  locale,
+  t,
+}: {
+  content: string;
+  contentTranslated: string | null;
+  contentLanguage: string | null;
+  locale: Locale;
+  t: (key: string, vars?: Record<string, string>) => string;
+}) {
+  const localized = getLocalizedText({
+    original: content,
+    translated: contentTranslated,
+    sourceLanguage: contentLanguage,
+    locale,
+  });
+
+  return (
+    <div className="space-y-2">
+      <p className="whitespace-pre-wrap text-sm text-zinc-800 dark:text-zinc-200">{localized.text}</p>
+      {localized.usedTranslation ? (
+        <details className="text-xs text-zinc-600 dark:text-zinc-400">
+          <summary className="cursor-pointer select-none">
+            {t("common.originalText")}
+          </summary>
+          <p className="mt-2 whitespace-pre-wrap">{content}</p>
+        </details>
+      ) : null}
+    </div>
+  );
+}
+
 export function IssueDetailClient({ issueId }: { issueId: string }) {
   const router = useRouter();
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
 
   const [issue, setIssue] = useState<IssueDetail | null>(null);
   const [users, setUsers] = useState<User[]>([]);
@@ -583,8 +660,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-zinc-600">{t("issueDetail.loading")}</p>
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("issueDetail.loading")}</p>
       </div>
     );
   }
@@ -592,11 +669,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   if (loadError || !issue) {
     return (
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          <p className="text-sm text-zinc-800">{loadError ?? t("issueDetail.notFound")}</p>
+        <div className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-6 shadow-sm">
+          <p className="text-sm text-zinc-800 dark:text-zinc-200">{loadError ?? t("issueDetail.notFound")}</p>
           <Link
             href="/issues"
-            className="mt-3 inline-block text-sm font-medium text-zinc-900 underline"
+            className="mt-3 inline-block text-sm font-medium text-zinc-900 dark:text-zinc-100 underline"
           >
             {t("issueDetail.backToIssues")}
           </Link>
@@ -609,13 +686,39 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const c = issue.customer;
   const threadTotalPages = Math.max(1, Math.ceil(threadTotal / THREAD_PAGE_SIZE));
   const readOnly = Boolean(issue.archivedAt);
+  const issueTranslationActive = [
+    getLocalizedText({
+      original: issue.title,
+      translated: issue.titleTranslated,
+      sourceLanguage: issue.contentLanguage,
+      locale,
+    }).usedTranslation,
+    getLocalizedText({
+      original: issue.symptom,
+      translated: issue.symptomTranslated,
+      sourceLanguage: issue.contentLanguage,
+      locale,
+    }).usedTranslation,
+    getLocalizedText({
+      original: issue.cause,
+      translated: issue.causeTranslated,
+      sourceLanguage: issue.contentLanguage,
+      locale,
+    }).usedTranslation,
+    getLocalizedText({
+      original: issue.solution,
+      translated: issue.solutionTranslated,
+      sourceLanguage: issue.contentLanguage,
+      locale,
+    }).usedTranslation,
+  ].some(Boolean);
 
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link
           href={readOnly ? "/archive" : "/issues"}
-          className="text-sm font-medium text-zinc-700 underline underline-offset-2"
+          className="text-sm font-medium text-zinc-700 dark:text-zinc-300 underline underline-offset-2"
         >
           ← {readOnly ? t("issueDetail.backToArchive") : t("nav.issues")}
         </Link>
@@ -624,7 +727,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             type="button"
             onClick={() => void archive()}
             disabled={archiving}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm text-zinc-800 hover:bg-zinc-50 disabled:opacity-50"
+            className="rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-sm text-zinc-800 dark:text-zinc-200 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
           >
             {archiving ? t("common.archiving") : t("issueDetail.archiveIssue")}
           </button>
@@ -647,21 +750,29 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
       ) : null}
 
-      <header className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      {issueTranslationActive ? (
+        <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3 text-sm text-blue-950 shadow-sm">
+          {t("issueDetail.translationBanner", {
+            language: t(`language.${issue.contentLanguage ?? "en"}`),
+          })}
+        </div>
+      ) : null}
+
+      <header className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h1 className="text-xl font-semibold">
           {readOnly ? t("issueDetail.viewArchivedTitle") : t("issueDetail.editTitle")}
         </h1>
-        <p className="mt-1 text-xs text-zinc-600">
-          <span className="font-medium text-zinc-700">{t("issues.ticketId")}:</span>{" "}
-          <span className="font-mono text-[11px] text-zinc-800 break-all">{issue.id}</span>
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+          <span className="font-medium text-zinc-700 dark:text-zinc-300">{t("issues.ticketId")}:</span>{" "}
+          <span className="font-mono text-[11px] text-zinc-800 dark:text-zinc-200 break-all">{issue.id}</span>
         </p>
-        <div className="mt-2 space-y-1 text-sm text-zinc-600">
+        <div className="mt-2 space-y-1 text-sm text-zinc-600 dark:text-zinc-400">
           {p ? (
             <p>
               {t("issueDetail.projectColon")}{" "}
               <Link
                 href={`/projects/${p.id}`}
-                className="font-medium text-zinc-900 underline underline-offset-2"
+                className="font-medium text-zinc-900 dark:text-zinc-100 underline underline-offset-2"
               >
                 {p.name}
               </Link>{" "}
@@ -669,14 +780,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </p>
           ) : null}
           {c ? (
-            <p className="text-zinc-700">
+            <p className="text-zinc-700 dark:text-zinc-300">
               {t("issueDetail.customerColon")}{" "}
-              <span className="font-medium text-zinc-900">{c.name}</span>
+              <span className="font-medium text-zinc-900 dark:text-zinc-100">{c.name}</span>
             </p>
           ) : null}
-          {!p && !c ? <p className="text-zinc-700">{t("issueDetail.notLinked")}</p> : null}
+          {!p && !c ? <p className="text-zinc-700 dark:text-zinc-300">{t("issueDetail.notLinked")}</p> : null}
         </div>
-        <p className="mt-1 text-xs text-zinc-600">
+        <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
           {t("issueDetail.metaLine", {
             name: issue.reporter.name ?? "—",
             at: new Date(issue.createdAt).toLocaleString(),
@@ -686,12 +797,12 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
       <form
         onSubmit={save}
-        className="space-y-4 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
+        className="space-y-4 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm"
       >
         <h2 className="text-base font-semibold">{t("issueDetail.details")}</h2>
         <div className="grid gap-3 md:grid-cols-2">
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">{t("common.title")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.title")}</span>
             <input
               className="input mt-1 w-full"
               value={title}
@@ -699,10 +810,17 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               required
               disabled={readOnly}
             />
+            <TranslationPreview
+              original={title}
+              translated={issue.titleTranslated}
+              sourceLanguage={issue.contentLanguage}
+              locale={locale}
+              t={t}
+            />
           </label>
-          <p className="text-xs text-zinc-500 md:col-span-2">{t("issues.linkHint")}</p>
+          <p className="text-xs text-zinc-500 dark:text-zinc-400 md:col-span-2">{t("issues.linkHint")}</p>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("issueDetail.projectOptional")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("issueDetail.projectOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={projectId}
@@ -718,7 +836,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("issues.customerOptional")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("issues.customerOptional")}</span>
             <select
               className="input mt-1 w-full"
               value={customerId}
@@ -734,7 +852,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("common.status")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.status")}</span>
             <select
               className="input mt-1 w-full"
               value={status}
@@ -747,7 +865,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("common.assignee")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.assignee")}</span>
             <select
               className="input mt-1 w-full"
               value={assigneeId}
@@ -763,7 +881,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </select>
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">{t("common.symptom")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.symptom")}</span>
             <textarea
               className="input mt-1 min-h-[72px] w-full"
               value={symptom}
@@ -771,27 +889,48 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               required
               disabled={readOnly}
             />
+            <TranslationPreview
+              original={symptom}
+              translated={issue.symptomTranslated}
+              sourceLanguage={issue.contentLanguage}
+              locale={locale}
+              t={t}
+            />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("common.cause")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.cause")}</span>
             <textarea
               className="input mt-1 min-h-[64px] w-full"
               value={cause}
               onChange={(e) => setCause(e.target.value)}
               disabled={readOnly}
             />
+            <TranslationPreview
+              original={cause}
+              translated={issue.causeTranslated}
+              sourceLanguage={issue.contentLanguage}
+              locale={locale}
+              t={t}
+            />
           </label>
           <label className="block text-sm">
-            <span className="text-zinc-600">{t("common.solution")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.solution")}</span>
             <textarea
               className="input mt-1 min-h-[64px] w-full"
               value={solution}
               onChange={(e) => setSolution(e.target.value)}
               disabled={readOnly}
             />
+            <TranslationPreview
+              original={solution}
+              translated={issue.solutionTranslated}
+              sourceLanguage={issue.contentLanguage}
+              locale={locale}
+              t={t}
+            />
           </label>
           <label className="block text-sm md:col-span-2">
-            <span className="text-zinc-600">{t("common.rndContact")}</span>
+            <span className="text-zinc-600 dark:text-zinc-400">{t("common.rndContact")}</span>
             <input
               className="input mt-1 w-full"
               value={rndContact}
@@ -804,20 +943,20 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           <button
             type="submit"
             disabled={saving}
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:bg-zinc-500"
+            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:bg-zinc-50 dark:bg-zinc-9500"
           >
             {saving ? t("common.saving") : t("issueDetail.saveChanges")}
           </button>
         )}
       </form>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 shadow-sm">
         <h2 className="text-base font-semibold">{t("issueDetail.attachmentsTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600">{t("issueDetail.attachmentsHelp")}</p>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("issueDetail.attachmentsHelp")}</p>
         {readOnly ? null : (
           <>
             <label className="mt-3 block max-w-xl text-sm">
-              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
               <textarea
                 className="input mt-1 min-h-[64px] w-full"
                 value={issueUploadNote}
@@ -850,10 +989,10 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         )}
         <div className="mt-4 space-y-3">
           {issue.attachments.length === 0 ? (
-            <p className="text-sm text-zinc-500">{t("issueDetail.noAttachments")}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("issueDetail.noAttachments")}</p>
           ) : (
             issue.attachments.map((att) => (
-              <div key={att.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <div key={att.id} className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-3">
                 {isImageExt(att.fileType) ? (
                   <a
                     href={attachmentBlobHref(att.fileUrl)}
@@ -883,11 +1022,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     download={att.fileName}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-sm font-medium text-zinc-900 underline"
+                    className="text-sm font-medium text-zinc-900 dark:text-zinc-100 underline"
                   >
                     {att.fileName}
                   </a>
-                  <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
+                  <span className="text-xs text-zinc-500 dark:text-zinc-400">{formatBytes(att.fileSize)}</span>
                   {readOnly ? null : (
                     <button
                       type="button"
@@ -909,19 +1048,19 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
       </section>
 
-      <section className="rounded-xl border border-zinc-200 bg-white p-5 shadow-sm">
+      <section className="rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-5 shadow-sm">
         <div className="flex flex-col gap-1">
-          <h2 className="text-base font-semibold text-zinc-900">{t("issueDetail.thread")}</h2>
-          <p className="text-sm text-zinc-600">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("issueDetail.thread")}</h2>
+          <p className="text-sm text-zinc-600 dark:text-zinc-400">
             {readOnly ? t("issueDetail.threadHelpArchived") : t("issueDetail.threadHelp")}
           </p>
           {readOnly ? null : (
-            <p className="text-sm text-zinc-500">{t("issueDetail.threadFilesHint")}</p>
+            <p className="text-sm text-zinc-500 dark:text-zinc-400">{t("issueDetail.threadFilesHint")}</p>
           )}
         </div>
 
         {readOnly ? null : (
-        <div className="mt-5 rounded-xl border border-zinc-200 bg-zinc-50/80 p-4 shadow-inner">
+        <div className="mt-5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950/80 p-4 shadow-inner">
           <textarea
             className="input min-h-[140px] w-full resize-y text-[15px] leading-relaxed"
             rows={5}
@@ -932,7 +1071,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
 
           {threadFiles.length > 0 ? (
             <label className="mt-3 block text-sm">
-              <span className="text-zinc-600">{t("common.attachmentUploadNoteLabel")}</span>
+              <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
               <textarea
                 className="input mt-1 min-h-[64px] w-full"
                 value={threadUploadNote}
@@ -947,7 +1086,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               {threadFiles.map((f, i) => (
                 <li
                   key={`${f.name}-${i}-${f.size}`}
-                  className="flex max-w-full items-center gap-1 rounded-full border border-zinc-200 bg-white py-1 pl-3 pr-1 text-xs text-zinc-800 shadow-sm"
+                  className="flex max-w-full items-center gap-1 rounded-full border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 py-1 pl-3 pr-1 text-xs text-zinc-800 dark:text-zinc-200 shadow-sm"
                 >
                   <span className="max-w-[220px] truncate font-medium" title={f.name}>
                     {f.name}
@@ -955,7 +1094,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                   <button
                     type="button"
                     onClick={() => removeThreadFile(i)}
-                    className="rounded-full p-1 text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800"
+                    className="rounded-full p-1 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:bg-zinc-800 dark:hover:bg-zinc-800 hover:text-zinc-800 dark:text-zinc-200"
                     aria-label={t("issueDetail.threadRemoveFileAria", { name: f.name })}
                   >
                     <span aria-hidden className="block text-sm leading-none">
@@ -967,7 +1106,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </ul>
           ) : null}
 
-          <div className="mt-4 flex flex-col gap-3 border-t border-zinc-200/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="mt-4 flex flex-col gap-3 border-t border-zinc-200 dark:border-zinc-700/80 pt-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex flex-wrap items-center gap-2">
               <input
                 id={`thread-attach-${issueId}`}
@@ -981,7 +1120,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               />
               <label
                 htmlFor={`thread-attach-${issueId}`}
-                className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-zinc-300 bg-white px-3.5 py-2 text-sm font-medium text-zinc-800 shadow-sm transition hover:border-zinc-400 hover:bg-zinc-50"
+                className="inline-flex cursor-pointer items-center justify-center rounded-lg border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3.5 py-2 text-sm font-medium text-zinc-800 dark:text-zinc-200 shadow-sm transition hover:border-zinc-400 dark:hover:border-zinc-500 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
               >
                 {t("issueDetail.chooseFiles")}
               </label>
@@ -989,7 +1128,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 <button
                   type="button"
                   onClick={clearThreadFiles}
-                  className="text-sm font-medium text-zinc-500 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800"
+                  className="text-sm font-medium text-zinc-500 dark:text-zinc-400 underline decoration-zinc-300 underline-offset-2 hover:text-zinc-800 dark:text-zinc-200"
                 >
                   {t("common.clear")}
                 </button>
@@ -997,7 +1136,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             </div>
             <button
               type="button"
-              className="inline-flex w-full items-center justify-center rounded-lg border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 disabled:border-zinc-300 disabled:bg-zinc-300 disabled:text-zinc-600 sm:w-auto"
+              className="inline-flex w-full items-center justify-center rounded-lg border border-blue-700 bg-blue-700 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:border-blue-800 hover:bg-blue-800 disabled:border-zinc-300 dark:border-zinc-600 disabled:bg-zinc-300 disabled:text-zinc-600 dark:text-zinc-400 sm:w-auto"
               onClick={() => void postThread()}
               disabled={postingThread}
             >
@@ -1012,24 +1151,30 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         </div>
         )}
         <div
-          className={`${readOnly ? "mt-5" : "mt-6"} space-y-3 border-t border-zinc-100 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
+          className={`${readOnly ? "mt-5" : "mt-6"} space-y-3 border-t border-zinc-100 dark:border-zinc-800 pt-5 ${threadListLoading && threadEntries.length > 0 ? "opacity-60" : ""}`}
         >
           {threadListLoading && threadEntries.length === 0 ? (
-            <p className="text-sm text-zinc-600">{t("common.loading")}</p>
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("common.loading")}</p>
           ) : threadEntries.length === 0 ? (
-            <p className="rounded-lg border border-dashed border-zinc-200 bg-zinc-50/50 px-4 py-6 text-center text-sm text-zinc-500">
+            <p className="rounded-lg border border-dashed border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950/50 px-4 py-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
               {t("issueDetail.noReplies")}
             </p>
           ) : (
             threadEntries.map((entry) => (
-              <div key={entry.id} className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <div key={entry.id} className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-3">
                 {entry.content ? (
-                  <p className="whitespace-pre-wrap text-sm text-zinc-800">{entry.content}</p>
+                  <ThreadContent
+                    content={entry.content}
+                    contentTranslated={entry.contentTranslated}
+                    contentLanguage={entry.contentLanguage}
+                    locale={locale}
+                    t={t}
+                  />
                 ) : null}
                 {entry.attachments.length > 0 ? (
                   <div className={entry.content ? "mt-3 space-y-3" : "space-y-3"}>
                     {entry.attachments.map((att) => (
-                      <div key={att.id} className="rounded-md border border-zinc-200 bg-white p-2">
+                      <div key={att.id} className="rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-2">
                         {isImageExt(att.fileType) ? (
                           <a
                             href={attachmentBlobHref(att.fileUrl)}
@@ -1059,11 +1204,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                             download={att.fileName}
                             target="_blank"
                             rel="noreferrer"
-                            className="text-sm font-medium text-zinc-900 underline"
+                            className="text-sm font-medium text-zinc-900 dark:text-zinc-100 underline"
                           >
                             {att.fileName}
                           </a>
-                          <span className="text-xs text-zinc-500">{formatBytes(att.fileSize)}</span>
+                          <span className="text-xs text-zinc-500 dark:text-zinc-400">{formatBytes(att.fileSize)}</span>
                           {readOnly ? null : (
                             <button
                               type="button"
@@ -1076,7 +1221,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                         </div>
                         <AttachmentNoteInlineEditor
                           uploadNote={att.uploadNote}
-                          borderClassName="border-zinc-100"
+                          borderClassName="border-zinc-100 dark:border-zinc-800"
                           readOnly={readOnly}
                           onSave={(note) => saveThreadAttachmentNote(entry.id, att.id, note)}
                         />
@@ -1084,7 +1229,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     ))}
                   </div>
                 ) : null}
-                <p className="mt-2 text-xs text-zinc-500">
+                <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
                   {entry.author.name ?? entry.author.email ?? t("common.unknown")}
                   {entry.createdAt ? ` · ${new Date(entry.createdAt).toLocaleString()}` : ""}
                 </p>
@@ -1093,8 +1238,8 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           )}
         </div>
         {threadTotal > 0 && threadTotalPages > 1 ? (
-          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 pt-3">
-            <p className="text-xs text-zinc-500">
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-zinc-100 dark:border-zinc-800 pt-3">
+            <p className="text-xs text-zinc-500 dark:text-zinc-400">
               {t("issueDetail.threadPageSummary", {
                 page: String(threadPage),
                 totalPages: String(threadTotalPages),
@@ -1106,7 +1251,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 type="button"
                 disabled={threadPage <= 1 || threadListLoading}
                 onClick={() => void loadThreadPage(threadPage - 1)}
-                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
               >
                 {t("common.previous")}
               </button>
@@ -1114,7 +1259,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                 type="button"
                 disabled={threadPage >= threadTotalPages || threadListLoading}
                 onClick={() => void loadThreadPage(threadPage + 1)}
-                className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50 disabled:opacity-50"
+                className="rounded-md border border-zinc-300 dark:border-zinc-600 bg-white dark:bg-zinc-900 px-3 py-1.5 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800 disabled:opacity-50"
               >
                 {t("common.next")}
               </button>

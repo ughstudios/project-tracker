@@ -24,7 +24,7 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
   return (
     <form action={formAction} className="mt-6 space-y-4">
       {bannerMessage ? (
-        <p className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="rounded-lg border border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-950/40 px-3 py-2 text-sm text-emerald-800 dark:text-emerald-200">
           {bannerMessage}
         </p>
       ) : null}
@@ -34,7 +34,7 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
           name="email"
           type="email"
           required
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
           placeholder="you@company.com"
         />
       </div>
@@ -44,21 +44,21 @@ export function LoginForm({ bannerMessage }: { bannerMessage?: string } = {}) {
           name="password"
           type="password"
           required
-          className="w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500"
+          className="w-full rounded-lg border border-zinc-300 dark:border-zinc-600 px-3 py-2 text-sm outline-none focus:border-zinc-500 dark:focus:border-zinc-400"
           placeholder="********"
         />
       </div>
-      {state?.error ? <p className="text-sm text-red-600">{state.error}</p> : null}
+      {state?.error ? <p className="text-sm text-red-600 dark:text-red-400">{state.error}</p> : null}
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 disabled:cursor-not-allowed disabled:bg-zinc-500"
+        className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:hover:bg-zinc-600 disabled:cursor-not-allowed disabled:bg-zinc-50 dark:bg-zinc-9500"
       >
         {pending ? t("login.signingIn") : t("login.signIn")}
       </button>
-      <p className="text-center text-sm text-zinc-600">
+      <p className="text-center text-sm text-zinc-600 dark:text-zinc-400">
         {t("login.needAccount")}{" "}
-        <Link href="/register" className="font-medium text-zinc-900 underline">
+        <Link href="/register" className="font-medium text-zinc-900 dark:text-zinc-100 underline">
           {t("login.register")}
         </Link>
       </p>

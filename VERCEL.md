@@ -87,6 +87,8 @@ Vercel → **Project → Settings → Environment Variables**:
 | **`AUTH_URL`** | **Exact origin users use in the browser** (no trailing slash). Examples: `https://tracker.colorlightcloud.com` for a custom domain, or `https://<project>.vercel.app`. **Do not use `http://localhost:3000` in production** — mismatched Auth.js cookies often cause “page couldn’t load” with `200` on RSC requests. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
 | **`BLOB_READ_WRITE_TOKEN`** | **Required for file uploads on Vercel.** Create a Blob store under **Storage** → connect it to this project so Vercel injects this token. Serverless functions cannot write under `public/uploads`. |
+| **`OPENAI_API_KEY`** | Optional, but required for automatic English/Chinese issue translation. If omitted, issues still work and the app simply stores the original text only. |
+| **`OPENAI_TRANSLATION_MODEL`** | Optional override for the translation model. Default: `gpt-4o-mini`. |
 
 After saving, **Redeploy** so the build sees the new values.
 
