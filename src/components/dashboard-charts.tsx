@@ -2,6 +2,7 @@
 
 import { WorkRecordsDashboardCharts } from "@/components/work-records-dashboard-charts";
 import { useI18n } from "@/i18n/context";
+import { getDashboardChartChrome } from "@/lib/dashboard-chart-theme";
 import { useTheme } from "next-themes";
 import { useMemo } from "react";
 import {
@@ -109,19 +110,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
     return { byAssignee, byStatus, byProject };
   }, [issues, t]);
 
-  const chartChrome = useMemo(() => {
-    const dark = resolvedTheme === "dark";
-    return {
-      gridStroke: dark ? "#3f3f46" : "#e4e4e7",
-      tooltipStyle: {
-        backgroundColor: dark ? "#18181b" : "white",
-        border: dark ? "1px solid #3f3f46" : "1px solid #e4e4e7",
-        borderRadius: "8px",
-        fontSize: "12px",
-        color: dark ? "#fafafa" : "#18181b",
-      } as const,
-    };
-  }, [resolvedTheme]);
+  const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
   return (
     <div className="space-y-4">
@@ -171,23 +160,33 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                     margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      allowDecimals={false}
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
                       width={120}
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
                       interval={0}
                     />
                     <Tooltip
-                      contentStyle={chartChrome.tooltipStyle}
+                      contentStyle={chartChrome.tooltipContentStyle}
+                      labelStyle={chartChrome.tooltipLabelStyle}
+                      itemStyle={chartChrome.tooltipItemStyle}
+                      cursor={{ fill: chartChrome.cursorFill }}
                       formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                     />
                     <Bar
                       dataKey="count"
                       name={t("dashboard.axisIssues")}
-                      fill="#6366f1"
+                      fill="#818cf8"
                       radius={[0, 4, 4, 0]}
+                      activeBar={false}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -207,19 +206,34 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                     margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      allowDecimals={false}
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
                       width={100}
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
                       interval={0}
                     />
                     <Tooltip
-                      contentStyle={chartChrome.tooltipStyle}
+                      contentStyle={chartChrome.tooltipContentStyle}
+                      labelStyle={chartChrome.tooltipLabelStyle}
+                      itemStyle={chartChrome.tooltipItemStyle}
+                      cursor={{ fill: chartChrome.cursorFill }}
                       formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                     />
-                    <Bar dataKey="count" name={t("dashboard.axisIssues")} fill="#52525b" radius={[0, 4, 4, 0]} />
+                    <Bar
+                      dataKey="count"
+                      name={t("dashboard.axisIssues")}
+                      fill="#71717a"
+                      radius={[0, 4, 4, 0]}
+                      activeBar={false}
+                    />
                   </BarChart>
                 </ResponsiveContainer>
               </div>
@@ -231,16 +245,33 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
               <div className="mt-3 h-[280px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                    <Pie
+                                       <Pie
                       data={byStatus}
                       dataKey="count"
                       nameKey="name"
                       cx="50%"
                       cy="50%"
                       outerRadius={100}
-                      label={({ name, percent }) =>
-                        `${name} ${((percent ?? 0) * 100).toFixed(0)}%`
-                      }
+                      stroke={chartChrome.pieStroke}
+                      strokeWidth={1}
+                      label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
+                        const RADIAN = Math.PI / 180;
+                        const or = outerRadius ?? 0;
+                        const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
+                        const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
+                        return (
+                          <text
+                            x={x}
+                            y={y}
+                            fill={fill as string}
+                            textAnchor={x > (cx ?? 0) ? "start" : "end"}
+                            dominantBaseline="central"
+                            fontSize={11}
+                          >
+                            {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                          </text>
+                        );
+                      }}
                       labelLine={false}
                     >
                       {byStatus.map((entry) => (
@@ -248,7 +279,9 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
                       ))}
                     </Pie>
                     <Tooltip
-                      contentStyle={chartChrome.tooltipStyle}
+                      contentStyle={chartChrome.tooltipContentStyle}
+                      labelStyle={chartChrome.tooltipLabelStyle}
+                      itemStyle={chartChrome.tooltipItemStyle}
                       formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                     />
                   </PieChart>

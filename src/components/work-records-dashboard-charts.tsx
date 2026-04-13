@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { getDashboardChartChrome } from "@/lib/dashboard-chart-theme";
 import { useTheme } from "next-themes";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
@@ -67,19 +68,7 @@ export function WorkRecordsDashboardCharts() {
     }));
   }, [summary, monthLabel]);
 
-  const chartChrome = useMemo(() => {
-    const dark = resolvedTheme === "dark";
-    return {
-      gridStroke: dark ? "#3f3f46" : "#e4e4e7",
-      tooltipStyle: {
-        backgroundColor: dark ? "#18181b" : "white",
-        border: dark ? "1px solid #3f3f46" : "1px solid #e4e4e7",
-        borderRadius: "8px",
-        fontSize: "12px",
-        color: dark ? "#fafafa" : "#18181b",
-      } as const,
-    };
-  }, [resolvedTheme]);
+  const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
   return (
     <section
@@ -111,23 +100,33 @@ export function WorkRecordsDashboardCharts() {
                     margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
                   >
                     <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                    <XAxis type="number" tick={{ fontSize: 11 }} allowDecimals={false} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      allowDecimals={false}
+                    />
                     <YAxis
                       type="category"
                       dataKey="name"
                       width={100}
-                      tick={{ fontSize: 11 }}
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
                       interval={0}
                     />
                     <Tooltip
-                      contentStyle={chartChrome.tooltipStyle}
+                      contentStyle={chartChrome.tooltipContentStyle}
+                      labelStyle={chartChrome.tooltipLabelStyle}
+                      itemStyle={chartChrome.tooltipItemStyle}
+                      cursor={{ fill: chartChrome.cursorFill }}
                       formatter={(value: number) => [value, t("dashboard.axisWorkRecords")]}
                     />
                     <Bar
                       dataKey="count"
                       name={t("dashboard.axisWorkRecords")}
-                      fill="#b45309"
+                      fill="#d97706"
                       radius={[0, 4, 4, 0]}
+                      activeBar={false}
                     />
                   </BarChart>
                 </ResponsiveContainer>
@@ -144,17 +143,33 @@ export function WorkRecordsDashboardCharts() {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byMonthLabeled} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                  <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-35} textAnchor="end" height={56} />
-                  <YAxis tick={{ fontSize: 11 }} allowDecimals={false} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10, fill: chartChrome.tickFill }}
+                    stroke={chartChrome.axisStroke}
+                    interval={0}
+                    angle={-35}
+                    textAnchor="end"
+                    height={56}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                    stroke={chartChrome.axisStroke}
+                    allowDecimals={false}
+                  />
                   <Tooltip
-                    contentStyle={chartChrome.tooltipStyle}
+                    contentStyle={chartChrome.tooltipContentStyle}
+                    labelStyle={chartChrome.tooltipLabelStyle}
+                    itemStyle={chartChrome.tooltipItemStyle}
+                    cursor={{ fill: chartChrome.cursorFill }}
                     formatter={(value: number) => [value, t("dashboard.axisWorkRecords")]}
                   />
                   <Bar
                     dataKey="count"
                     name={t("dashboard.axisWorkRecords")}
-                    fill="#ca8a04"
+                    fill="#eab308"
                     radius={[4, 4, 0, 0]}
+                    activeBar={false}
                   />
                 </BarChart>
               </ResponsiveContainer>
