@@ -140,8 +140,6 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
         </div>
       </section>
 
-      <WorkRecordsDashboardCharts />
-
       {issues.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-950 p-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           {t("dashboard.chartsNoIssues")}
@@ -245,7 +243,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
               <div className="mt-3 h-[280px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
-                                       <Pie
+                    <Pie
                       data={byStatus}
                       dataKey="count"
                       nameKey="name"
@@ -291,6 +289,8 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
           </div>
         </div>
       )}
+
+      <WorkRecordsDashboardCharts />
     </div>
   );
 }
