@@ -220,17 +220,6 @@ export default function WorkRecordsPage() {
     [editContent, formContent, t],
   );
 
-  async function onDelete(id: string) {
-    if (!window.confirm(t("workRecords.deleteConfirm"))) return;
-    setError(null);
-    const res = await fetch(`/api/work-records/${id}`, { method: "DELETE" });
-    if (!res.ok) {
-      setError(t("workRecords.couldNotDelete"));
-      return;
-    }
-    void fetchPage(page);
-  }
-
   const totalPages = Math.max(1, Math.ceil(total / WORK_RECORDS_PAGE_SIZE));
 
   return (
@@ -410,22 +399,13 @@ export default function WorkRecordsPage() {
                           </button>
                         </div>
                       ) : (
-                        <div className="flex flex-col gap-1">
-                          <button
-                            type="button"
-                            onClick={() => startEdit(row)}
-                            className="rounded border border-zinc-300 dark:border-zinc-600 px-2 py-1 text-xs font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-50 dark:bg-zinc-950 dark:hover:bg-zinc-800"
-                          >
-                            {t("workRecords.edit")}
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => void onDelete(row.id)}
-                            className="rounded border border-red-200 px-2 py-1 text-xs font-medium text-red-700 hover:bg-red-50 dark:border-red-900/60 dark:text-red-400 dark:hover:bg-red-950/35"
-                          >
-                            {t("common.delete")}
-                          </button>
-                        </div>
+                        <button
+                          type="button"
+                          onClick={() => startEdit(row)}
+                          className="btn-secondary rounded-md px-2.5 py-1 text-xs font-medium"
+                        >
+                          {t("workRecords.edit")}
+                        </button>
                       )}
                     </td>
                   </tr>
