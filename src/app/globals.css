@@ -1,6 +1,8 @@
 @import "tailwindcss";
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Use (.dark &) so dark: utilities beat same-specificity light utilities (e.g. bg-white).
+   The docs' &:where(.dark, .dark *) zeroes specificity and lets bg-white override dark:bg. */
+@custom-variant dark (.dark &);
 
 :root {
   --background: #ffffff;
