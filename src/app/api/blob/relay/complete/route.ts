@@ -5,6 +5,7 @@ import {
   isBlobStorageEnabled,
   vercelUploadsNotReadyResponse,
 } from "@/lib/file-storage";
+import { maybeConvertHeicForBlobUpload } from "@/lib/heic-blob-convert";
 import { prisma } from "@/lib/prisma";
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
@@ -63,12 +64,34 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Size mismatch after assembly." }, { status: 500 });
   }
 
+  const contentType = upload.contentType || "application/octet-stream";
+
+  let putBuffer: typeof buffer = buffer;
+  let putPathname = upload.pathname;
+  let putContentType = contentType;
+  let heicConverted = false;
+  try {
+    const converted = await maybeConvertHeicForBlobUpload({
+      buffer,
+      pathname: upload.pathname,
+      contentType,
+    });
+    putBuffer = converted.buffer as typeof buffer;
+    putPathname = converted.pathname;
+    putContentType = converted.contentType;
+    heicConverted = converted.heicConverted;
+  } catch (e) {
+    const message = e instanceof Error ? e.message : "Could not convert image.";
+    await prisma.blobRelayUpload.delete({ where: { id: upload.id } }).catch(() => {});
+    return NextResponse.json({ error: message }, { status: 422 });
+  }
+
   let url: string;
   try {
-    const blob = await put(upload.pathname, buffer, {
+    const blob = await put(putPathname, putBuffer, {
       access: getBlobStoreAccess(),
       token,
-      contentType: upload.contentType || "application/octet-stream",
+      contentType: putContentType || "application/octet-stream",
       addRandomSuffix: false,
     });
     url = blob.url;
@@ -80,5 +103,10 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   await prisma.blobRelayUpload.delete({ where: { id: upload.id } });
 
-  return NextResponse.json({ url, pathname: upload.pathname });
+  return NextResponse.json({
+    url,
+    pathname: putPathname,
+    fileSize: putBuffer.length,
+    heicConverted,
+  });
 }

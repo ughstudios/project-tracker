@@ -10,6 +10,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "node prisma/seed.mjs",
+    "migrate:heic": "tsx scripts/migrate-heic-attachments.ts",
     "neon:auth": "npx neonctl@latest auth",
     "neon:create": "npx neonctl@latest projects create --name project-tracker --region-id aws-us-east-1 --set-context",
     "neon:url": "npx neonctl@latest connection-string main --prisma --pooled",
@@ -22,6 +23,7 @@
     "@vercel/speed-insights": "^2.0.0",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
+    "heic-convert": "^2.1.0",
     "next": "16.2.1",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "^0.4.6",
@@ -39,6 +41,7 @@
     "eslint": "^9",
     "eslint-config-next": "16.2.1",
     "tailwindcss": "^4",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }

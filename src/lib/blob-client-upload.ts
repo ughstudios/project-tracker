@@ -22,6 +22,12 @@ export function blobUploadNeedsSameOriginRelay(): boolean {
 const UPLOAD_FAILED_GENERIC =
   "Couldn’t upload the file. Check your connection and try again.";
 
+function displayNameAfterHeicConversion(originalName: string): string {
+  const n = originalName.trim() || "image";
+  if (/\.(heic|heif)$/i.test(n)) return n.replace(/\.(heic|heif)$/i, ".jpg");
+  return n.toLowerCase().endsWith(".jpg") ? n : `${n}.jpg`;
+}
+
 export async function isBlobClientUploadEnabled(): Promise<boolean> {
   try {
     const r = await fetch("/api/blob/status", { credentials: "include", cache: "no-store" });
@@ -139,7 +145,8 @@ async function relayUploadFileToBlob(
   doneBytesBeforeFile: number,
   onProgress: (percent: number | null) => void,
 ): Promise<
-  { ok: true; url: string; pathname: string } | { ok: false; error: string }
+  | { ok: true; url: string; pathname: string; fileSize: number; heicConverted: boolean }
+  | { ok: false; error: string }
 > {
   const initRes = await fetch("/api/blob/relay/init", {
     method: "POST",
@@ -202,6 +209,9 @@ async function relayUploadFileToBlob(
   const compJson = (await compRes.json().catch(() => ({}))) as {
     error?: string;
     url?: string;
+    pathname?: string;
+    fileSize?: number;
+    heicConverted?: boolean;
   };
   if (!compRes.ok) {
     return { ok: false, error: compJson.error ?? UPLOAD_FAILED_GENERIC };
@@ -210,7 +220,14 @@ async function relayUploadFileToBlob(
     return { ok: false, error: UPLOAD_FAILED_GENERIC };
   }
 
-  return { ok: true, url: compJson.url, pathname };
+  const outPathname = typeof compJson.pathname === "string" ? compJson.pathname : pathname;
+  const fileSize =
+    typeof compJson.fileSize === "number" && Number.isFinite(compJson.fileSize)
+      ? compJson.fileSize
+      : file.size;
+  const heicConverted = Boolean(compJson.heicConverted);
+
+  return { ok: true, url: compJson.url, pathname: outPathname, fileSize, heicConverted };
 }
 
 async function uploadOneFileViaRelay(
@@ -232,10 +249,10 @@ async function uploadOneFileViaRelay(
   if (!relayed.ok) return { ok: false, error: relayed.error };
 
   const reg = await completeRegistration(completeUrl, {
-    fileName: file.name,
+    fileName: relayed.heicConverted ? displayNameAfterHeicConversion(file.name) : file.name,
     pathname: relayed.pathname,
     fileUrl: relayed.url,
-    fileSize: file.size,
+    fileSize: relayed.fileSize,
     uploadNote,
   });
   if (!reg.ok) return { ok: false, error: reg.error ?? UPLOAD_FAILED_GENERIC };
