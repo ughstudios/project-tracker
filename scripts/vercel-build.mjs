@@ -49,6 +49,28 @@ async function runMigrateDeployWithRetry() {
   }
 }
 
+/**
+ * Convert legacy HEIC/HEIF attachment blobs to JPEG (idempotent). Runs after `next build` on Vercel
+ * when `BLOB_READ_WRITE_TOKEN` is set. Skip with `SKIP_HEIC_MIGRATION_ON_DEPLOY=1`.
+ * For non-Vercel CI, set `RUN_HEIC_MIGRATION_ON_DEPLOY=1`.
+ */
+function shouldRunHeicAttachmentMigration() {
+  if (process.env.SKIP_HEIC_MIGRATION_ON_DEPLOY === "1") {
+    console.log("Skipping HEIC attachment migration (SKIP_HEIC_MIGRATION_ON_DEPLOY=1).");
+    return false;
+  }
+  if (!process.env.BLOB_READ_WRITE_TOKEN?.trim()) {
+    console.log("Skipping HEIC attachment migration: BLOB_READ_WRITE_TOKEN not set.");
+    return false;
+  }
+  if (process.env.VERCEL === "1") return true;
+  if (process.env.RUN_HEIC_MIGRATION_ON_DEPLOY === "1") return true;
+  console.log(
+    "Skipping HEIC attachment migration (local build). Deploy on Vercel or set RUN_HEIC_MIGRATION_ON_DEPLOY=1.",
+  );
+  return false;
+}
+
 const dbUrl = process.env.DATABASE_URL?.trim();
 if (!dbUrl) {
   console.error(`
@@ -76,3 +98,12 @@ See VERCEL.md in this repo for the full checklist.
 await runOrExit("npx", ["prisma", "generate"]);
 await runMigrateDeployWithRetry();
 await runOrExit("npx", ["next", "build"]);
+
+if (shouldRunHeicAttachmentMigration()) {
+  console.log("\nRunning HEIC → JPEG attachment migration (no-op if nothing to convert)...\n");
+  const mig = run("npx", ["tsx", "scripts/migrate-heic-attachments.ts"]);
+  if (mig.status !== 0) {
+    console.error("\nHEIC attachment migration failed. Fix errors or set SKIP_HEIC_MIGRATION_ON_DEPLOY=1.\n");
+    process.exit(mig.status ?? 1);
+  }
+}

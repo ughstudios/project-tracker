@@ -6,6 +6,9 @@
  *   npm run migrate:heic -- --limit=20
  *   npm run migrate:heic
  *
+ * On Vercel, this also runs automatically after `next build` when `BLOB_READ_WRITE_TOKEN` is set
+ * (disable with `SKIP_HEIC_MIGRATION_ON_DEPLOY=1`).
+ *
  * Requires: DATABASE_URL, BLOB_READ_WRITE_TOKEN, same blob access env as the app.
  */
 import "dotenv/config";
