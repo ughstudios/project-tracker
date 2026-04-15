@@ -61,7 +61,7 @@ type IssueDetail = {
   customerId: string | null;
   project: ProjectSummary | null;
   customer: { id: string; name: string } | null;
-  assignee: { id: string; name: string | null; email: string | null } | null;
+  assignees: { id: string; name: string | null; email: string | null }[];
   reporter: { id: string; name: string | null };
   attachments: IssueFileAttachment[];
 };
@@ -239,7 +239,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [projectId, setProjectId] = useState("");
   const [customerId, setCustomerId] = useState("");
   const [status, setStatus] = useState("OPEN");
-  const [assigneeId, setAssigneeId] = useState("");
+  const [assigneeIds, setAssigneeIds] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
 
   const [threadInput, setThreadInput] = useState("");
@@ -308,7 +308,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     setProjectId(data.projectId ?? "");
     setCustomerId(data.customerId ?? "");
     setStatus(data.status);
-    setAssigneeId(data.assignee?.id ?? "");
+    setAssigneeIds(data.assignees.map((a) => a.id));
   }, []);
 
   useEffect(() => {
@@ -430,7 +430,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
         projectId: projectId || null,
         customerId: customerId || null,
         status,
-        assigneeId: assigneeId || null,
+        assigneeIds,
       }),
     });
     setSaving(false);
@@ -901,22 +901,32 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
               <option value="DONE">{t("issueStatus.DONE")}</option>
             </select>
           </label>
-          <label className="block text-sm">
+          <div className="block text-sm">
             <span className="text-zinc-600 dark:text-zinc-400">{t("common.assignee")}</span>
-            <select
-              className="input mt-1 w-full"
-              value={assigneeId}
-              onChange={(e) => setAssigneeId(e.target.value)}
-              disabled={readOnly}
-            >
-              <option value="">{t("common.unassigned")}</option>
+            <div className="mt-1 max-h-40 space-y-1.5 overflow-y-auto rounded-lg border border-zinc-200 bg-white px-2 py-2 dark:border-white/10 dark:bg-zinc-950/40">
               {users.map((u) => (
-                <option key={u.id} value={u.id}>
-                  {u.name ?? u.email}
-                </option>
+                <label key={u.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    className="rounded border-zinc-300 dark:border-zinc-600"
+                    checked={assigneeIds.includes(u.id)}
+                    disabled={readOnly}
+                    onChange={(e) => {
+                      setAssigneeIds((prev) =>
+                        e.target.checked
+                          ? [...prev, u.id]
+                          : prev.filter((id) => id !== u.id),
+                      );
+                    }}
+                  />
+                  <span>{u.name ?? u.email}</span>
+                </label>
               ))}
-            </select>
-          </label>
+            </div>
+            <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+              {t("issues.assigneesMultiHint")}
+            </p>
+          </div>
           <label className="block text-sm md:col-span-2">
             <span className="text-zinc-600 dark:text-zinc-400">{t("common.symptom")}</span>
             <textarea

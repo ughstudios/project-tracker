@@ -30,7 +30,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 type ChartIssue = {
   status: string;
-  assignee: { id: string; name: string } | null;
+  assignees: { id: string; name: string }[];
   project: { id: string; name: string; product: string } | null;
 };
 
@@ -58,11 +58,19 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
 
     const assigneeMap = new Map<string, AssigneeSlice>();
     for (const issue of issues) {
-      const id = issue.assignee?.id ?? "";
-      const name = issue.assignee?.name ?? t("dashboard.chartUnassigned");
-      const prev = assigneeMap.get(id) ?? { id, name, count: 0 };
-      prev.count += 1;
-      assigneeMap.set(id, prev);
+      if (issue.assignees.length === 0) {
+        const id = "";
+        const name = t("dashboard.chartUnassigned");
+        const prev = assigneeMap.get(id) ?? { id, name, count: 0 };
+        prev.count += 1;
+        assigneeMap.set(id, prev);
+      } else {
+        for (const a of issue.assignees) {
+          const prev = assigneeMap.get(a.id) ?? { id: a.id, name: a.name, count: 0 };
+          prev.count += 1;
+          assigneeMap.set(a.id, prev);
+        }
+      }
     }
     const byAssignee = [...assigneeMap.values()].sort((a, b) => b.count - a.count);
 

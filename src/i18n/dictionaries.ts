@@ -216,6 +216,8 @@ const en: MessageTree = {
     attachmentsOnCreateHelp:
       "Add files now or later on the issue page. Max 100 MB per file; up to 20 files. If you attach files, an upload note is required.",
     copyIssueLink: "Copy issue link",
+    assigneesMultiHint:
+      "You can assign more than one person to an issue.",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -885,6 +887,7 @@ const zh: MessageTree = {
     attachmentsOnCreateHelp:
       "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个。若添加附件，须填写上传说明。",
     copyIssueLink: "复制问题链接",
+    assigneesMultiHint: "一个问题可以分配给多位负责人。",
   },
   issueDetail: {
     loading: "正在加载问题…",

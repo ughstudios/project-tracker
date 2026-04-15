@@ -2,10 +2,26 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import {
+  issueAssignmentsWithUsersInclude,
+  issueRowToApiShape,
+  resolveAssigneeIdsForPatch,
+} from "@/lib/issue-assignees";
 import { translateIssueContent } from "@/lib/issue-content-translation";
 import { autoArchiveExpiredDoneIssue } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+
+const issueDetailInclude = {
+  project: true,
+  customer: { select: { id: true, name: true } },
+  reporter: { select: { id: true, name: true } },
+  attachments: {
+    orderBy: { createdAt: "asc" as const },
+    include: { uploader: { select: { id: true, name: true, email: true } } },
+  },
+  ...issueAssignmentsWithUsersInclude,
+} as const;
 
 export async function GET(
   _request: Request,
@@ -21,26 +37,16 @@ export async function GET(
   const { id } = await params;
   await autoArchiveExpiredDoneIssue(id);
   try {
-    const attachmentUploader = { select: { id: true, name: true, email: true } as const };
     const issue = await prisma.issue.findUnique({
       where: { id },
-      include: {
-        project: true,
-        customer: { select: { id: true, name: true } },
-        assignee: { select: { id: true, name: true, email: true } },
-        reporter: { select: { id: true, name: true } },
-        attachments: {
-          orderBy: { createdAt: "asc" },
-          include: { uploader: attachmentUploader },
-        },
-      },
+      include: issueDetailInclude,
     });
 
     if (!issue) {
       return NextResponse.json({ error: "Issue not found." }, { status: 404 });
     }
 
-    return NextResponse.json(issue, {
+    return NextResponse.json(issueRowToApiShape(issue), {
       headers: { "Cache-Control": "private, no-store, must-revalidate" },
     });
   } catch {
@@ -87,6 +93,13 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   }
 
+  if ("assigneeIds" in body && body.assigneeIds !== undefined && !Array.isArray(body.assigneeIds)) {
+    return NextResponse.json(
+      { error: "assigneeIds must be an array of user id strings." },
+      { status: 400 },
+    );
+  }
+
   const title =
     typeof body.title === "string" ? body.title.trim() : existing.title;
   const symptom =
@@ -99,12 +112,8 @@ export async function PATCH(
     typeof body.rndContact === "string" ? body.rndContact.trim() : existing.rndContact;
   const status =
     body.status !== undefined ? String(body.status) : existing.status;
-  const assigneeId =
-    body.assigneeId !== undefined
-      ? body.assigneeId
-        ? String(body.assigneeId)
-        : null
-      : existing.assigneeId;
+
+  const assigneePatch = resolveAssigneeIdsForPatch(body);
 
   let projectId: string | null = existing.projectId;
   let customerId: string | null = existing.customerId;
@@ -148,6 +157,13 @@ export async function PATCH(
     );
   }
 
+  if (assigneePatch !== "unchanged") {
+    const n = await prisma.user.count({ where: { id: { in: assigneePatch } } });
+    if (n !== assigneePatch.length) {
+      return NextResponse.json({ error: "One or more assignees were not found." }, { status: 404 });
+    }
+  }
+
   const contentChanged =
     title !== existing.title ||
     symptom !== existing.symptom ||
@@ -164,35 +180,39 @@ export async function PATCH(
         solutionTranslated: existing.solutionTranslated,
       };
 
-  const issue = await prisma.issue.update({
-    where: { id },
-    data: {
-      title,
-      titleTranslated: translatedContent.titleTranslated,
-      symptom,
-      symptomTranslated: translatedContent.symptomTranslated,
-      cause,
-      causeTranslated: translatedContent.causeTranslated,
-      solution,
-      solutionTranslated: translatedContent.solutionTranslated,
-      contentLanguage: translatedContent.contentLanguage,
-      rndContact,
-      projectId,
-      customerId,
-      status,
-      assigneeId,
-      doneAt: status === "DONE" ? new Date() : null,
-    },
-    include: {
-      project: true,
-      customer: { select: { id: true, name: true } },
-      assignee: { select: { id: true, name: true, email: true } },
-      reporter: { select: { id: true, name: true } },
-      attachments: {
-        orderBy: { createdAt: "asc" },
-        include: { uploader: { select: { id: true, name: true, email: true } } },
+  await prisma.$transaction(async (tx) => {
+    await tx.issue.update({
+      where: { id },
+      data: {
+        title,
+        titleTranslated: translatedContent.titleTranslated,
+        symptom,
+        symptomTranslated: translatedContent.symptomTranslated,
+        cause,
+        causeTranslated: translatedContent.causeTranslated,
+        solution,
+        solutionTranslated: translatedContent.solutionTranslated,
+        contentLanguage: translatedContent.contentLanguage,
+        rndContact,
+        projectId,
+        customerId,
+        status,
+        doneAt: status === "DONE" ? new Date() : null,
       },
-    },
+    });
+    if (assigneePatch !== "unchanged") {
+      await tx.issueAssignment.deleteMany({ where: { issueId: id } });
+      if (assigneePatch.length > 0) {
+        await tx.issueAssignment.createMany({
+          data: assigneePatch.map((userId) => ({ issueId: id, userId })),
+        });
+      }
+    }
+  });
+
+  const issue = await prisma.issue.findUniqueOrThrow({
+    where: { id },
+    include: issueDetailInclude,
   });
 
   await writeAuditLog({
@@ -203,5 +223,5 @@ export async function PATCH(
     description: `Issue "${issue.title}" updated.`,
   });
 
-  return NextResponse.json(issue);
+  return NextResponse.json(issueRowToApiShape(issue));
 }

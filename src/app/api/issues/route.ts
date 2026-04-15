@@ -2,6 +2,11 @@ import { auth } from "@/auth";
 import { writeAuditLog } from "@/lib/audit";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
+import {
+  issueAssignmentsWithUsersInclude,
+  issueRowToApiShape,
+  resolveAssigneeIdsForCreate,
+} from "@/lib/issue-assignees";
 import { translateIssueContent } from "@/lib/issue-content-translation";
 import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
@@ -23,12 +28,12 @@ export async function GET() {
     include: {
       project: true,
       customer: { select: { id: true, name: true } },
-      assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
+      ...issueAssignmentsWithUsersInclude,
     },
   });
 
-  return NextResponse.json(issues);
+  return NextResponse.json(issues.map(issueRowToApiShape));
 }
 
 export async function POST(request: Request) {
@@ -39,7 +44,7 @@ export async function POST(request: Request) {
   const denied = await guardEmployeeNavApi(session, TABS_ISSUE_DATA);
   if (denied) return denied;
 
-  const body = await request.json();
+  const body = (await request.json()) as Record<string, unknown>;
   const {
     title,
     projectId: rawProjectId,
@@ -50,8 +55,13 @@ export async function POST(request: Request) {
     cause,
     solution,
     rndContact,
-    assigneeId,
   } = body as Record<string, string | undefined>;
+
+  if ("assigneeIds" in body && body.assigneeIds !== undefined && !Array.isArray(body.assigneeIds)) {
+    return NextResponse.json({ error: "assigneeIds must be an array of user id strings." }, { status: 400 });
+  }
+
+  const assigneeIds = resolveAssigneeIdsForCreate(body);
 
   const projectIdStr =
     typeof rawProjectId === "string" && rawProjectId.trim() ? rawProjectId.trim() : "";
@@ -106,6 +116,13 @@ export async function POST(request: Request) {
     }
   }
 
+  if (assigneeIds.length > 0) {
+    const n = await prisma.user.count({ where: { id: { in: assigneeIds } } });
+    if (n !== assigneeIds.length) {
+      return NextResponse.json({ error: "One or more assignees were not found." }, { status: 404 });
+    }
+  }
+
   const translatedContent = await translateIssueContent({
     title: title.trim(),
     symptom: symptom.trim(),
@@ -127,14 +144,17 @@ export async function POST(request: Request) {
       rndContact: (rndContact ?? "").trim(),
       projectId: project?.id ?? null,
       customerId: customer?.id ?? null,
-      assigneeId: assigneeId || null,
       reporterId: session.user.id,
+      assignments:
+        assigneeIds.length > 0
+          ? { create: assigneeIds.map((userId) => ({ userId })) }
+          : undefined,
     },
     include: {
       project: true,
       customer: { select: { id: true, name: true } },
-      assignee: { select: { id: true, name: true, email: true } },
       reporter: { select: { id: true, name: true } },
+      ...issueAssignmentsWithUsersInclude,
     },
   });
 
@@ -148,5 +168,5 @@ export async function POST(request: Request) {
     description: `Issue "${issue.title}" created (${linkLabel}).`,
   });
 
-  return NextResponse.json(issue, { status: 201 });
+  return NextResponse.json(issueRowToApiShape(issue), { status: 201 });
 }

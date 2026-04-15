@@ -32,7 +32,7 @@ export type IssueBoardIssue = {
   rndContact: string;
   project: { id: string; name: string; product: string } | null;
   customer: { id: string; name: string } | null;
-  assignee: { id: string; name: string; email: string } | null;
+  assignees: { id: string; name: string; email: string }[];
   reporter: { id: string; name: string };
 };
 

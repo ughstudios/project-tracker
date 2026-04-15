@@ -5,7 +5,7 @@ import { formatDateTimeUtc, formatDateUtc } from "@/lib/report-dates";
 export type IssueWithRelations = Issue & {
   project: Pick<Project, "name"> | null;
   customer: Pick<Customer, "name"> | null;
-  assignee: Pick<User, "name" | "email"> | null;
+  assignees: Pick<User, "name" | "email">[];
   reporter: Pick<User, "name" | "email">;
 };
 
@@ -59,8 +59,14 @@ const ISSUE_COLS: Record<
   rndContact: { header: "R&D contact", cell: (i) => i.rndContact },
   projectName: { header: "Project", cell: (i) => i.project?.name ?? "" },
   customerName: { header: "Customer", cell: (i) => i.customer?.name ?? "" },
-  assigneeName: { header: "Assignee", cell: (i) => i.assignee?.name ?? "" },
-  assigneeEmail: { header: "Assignee email", cell: (i) => i.assignee?.email ?? "" },
+  assigneeName: {
+    header: "Assignee",
+    cell: (i) => i.assignees.map((a) => a.name).join("; "),
+  },
+  assigneeEmail: {
+    header: "Assignee email",
+    cell: (i) => i.assignees.map((a) => a.email).join("; "),
+  },
   reporterName: { header: "Reporter", cell: (i) => i.reporter.name },
   reporterEmail: { header: "Reporter email", cell: (i) => i.reporter.email },
   createdAt: { header: "Opened", cell: (i) => formatDateUtc(i.createdAt) },

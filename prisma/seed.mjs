@@ -17,7 +17,7 @@ async function removeAdminExampleUser() {
     }));
 
   if (replacement) {
-    await prisma.issue.updateMany({ where: { assigneeId: demo.id }, data: { assigneeId: null } });
+    await prisma.issueAssignment.deleteMany({ where: { userId: demo.id } });
     await prisma.issue.updateMany({
       where: { reporterId: demo.id },
       data: { reporterId: replacement.id },

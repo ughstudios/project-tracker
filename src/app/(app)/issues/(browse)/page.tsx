@@ -34,7 +34,7 @@ type IssueListItem = {
   contentLanguage: string | null;
   project: { id: string; name: string; product: string } | null;
   customer: { id: string; name: string } | null;
-  assignee: { id: string; name: string | null; email: string | null } | null;
+  assignees: { id: string; name: string | null; email: string | null }[];
 };
 
 function matchesLinkFilter(issue: IssueListItem, filter: string) {
@@ -77,7 +77,7 @@ function IssuesPageContent() {
   const [formCause, setFormCause] = useState("");
   const [formSolution, setFormSolution] = useState("");
   const [formRnd, setFormRnd] = useState("");
-  const [formAssigneeId, setFormAssigneeId] = useState("");
+  const [formAssigneeIds, setFormAssigneeIds] = useState<string[]>([]);
   const [formFiles, setFormFiles] = useState<File[]>([]);
   const [formAttachmentUploadNote, setFormAttachmentUploadNote] = useState("");
   const createFileInputRef = useRef<HTMLInputElement>(null);
@@ -135,8 +135,8 @@ function IssuesPageContent() {
       const matchAssignee =
         !assigneeListFilter ||
         (assigneeListFilter === FILTER_ASSIGNEE_UNASSIGNED
-          ? !i.assignee
-          : i.assignee?.id === assigneeListFilter);
+          ? i.assignees.length === 0
+          : i.assignees.some((a) => a.id === assigneeListFilter));
       const matchText =
         !q ||
         [
@@ -147,7 +147,7 @@ function IssuesPageContent() {
           i.symptomTranslated ?? "",
           i.project?.name ?? "",
           i.customer?.name ?? "",
-          i.assignee?.name ?? "",
+          i.assignees.map((a) => `${a.name ?? ""} ${a.email ?? ""}`).join(" "),
         ]
           .join(" ")
           .toLowerCase()
@@ -172,7 +172,7 @@ function IssuesPageContent() {
         cause: formCause.trim(),
         solution: formSolution.trim(),
         rndContact: formRnd.trim(),
-        assigneeId: formAssigneeId || null,
+        assigneeIds: formAssigneeIds,
       }),
     });
     if (!res.ok) {
@@ -211,7 +211,7 @@ function IssuesPageContent() {
     setFormCause("");
     setFormSolution("");
     setFormRnd("");
-    setFormAssigneeId("");
+    setFormAssigneeIds([]);
     setFormFiles([]);
     setFormAttachmentUploadNote("");
     if (createFileInputRef.current) createFileInputRef.current.value = "";
@@ -335,21 +335,33 @@ function IssuesPageContent() {
                   ))}
                 </select>
               </label>
-              <label className="block text-sm md:col-span-2">
-                <span className="text-zinc-600 dark:text-zinc-400">{t("common.assignee")}</span>
-                <select
-                  className="input mt-1 w-full"
-                  value={formAssigneeId}
-                  onChange={(e) => setFormAssigneeId(e.target.value)}
-                >
-                  <option value="">{t("common.unassigned")}</option>
+              <div className="md:col-span-2">
+                <span className="block text-sm text-zinc-600 dark:text-zinc-400">
+                  {t("common.assignee")}
+                </span>
+                <div className="mt-1 max-h-40 space-y-1.5 overflow-y-auto rounded-lg border border-zinc-200 bg-white px-2 py-2 dark:border-white/10 dark:bg-zinc-950/40">
                   {users.map((u) => (
-                    <option key={u.id} value={u.id}>
-                      {u.name ?? u.email}
-                    </option>
+                    <label key={u.id} className="flex cursor-pointer items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        className="rounded border-zinc-300 dark:border-zinc-600"
+                        checked={formAssigneeIds.includes(u.id)}
+                        onChange={(e) => {
+                          setFormAssigneeIds((prev) =>
+                            e.target.checked
+                              ? [...prev, u.id]
+                              : prev.filter((id) => id !== u.id),
+                          );
+                        }}
+                      />
+                      <span>{u.name ?? u.email}</span>
+                    </label>
                   ))}
-                </select>
-              </label>
+                </div>
+                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("issues.assigneesMultiHint")}
+                </p>
+              </div>
               <label className="block text-sm md:col-span-2">
                 <span className="text-zinc-600 dark:text-zinc-400">{t("common.symptom")}</span>
                 <textarea
@@ -600,7 +612,9 @@ function IssuesPageContent() {
                             .join(" · ") || t("issues.unlinked");
                         return `${linkPart} · ${statusLabel(t, i.status)}`;
                       })()}
-                      {i.assignee ? ` · ${i.assignee.name ?? i.assignee.email}` : ""}
+                      {i.assignees.length > 0
+                        ? ` · ${i.assignees.map((a) => a.name ?? a.email).join(", ")}`
+                        : ""}
                     </span>
                   </div>
                   <button

@@ -49,7 +49,7 @@ export function IssueKanban() {
           issue.solution,
           issue.solutionTranslated ?? "",
           issue.rndContact,
-          issue.assignee?.name ?? "",
+          issue.assignees.map((a) => `${a.name} ${a.email}`).join(" "),
         ]
           .join(" ")
           .toLowerCase()
@@ -57,8 +57,8 @@ export function IssueKanban() {
       const matchesAssignee =
         !assigneeFilter ||
         (assigneeFilter === FILTER_ASSIGNEE_UNASSIGNED
-          ? !issue.assignee
-          : issue.assignee?.id === assigneeFilter);
+          ? issue.assignees.length === 0
+          : issue.assignees.some((a) => a.id === assigneeFilter));
       const matchesLink = matchesLinkFilter(issue, linkFilter);
       const matchesStatus = !statusFilter || issue.status === statusFilter;
 
@@ -66,7 +66,7 @@ export function IssueKanban() {
     });
   }, [issues, query, assigneeFilter, linkFilter, statusFilter]);
 
-  const updateIssue = async (id: string, payload: { status?: string; assigneeId?: string }) => {
+  const updateIssue = async (id: string, payload: { status?: string; assigneeIds?: string[] }) => {
     await fetch(`/api/issues/${id}`, {
       method: "PATCH",
       credentials: "include",
@@ -326,19 +326,27 @@ export function IssueKanban() {
                               </p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
                                 <select
-                                  className="input"
-                                  value={issue.assignee?.id ?? ""}
-                                  onChange={(e) =>
-                                    updateIssue(issue.id, { assigneeId: e.target.value })
-                                  }
+                                  multiple
+                                  className="input min-h-[88px]"
+                                  value={issue.assignees.map((a) => a.id)}
+                                  onChange={(e) => {
+                                    const selected = Array.from(
+                                      e.target.selectedOptions,
+                                      (o) => o.value,
+                                    );
+                                    void updateIssue(issue.id, { assigneeIds: selected });
+                                  }}
+                                  aria-label={t("common.assignee")}
                                 >
-                                  <option value="">{t("common.unassigned")}</option>
                                   {users.map((u) => (
                                     <option key={u.id} value={u.id}>
                                       {u.name}
                                     </option>
                                   ))}
                                 </select>
+                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
+                                  {t("issues.assigneesMultiHint")}
+                                </p>
                                 <select
                                   className="input"
                                   value={issue.status}

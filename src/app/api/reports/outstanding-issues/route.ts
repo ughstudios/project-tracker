@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { TABS_REPORTS } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
-import { issuesToCsv } from "@/lib/report-column-defs";
+import { issueAssignmentsWithUsersInclude, issueRowToApiShape } from "@/lib/issue-assignees";
+import { issuesToCsv, type IssueWithRelations } from "@/lib/report-column-defs";
 import { withBomUtf8 } from "@/lib/csv";
 import { prisma } from "@/lib/prisma";
 import { parseYearMonth } from "@/lib/report-dates";
@@ -50,12 +51,13 @@ export async function GET(request: Request) {
       include: {
         project: { select: { name: true } },
         customer: { select: { name: true } },
-        assignee: { select: { name: true, email: true } },
         reporter: { select: { name: true, email: true } },
+        ...issueAssignmentsWithUsersInclude,
       },
     });
 
-    const csv = issuesToCsv(issues, issueCols);
+    const issueRows = issues.map((row) => issueRowToApiShape(row)) as IssueWithRelations[];
+    const csv = issuesToCsv(issueRows, issueCols);
     const safeMonth = month.trim().replace(/[^\d-]/g, "") || "report";
     return new NextResponse(withBomUtf8(csv), {
       status: 200,

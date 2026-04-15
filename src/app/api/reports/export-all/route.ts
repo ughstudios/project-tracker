@@ -1,7 +1,8 @@
 import { auth } from "@/auth";
 import { TABS_REPORTS } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
-import { issuesToCsv, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
+import { issueAssignmentsWithUsersInclude, issueRowToApiShape } from "@/lib/issue-assignees";
+import { issuesToCsv, type IssueWithRelations, usersToCsv, workRecordsToCsv } from "@/lib/report-column-defs";
 import { prisma } from "@/lib/prisma";
 import { parseIssueCols, parseUserCols, parseWorkCols } from "@/lib/report-params";
 import { isPrivilegedAdmin } from "@/lib/roles";
@@ -37,8 +38,8 @@ export async function GET(request: Request) {
         include: {
           project: { select: { name: true } },
           customer: { select: { name: true } },
-          assignee: { select: { name: true, email: true } },
           reporter: { select: { name: true, email: true } },
+          ...issueAssignmentsWithUsersInclude,
         },
       }),
       prisma.workRecord.findMany({
@@ -61,9 +62,11 @@ export async function GET(request: Request) {
       }),
     ]);
 
+    const issueRows = issues.map((row) => issueRowToApiShape(row)) as IssueWithRelations[];
+
     return NextResponse.json({
       files: {
-        "issues-all.csv": issuesToCsv(issues, issueCols),
+        "issues-all.csv": issuesToCsv(issueRows, issueCols),
         "work-records-all.csv": workRecordsToCsv(workRecords, workCols),
         "users-approved.csv": usersToCsv(users, userCols),
       },
