@@ -48,6 +48,7 @@ const en: MessageTree = {
     saving: "Saving…",
     create: "Create",
     creating: "Creating…",
+    add: "Add",
     archive: "Archive",
     archiving: "Archiving…",
     unarchive: "Unarchive",
@@ -219,6 +220,12 @@ const en: MessageTree = {
     copyIssueLink: "Copy issue link",
     assigneesMultiHint:
       "You can assign more than one person to an issue.",
+    assigneeSearchPlaceholder: "Search employees by name or email…",
+    assigneeSearchHint:
+      "Search by name or email to add assignees. Selected people stay listed above.",
+    assigneeNoneSelected: "No assignees selected.",
+    assigneeNoMatch: "No employees match that search.",
+    assigneeResultsTruncated: "Showing the first {shown} of {total} matches.",
   },
   issueDetail: {
     loading: "Loading issue…",
@@ -724,6 +731,7 @@ const zh: MessageTree = {
     saving: "保存中…",
     create: "创建",
     creating: "创建中…",
+    add: "添加",
     archive: "归档",
     archiving: "归档中…",
     unarchive: "取消归档",
@@ -890,6 +898,11 @@ const zh: MessageTree = {
       "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个。若添加附件，须填写上传说明。",
     copyIssueLink: "复制问题链接",
     assigneesMultiHint: "一个问题可以分配给多位负责人。",
+    assigneeSearchPlaceholder: "按姓名或邮箱搜索员工…",
+    assigneeSearchHint: "按姓名或邮箱搜索以添加负责人；已选人员会保留在上方。",
+    assigneeNoneSelected: "当前未分配负责人。",
+    assigneeNoMatch: "没有匹配的员工。",
+    assigneeResultsTruncated: "当前显示前 {shown} 个结果，共匹配 {total} 个。",
   },
   issueDetail: {
     loading: "正在加载问题…",

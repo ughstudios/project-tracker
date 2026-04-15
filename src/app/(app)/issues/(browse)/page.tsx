@@ -1,5 +1,6 @@
 "use client";
 
+import { UserMultiSelect } from "@/components/user-multi-select";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
@@ -339,28 +340,14 @@ function IssuesPageContent() {
                 <span className="block text-sm text-zinc-600 dark:text-zinc-400">
                   {t("common.assignee")}
                 </span>
-                <div className="mt-1 max-h-40 space-y-1.5 overflow-y-auto rounded-lg border border-zinc-200 bg-white px-2 py-2 dark:border-white/10 dark:bg-zinc-950/40">
-                  {users.map((u) => (
-                    <label key={u.id} className="flex cursor-pointer items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        className="rounded border-zinc-300 dark:border-zinc-600"
-                        checked={formAssigneeIds.includes(u.id)}
-                        onChange={(e) => {
-                          setFormAssigneeIds((prev) =>
-                            e.target.checked
-                              ? [...prev, u.id]
-                              : prev.filter((id) => id !== u.id),
-                          );
-                        }}
-                      />
-                      <span>{u.name ?? u.email}</span>
-                    </label>
-                  ))}
+                <div className="mt-1">
+                  <UserMultiSelect
+                    users={users}
+                    selectedIds={formAssigneeIds}
+                    onChange={setFormAssigneeIds}
+                    disabled={creating}
+                  />
                 </div>
-                <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-                  {t("issues.assigneesMultiHint")}
-                </p>
               </div>
               <label className="block text-sm md:col-span-2">
                 <span className="text-zinc-600 dark:text-zinc-400">{t("common.symptom")}</span>

@@ -1,5 +1,6 @@
 "use client";
 
+import { UserMultiSelect } from "@/components/user-multi-select";
 import { useI18n } from "@/i18n/context";
 import { getLocalizedText } from "@/lib/translated-content";
 import type { IssueBoardIssue } from "@/hooks/use-issue-board-data";
@@ -325,28 +326,14 @@ export function IssueKanban() {
                                 {localizedSymptom.text}
                               </p>
                               <div className="mt-3 grid grid-cols-1 gap-2">
-                                <select
-                                  multiple
-                                  className="input min-h-[88px]"
-                                  value={issue.assignees.map((a) => a.id)}
-                                  onChange={(e) => {
-                                    const selected = Array.from(
-                                      e.target.selectedOptions,
-                                      (o) => o.value,
-                                    );
+                                <UserMultiSelect
+                                  users={users}
+                                  selectedIds={issue.assignees.map((a) => a.id)}
+                                  onChange={(selected) => {
                                     void updateIssue(issue.id, { assigneeIds: selected });
                                   }}
-                                  aria-label={t("common.assignee")}
-                                >
-                                  {users.map((u) => (
-                                    <option key={u.id} value={u.id}>
-                                      {u.name}
-                                    </option>
-                                  ))}
-                                </select>
-                                <p className="text-[11px] text-zinc-500 dark:text-zinc-400">
-                                  {t("issues.assigneesMultiHint")}
-                                </p>
+                                  compact
+                                />
                                 <select
                                   className="input"
                                   value={issue.status}
