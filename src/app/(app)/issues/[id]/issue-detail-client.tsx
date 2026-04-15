@@ -66,6 +66,12 @@ type IssueDetail = {
   attachments: IssueFileAttachment[];
 };
 
+type ImagePreviewState = {
+  src: string;
+  name: string;
+  downloadHref: string;
+};
+
 const IMAGE_EXT = new Set(["jpg", "jpeg", "png", "gif", "webp", "svg", "bmp"]);
 const VIDEO_EXT = new Set(["mp4", "webm", "ogv", "mov", "m4v"]);
 
@@ -220,6 +226,32 @@ function ThreadContent({
   );
 }
 
+function AttachmentImageButton({
+  attachment,
+  className,
+  onOpen,
+}: {
+  attachment: IssueFileAttachment;
+  className: string;
+  onOpen: (attachment: IssueFileAttachment) => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={() => onOpen(attachment)}
+      className="block cursor-zoom-in"
+      title={attachment.fileName}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src={attachmentBlobHref(attachment.fileUrl)}
+        alt={attachment.fileName}
+        className={className}
+      />
+    </button>
+  );
+}
+
 export function IssueDetailClient({ issueId }: { issueId: string }) {
   const router = useRouter();
   const { t, locale } = useI18n();
@@ -258,6 +290,7 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
   const [threadTotal, setThreadTotal] = useState(0);
   const [threadListLoading, setThreadListLoading] = useState(false);
   const [copiedIssueId, setCopiedIssueId] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<ImagePreviewState | null>(null);
   const loadThreadPage = useCallback(
     async (page: number | "last") => {
       setThreadListLoading(true);
@@ -298,6 +331,24 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
       if (threadFileInputRef.current) threadFileInputRef.current.value = "";
     }
   }, [threadFiles.length]);
+
+  useEffect(() => {
+    if (!imagePreview) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setImagePreview(null);
+      }
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("keydown", onKeyDown);
+    };
+  }, [imagePreview]);
 
   const syncDraftFromIssue = useCallback((data: IssueDetail) => {
     setTitle(data.title);
@@ -399,6 +450,14 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
     } catch {
       alert(t("common.copyFailed"));
     }
+  };
+
+  const openImagePreview = (attachment: IssueFileAttachment) => {
+    setImagePreview({
+      src: attachmentBlobHref(attachment.fileUrl),
+      name: attachment.fileName,
+      downloadHref: attachmentBlobHref(attachment.fileUrl, { asDownload: true }),
+    });
   };
 
   const refreshIssue = async () => {
@@ -1041,19 +1100,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
             issue.attachments.map((att) => (
               <div key={att.id} className="rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-950 p-3">
                 {isImageExt(att.fileType) ? (
-                  <a
-                    href={attachmentBlobHref(att.fileUrl)}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="block"
-                  >
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={attachmentBlobHref(att.fileUrl)}
-                      alt=""
-                      className="max-h-48 w-auto max-w-full rounded object-contain"
-                    />
-                  </a>
+                  <AttachmentImageButton
+                    attachment={att}
+                    className="max-h-48 w-auto max-w-full rounded object-contain"
+                    onOpen={openImagePreview}
+                  />
                 ) : null}
                 {isVideoExt(att.fileType) ? (
                   <AttachmentVideo
@@ -1223,19 +1274,11 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
                     {entry.attachments.map((att) => (
                       <div key={att.id} className="panel-surface rounded-md p-2">
                         {isImageExt(att.fileType) ? (
-                          <a
-                            href={attachmentBlobHref(att.fileUrl)}
-                            target="_blank"
-                            rel="noreferrer"
-                            className="block"
-                          >
-                            {/* eslint-disable-next-line @next/next/no-img-element */}
-                            <img
-                              src={attachmentBlobHref(att.fileUrl)}
-                              alt=""
-                              className="max-h-40 w-auto max-w-full rounded object-contain"
-                            />
-                          </a>
+                          <AttachmentImageButton
+                            attachment={att}
+                            className="max-h-40 w-auto max-w-full rounded object-contain"
+                            onOpen={openImagePreview}
+                          />
                         ) : null}
                         {isVideoExt(att.fileType) ? (
                           <AttachmentVideo
@@ -1314,6 +1357,50 @@ export function IssueDetailClient({ issueId }: { issueId: string }) {
           </div>
         ) : null}
       </section>
+      {imagePreview ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/85 p-4 backdrop-blur-sm"
+          onClick={() => setImagePreview(null)}
+          role="dialog"
+          aria-modal="true"
+          aria-label={imagePreview.name}
+        >
+          <div
+            className="relative flex max-h-full w-full max-w-6xl flex-col gap-3"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="flex items-center justify-between gap-3 text-white">
+              <p className="min-w-0 truncate text-sm font-medium">{imagePreview.name}</p>
+              <div className="flex items-center gap-2">
+                <a
+                  href={imagePreview.downloadHref}
+                  download={imagePreview.name}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/10"
+                >
+                  {t("issueDetail.downloadFile")}
+                </a>
+                <button
+                  type="button"
+                  onClick={() => setImagePreview(null)}
+                  className="rounded-md border border-white/20 px-3 py-1.5 text-sm font-medium hover:bg-white/10"
+                >
+                  {t("common.close")}
+                </button>
+              </div>
+            </div>
+            <div className="flex min-h-0 flex-1 items-center justify-center overflow-auto rounded-xl bg-black/30 p-2">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imagePreview.src}
+                alt={imagePreview.name}
+                className="max-h-[85vh] w-auto max-w-full rounded-lg object-contain"
+              />
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }
