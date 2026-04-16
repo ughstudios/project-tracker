@@ -13,6 +13,7 @@ export const EMPLOYEE_NAV_TAB_IDS = [
   "customers",
   "inventory",
   "logs",
+  "tools",
   "archive",
 ] as const;
 

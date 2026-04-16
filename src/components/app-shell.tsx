@@ -112,6 +112,7 @@ export function AppShell({ user, onboardingCompleted, navAccess, onLogout, child
                   <NavItem href="/inventory" label={t("nav.inventory")} />
                 ) : null}
                 {showTab("logs") ? <NavItem href="/logs" label={t("nav.logs")} /> : null}
+                {showTab("tools") ? <NavItem href="/tools" label={t("nav.tools")} /> : null}
                 {showTab("archive") ? (
                   <NavItem href="/archive" label={t("nav.archive")} />
                 ) : null}
