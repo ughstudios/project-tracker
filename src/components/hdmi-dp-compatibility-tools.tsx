@@ -4,6 +4,7 @@ import { useI18n } from "@/i18n/context";
 import {
   DISPLAY_INTERFACE_MAX_GBPS,
   DEFAULT_DISPLAY_TIMING_OVERHEAD,
+  activeVideoGbps,
   requiredVideoGbps,
   type DisplayInterfaceId,
 } from "@/lib/display-interface-specs";
@@ -42,6 +43,22 @@ export function HdmiDpCompatibilityTools() {
     () => new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", { maximumFractionDigits: 2 }),
     [locale],
   );
+  const nfFormula = useMemo(
+    () =>
+      new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", {
+        maximumFractionDigits: 0,
+        useGrouping: false,
+      }),
+    [locale],
+  );
+  const nfFormulaHz = useMemo(
+    () =>
+      new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", {
+        maximumFractionDigits: 3,
+        useGrouping: false,
+      }),
+    [locale],
+  );
 
   const [iface, setIface] = useState<DisplayInterfaceId>("hdmi-2-0");
   const [wStr, setWStr] = useState("1920");
@@ -54,6 +71,7 @@ export function HdmiDpCompatibilityTools() {
   const hz = parsePositiveFloat(hzStr, 60);
   const bpp = totalBppRgbPacked(rgbBpc);
   const maxGbps = DISPLAY_INTERFACE_MAX_GBPS[iface];
+  const activeGbps = activeVideoGbps(w, h, hz, bpp);
   const needGbps = requiredVideoGbps(w, h, hz, bpp, DEFAULT_DISPLAY_TIMING_OVERHEAD);
   const utilPct = maxGbps > 0 ? (needGbps / maxGbps) * 100 : 0;
   const fits = needGbps <= maxGbps;
@@ -152,7 +170,37 @@ export function HdmiDpCompatibilityTools() {
             max: nf2.format(maxGbps),
           })}
         </p>
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div
+          className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200"
+          aria-label={t("tools.displayIo.mathBlockAria")}
+        >
+          <p className="mb-2 font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathHeading")}</p>
+          <p className="whitespace-pre-wrap font-mono tabular-nums">
+            {t("tools.displayIo.mathStep1", {
+              w: nfFormula.format(w),
+              h: nfFormula.format(h),
+              hz: nfFormulaHz.format(hz),
+              bpp: nfFormula.format(bpp),
+              active: nf2.format(activeGbps),
+            })}
+          </p>
+          <p className="mt-2 whitespace-pre-wrap font-mono tabular-nums">
+            {t("tools.displayIo.mathStep2", {
+              active: nf2.format(activeGbps),
+              overhead: String(DEFAULT_DISPLAY_TIMING_OVERHEAD),
+              need: nf2.format(needGbps),
+            })}
+          </p>
+          <p className="mt-2 whitespace-pre-wrap font-mono tabular-nums">
+            {t("tools.displayIo.mathStep3", {
+              need: nf2.format(needGbps),
+              max: nf2.format(maxGbps),
+              verdict: fits ? t("tools.displayIo.mathVerdictOk") : t("tools.displayIo.mathVerdictNo"),
+            })}
+          </p>
+        </div>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
           <span
             className={[
               "inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold",

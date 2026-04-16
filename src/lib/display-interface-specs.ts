@@ -32,6 +32,12 @@ export const DISPLAY_INTERFACE_MAX_GBPS: Record<DisplayInterfaceId, number> = {
  */
 export const DEFAULT_DISPLAY_TIMING_OVERHEAD = 1.2;
 
+/** Active-area only (no blanking multiplier), Gbit/s. */
+export function activeVideoGbps(width: number, height: number, hz: number, bitsPerPixel: number): number {
+  if (width <= 0 || height <= 0 || hz <= 0 || bitsPerPixel <= 0) return 0;
+  return (width * height * hz * bitsPerPixel) / 1e9;
+}
+
 export function requiredVideoGbps(
   width: number,
   height: number,
@@ -39,7 +45,6 @@ export function requiredVideoGbps(
   bitsPerPixel: number,
   timingOverhead: number = DEFAULT_DISPLAY_TIMING_OVERHEAD,
 ): number {
-  if (width <= 0 || height <= 0 || hz <= 0 || bitsPerPixel <= 0) return 0;
-  const activeGbps = (width * height * hz * bitsPerPixel) / 1e9;
+  const activeGbps = activeVideoGbps(width, height, hz, bitsPerPixel);
   return activeGbps * Math.max(1, timingOverhead);
 }

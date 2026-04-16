@@ -510,6 +510,14 @@ const en: MessageTree = {
       outCeiling: "Interface ceiling (picked)",
       withOverhead: "includes timing overhead",
       ceilingHelp: "Spec-style maximum for the generation you chose; real hardware may be lower.",
+      mathBlockAria: "Calculation steps",
+      mathHeading: "Math (how we got the numbers)",
+      mathStep1:
+        "{w} × {h} × {hz} Hz × {bpp} bits/pixel ÷ 10^9 = {active} Gbit/s  (active area only, uncompressed RGB-style)",
+      mathStep2: "{active} Gbit/s × {overhead} (timing overhead) ≈ {need} Gbit/s",
+      mathStep3: "{need} Gbit/s compared with ~{max} Gbit/s ceiling → {verdict}",
+      mathVerdictOk: "fits",
+      mathVerdictNo: "does not fit",
     },
   },
   inventory: {
@@ -1257,6 +1265,14 @@ const zh: MessageTree = {
       outCeiling: "接口参考上限（所选代际）",
       withOverhead: "含时序开销",
       ceilingHelp: "所选代际的常见标称峰值；实际硬件可能更低。",
+      mathBlockAria: "计算步骤",
+      mathHeading: "计算过程（简化）",
+      mathStep1:
+        "{w} × {h} × {hz} Hz × {bpp} 位/像素 ÷ 10^9 = {active} Gbit/s（仅主动像素区，未压缩类 RGB）",
+      mathStep2: "{active} Gbit/s × {overhead}（时序开销近似）≈ {need} Gbit/s",
+      mathStep3: "{need} Gbit/s 与约 {max} Gbit/s 上限比较 → {verdict}",
+      mathVerdictOk: "可行",
+      mathVerdictNo: "不可行",
     },
   },
   inventory: {
