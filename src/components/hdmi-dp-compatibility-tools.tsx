@@ -190,11 +190,14 @@ export function HdmiDpCompatibilityTools() {
                   </p>
                   <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-sm tabular-nums">
                     <span className="text-zinc-500 dark:text-zinc-400">
-                      ÷ 10<sup className="text-[0.65em]">9</sup>
+                      ÷ (10<sup className="text-[0.65em]">9</sup>)
                     </span>
                     <span className="text-zinc-400">=</span>
                     <span className="font-semibold text-zinc-900 dark:text-zinc-100">{nf2.format(activeGbps)} Gbit/s</span>
                   </div>
+                  <p className="mt-2 border-t border-zinc-100 pt-2 text-xs leading-relaxed text-zinc-500 dark:border-zinc-800 dark:text-zinc-400">
+                    {t("tools.displayIo.mathStep1GbpsConversionNote")}
+                  </p>
                 </div>
               </div>
             </li>

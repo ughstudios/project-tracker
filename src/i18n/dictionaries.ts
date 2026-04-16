@@ -513,6 +513,8 @@ const en: MessageTree = {
       mathBlockAria: "Calculation steps",
       mathHeading: "How the numbers are computed",
       mathBitsPerPixelUnit: "bits/pixel",
+      mathStep1GbpsConversionNote:
+        "The multiplication above is in bits per second (bit/s). We divide by 10⁹ — ten to the ninth power, one billion bits — to express the same rate in gigabits per second (Gbit/s), which is how these interface ceilings are usually quoted. This is only a unit change, not extra video overhead.",
       mathStep1Title: "1 · Active pixel data rate",
       mathStep1Hint:
         "Bits per second for the lit area only (uncompressed RGB-style: bits per pixel = 3 × bits per color).",
@@ -1275,6 +1277,8 @@ const zh: MessageTree = {
       mathBlockAria: "计算步骤",
       mathHeading: "计算说明",
       mathBitsPerPixelUnit: "位/像素",
+      mathStep1GbpsConversionNote:
+        "上面乘积的单位是比特每秒（bit/s）。除以 10⁹（10 的 9 次方，即十亿比特）是为了用吉比特每秒（Gbit/s）表示同一码率，与接口标称带宽一致。这只是单位换算，不是额外的视频时序开销。",
       mathStep1Title: "1 · 主动像素区码率",
       mathStep1Hint: "仅算点亮区域（未压缩类 RGB：每像素位数 = 3 × 单色位数）。",
       mathStep2Title: "2 · 时序开销（经验系数）",
