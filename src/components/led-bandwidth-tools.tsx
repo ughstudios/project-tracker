@@ -5,14 +5,14 @@ import type { TranslateFn } from "@/i18n/create-translator";
 import {
   DEFAULT_USABLE_MBPS_1G,
   DEFAULT_USABLE_MBPS_5G,
-  FPS_REFERENCE,
   RGB_BPC_PRESETS,
-  maxPixelsForLink,
   streamBandwidthMbps,
   totalBppRgbPacked,
   type RgbBitsPerChannel,
 } from "@/lib/led-bandwidth";
 import { useMemo, useState } from "react";
+
+const ONE_PORT_CHECK_FPS = 60;
 
 function parsePositiveInt(raw: string, fallback: number): number {
   const n = Number.parseInt(raw.replaceAll(/\s+/g, ""), 10);
@@ -49,9 +49,9 @@ export function LedBandwidthTools() {
   const [fpsStr, setFpsStr] = useState("60");
   const [rgbBpc, setRgbBpc] = useState<RgbBitsPerChannel>(8);
 
-  const [capMbpsStr, setCapMbpsStr] = useState(String(DEFAULT_USABLE_MBPS_1G));
-  const [capFpsStr, setCapFpsStr] = useState("60");
-  const [capRgbBpc, setCapRgbBpc] = useState<RgbBitsPerChannel>(8);
+  const [onePixelsStr, setOnePixelsStr] = useState("720000");
+  const [oneBpc, setOneBpc] = useState<RgbBitsPerChannel>(8);
+  const [oneLink, setOneLink] = useState<"1g" | "5g">("1g");
 
   const w = parsePositiveInt(wStr, 0);
   const h = parsePositiveInt(hStr, 0);
@@ -67,11 +67,11 @@ export function LedBandwidthTools() {
   const fits1g = streamMbps <= DEFAULT_USABLE_MBPS_1G;
   const fits5g = streamMbps <= DEFAULT_USABLE_MBPS_5G;
 
-  const capMbps = parsePositiveFloat(capMbpsStr, DEFAULT_USABLE_MBPS_1G);
-  const capFps = parsePositiveFloat(capFpsStr, 60);
-  const capBpp = totalBppRgbPacked(capRgbBpc);
-  const capMaxPx = maxPixelsForLink(capMbps, capFps, capBpp);
-  const capSqrt = capMaxPx > 0 ? Math.floor(Math.sqrt(capMaxPx)) : 0;
+  const onePixels = parsePositiveInt(onePixelsStr, 0);
+  const oneBpp = totalBppRgbPacked(oneBpc);
+  const oneCapMbps = oneLink === "1g" ? DEFAULT_USABLE_MBPS_1G : DEFAULT_USABLE_MBPS_5G;
+  const oneNeedMbps = streamBandwidthMbps(onePixels, ONE_PORT_CHECK_FPS, oneBpp);
+  const onePortOk = oneNeedMbps <= oneCapMbps;
 
   const utilClass = (pct: number) =>
     pct >= 100
@@ -79,23 +79,6 @@ export function LedBandwidthTools() {
       : pct >= 85
         ? "text-amber-700 dark:text-amber-400"
         : "text-emerald-700 dark:text-emerald-400";
-
-  const refRows = useMemo(() => {
-    const rows: { bpc: RgbBitsPerChannel; bpp: number; fps: number; max1g: number; max5g: number }[] = [];
-    for (const bpc of RGB_BPC_PRESETS) {
-      const bpp = totalBppRgbPacked(bpc);
-      for (const f of FPS_REFERENCE) {
-        rows.push({
-          bpc,
-          bpp,
-          fps: f,
-          max1g: maxPixelsForLink(DEFAULT_USABLE_MBPS_1G, f, bpp),
-          max5g: maxPixelsForLink(DEFAULT_USABLE_MBPS_5G, f, bpp),
-        });
-      }
-    }
-    return rows;
-  }, []);
 
   return (
     <div className="space-y-4">
@@ -107,35 +90,6 @@ export function LedBandwidthTools() {
           <li>{t("tools.disclaimerBullet2")}</li>
           <li>{t("tools.disclaimerBullet3")}</li>
         </ul>
-      </section>
-
-      <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.refTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.refSubtitle")}</p>
-        <div className="mt-3 overflow-x-auto">
-          <table className="w-full min-w-[480px] border-collapse text-sm">
-            <thead>
-              <tr className="border-b border-zinc-200 text-left dark:border-zinc-700">
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colPerColor")}</th>
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colBitsPerPixel")}</th>
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colFps")}</th>
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax1g")}</th>
-                <th className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax5g")}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {refRows.map((row) => (
-                <tr key={`${row.bpc}-${row.fps}`} className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-3 tabular-nums text-zinc-800 dark:text-zinc-200">{nf0.format(row.bpc)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-zinc-800 dark:text-zinc-200">{nf0.format(row.bpp)}</td>
-                  <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-200">{nf0.format(row.fps)}</td>
-                  <td className="py-2 pr-3 tabular-nums text-zinc-700 dark:text-zinc-300">{nf.format(row.max1g)}</td>
-                  <td className="py-2 tabular-nums text-zinc-700 dark:text-zinc-300">{nf.format(row.max5g)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
       </section>
 
       <section className="panel-surface rounded-xl p-4">
@@ -272,58 +226,91 @@ export function LedBandwidthTools() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.capacityTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.capacityHelp")}</p>
-        <div className="mt-3 flex flex-wrap gap-2">
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-            onClick={() => setCapMbpsStr(String(DEFAULT_USABLE_MBPS_1G))}
-          >
-            {t("tools.preset1g")}
-          </button>
-          <button
-            type="button"
-            className="rounded-lg border border-zinc-200 bg-white px-3 py-1.5 text-sm font-medium text-zinc-800 shadow-sm hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100 dark:hover:bg-zinc-800"
-            onClick={() => setCapMbpsStr(String(DEFAULT_USABLE_MBPS_5G))}
-          >
-            {t("tools.preset5g")}
-          </button>
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-3">
-          <label className="block text-sm sm:col-span-3">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelUsableMbps")}</span>
-            <input className="input w-full max-w-xs" inputMode="decimal" value={capMbpsStr} onChange={(e) => setCapMbpsStr(e.target.value)} />
-          </label>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.onePortTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.onePortSubtitle")}</p>
+
+        <div className="mt-5 grid max-w-lg gap-6">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelFps")}</span>
-            <input className="input w-full" inputMode="decimal" value={capFpsStr} onChange={(e) => setCapFpsStr(e.target.value)} />
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.onePortLabelPixels")}</span>
+            <input
+              className="input w-full"
+              inputMode="numeric"
+              value={onePixelsStr}
+              onChange={(e) => setOnePixelsStr(e.target.value)}
+            />
           </label>
-          <label className="block text-sm sm:col-span-2">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelColorDepth")}</span>
-            <select
-              className="input w-full max-w-xs"
-              value={capRgbBpc}
-              onChange={(e) => setCapRgbBpc(Number(e.target.value) as RgbBitsPerChannel)}
-            >
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.onePortLabelDepth")}</legend>
+            <div className="flex flex-wrap gap-4">
               {RGB_BPC_PRESETS.map((bpc) => (
-                <option key={bpc} value={bpc}>
-                  {depthSelectLabel(t, bpc)}
-                </option>
+                <label key={bpc} className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                  <input
+                    type="radio"
+                    name="led-one-port-depth"
+                    className="h-4 w-4 border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900"
+                    checked={oneBpc === bpc}
+                    onChange={() => setOneBpc(bpc)}
+                  />
+                  <span className="tabular-nums">{bpc}</span>
+                </label>
               ))}
-            </select>
-            <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">{t("tools.depthFieldHint")}</span>
-          </label>
+            </div>
+          </fieldset>
+
+          <fieldset>
+            <legend className="mb-2 text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.onePortLabelLink")}</legend>
+            <div className="flex flex-wrap gap-4">
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                <input
+                  type="radio"
+                  name="led-one-port-link"
+                  className="h-4 w-4 border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900"
+                  checked={oneLink === "1g"}
+                  onChange={() => setOneLink("1g")}
+                />
+                {t("tools.onePortLink1g")}
+              </label>
+              <label className="inline-flex cursor-pointer items-center gap-2 text-sm text-zinc-700 dark:text-zinc-300">
+                <input
+                  type="radio"
+                  name="led-one-port-link"
+                  className="h-4 w-4 border-zinc-300 text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900"
+                  checked={oneLink === "5g"}
+                  onChange={() => setOneLink("5g")}
+                />
+                {t("tools.onePortLink5g")}
+              </label>
+            </div>
+          </fieldset>
         </div>
-        <dl className="mt-4 border-t border-zinc-100 pt-4 dark:border-zinc-800">
-          <dt className="text-xs font-medium uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-            {t("tools.outMaxPixels")}
-          </dt>
-          <dd className="mt-1 text-lg font-semibold tabular-nums text-zinc-900 dark:text-zinc-100">{nf.format(capMaxPx)}</dd>
-          <dd className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
-            {t("tools.squareHint", { n: nf.format(capSqrt), product: nf.format(capSqrt * capSqrt) })}
-          </dd>
-        </dl>
+
+        <p className="mt-3 text-xs text-zinc-500 dark:text-zinc-400">{t("tools.onePortFpsNote")}</p>
+
+        <div
+          className={[
+            "mt-6 rounded-xl border-2 px-4 py-5 text-center",
+            onePortOk
+              ? "border-emerald-300 bg-emerald-50/80 dark:border-emerald-800 dark:bg-emerald-950/40"
+              : "border-red-300 bg-red-50/80 dark:border-red-900 dark:bg-red-950/40",
+          ].join(" ")}
+        >
+          <p className="text-xs font-semibold uppercase tracking-wide text-zinc-600 dark:text-zinc-400">{t("tools.onePortResult")}</p>
+          <p
+            className={[
+              "mt-2 text-3xl font-bold tracking-tight",
+              onePortOk ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200",
+            ].join(" ")}
+          >
+            {onePortOk ? t("tools.onePortYay") : t("tools.onePortNay")}
+          </p>
+          <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">
+            {t("tools.onePortNeedLine", {
+              need: nf1.format(oneNeedMbps),
+              cap: nf0.format(oneCapMbps),
+            })}
+          </p>
+        </div>
       </section>
     </div>
   );
