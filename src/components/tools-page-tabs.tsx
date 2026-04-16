@@ -1,5 +1,6 @@
 "use client";
 
+import { HdmiDpCompatibilityTools } from "@/components/hdmi-dp-compatibility-tools";
 import { LedBandwidthTools } from "@/components/led-bandwidth-tools";
 import { useI18n } from "@/i18n/context";
 import { TOOLS_PAGE_TAB_IDS, type ToolsPageTabId } from "@/lib/tools-page-tabs";
@@ -13,6 +14,8 @@ function renderToolPanel(id: ToolsPageTabId) {
   switch (id) {
     case "led-bandwidth":
       return <LedBandwidthTools />;
+    case "display-io":
+      return <HdmiDpCompatibilityTools />;
     default:
       return null;
   }

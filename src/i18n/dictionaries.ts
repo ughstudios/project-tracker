@@ -446,6 +446,7 @@ const en: MessageTree = {
     pageTabListAria: "Tools on this page",
     tabs: {
       "led-bandwidth": "LED bandwidth",
+      "display-io": "HDMI / DisplayPort",
     },
     disclaimerTitle: "Assumptions",
     disclaimerBody:
@@ -497,6 +498,43 @@ const en: MessageTree = {
     labelUsableMbps: "Usable link throughput (Mbps)",
     outMaxPixels: "Max pixels per frame (floor)",
     squareHint: "If it were a square: about {n} × {n} ≈ {product} px (illustration only).",
+    displayIo: {
+      disclaimerTitle: "What this checks",
+      disclaimerBody:
+        "This compares a rough required bit rate for uncompressed RGB-style video to a published maximum for the HDMI or DisplayPort generation you pick. It is not a substitute for a datasheet, EDID, cable qualification, DSC, chroma subsampling, or link training.",
+      disclaimerBullet1:
+        "Required rate = width × height × refresh × bits per pixel, then multiplied by a fixed 1.2× timing overhead to approximate blanking and margins.",
+      disclaimerBullet2:
+        "Ceiling numbers are typical headline maxima (e.g. HDMI 2.0 ≈ 18 Gbit/s, DP HBR3 4-lane ≈ 32.4 Gbit/s). Your chip, cable, lane count, and sink may be lower.",
+      disclaimerBullet3: "YUV 4:2:2 or 4:2:0 uses less bandwidth than full RGB; this tool assumes packed RGB for a conservative upper bound unless you know otherwise.",
+      formTitle: "Input format",
+      formSubtitle: "Choose the cable or port generation, then enter the timing you care about.",
+      labelInterface: "HDMI or DisplayPort generation",
+      groupHdmi: "HDMI",
+      groupDp: "DisplayPort",
+      ifaces: {
+        "hdmi-1-4": "HDMI 1.4 (up to ~10.2 Gbit/s)",
+        "hdmi-2-0": "HDMI 2.0 (up to ~18 Gbit/s)",
+        "hdmi-2-1": "HDMI 2.1 (up to ~48 Gbit/s)",
+        "dp-1-2": "DisplayPort 1.2 — HBR2, 4 lanes (~21.6 Gbit/s)",
+        "dp-1-4": "DisplayPort 1.4 — HBR3, 4 lanes (~32.4 Gbit/s)",
+        "dp-2-0": "DisplayPort 2.0 / 2.1 — UHBR20, 4 lanes (~80 Gbit/s)",
+      },
+      interfaceMaxHint: "Reference ceiling for this choice: ~{gbps} Gbit/s.",
+      labelHz: "Refresh rate (Hz)",
+      overheadNote:
+        "Timing overhead is fixed at 1.2× on top of active pixels (blanking / housekeeping). Turn down refresh, resolution, or color depth if you are over the line.",
+      resultTitle: "Compatibility (rough)",
+      resultSummary:
+        "At {w}×{h} @ {hz} Hz with the color depth you chose, estimated need ≈ {need} Gbit/s vs ~{max} Gbit/s ceiling for the interface you selected.",
+      badgeOk: "Within ceiling (rough)",
+      badgeOver: "Over ceiling (rough)",
+      utilLine: "~{pct}% of interface ceiling",
+      outRequired: "Estimated need",
+      outCeiling: "Interface ceiling (picked)",
+      withOverhead: "includes timing overhead",
+      ceilingHelp: "Spec-style maximum for the generation you chose; real hardware may be lower.",
+    },
   },
   inventory: {
     title: "Warehouse inventory",
@@ -1179,6 +1217,7 @@ const zh: MessageTree = {
     pageTabListAria: "本页工具",
     tabs: {
       "led-bandwidth": "LED 带宽",
+      "display-io": "HDMI / DisplayPort",
     },
     disclaimerTitle: "假设与说明",
     disclaimerBody:
@@ -1228,6 +1267,44 @@ const zh: MessageTree = {
     labelUsableMbps: "链路可用吞吐（Mbps）",
     outMaxPixels: "每帧最大像素数（下整）",
     squareHint: "若为正方形：约 {n} × {n} ≈ {product} 像素（示意）。",
+    displayIo: {
+      disclaimerTitle: "本工具在做什么",
+      disclaimerBody:
+        "将「未压缩、类 RGB」视频的大致码率，与您选择的 HDMI / DisplayPort 代际的公开上限做对比。不能替代规格书、EDID、线材认证、DSC、色度抽样或链路训练结果。",
+      disclaimerBullet1:
+        "估算需求 = 宽 × 高 × 刷新率 × 每像素位数，再乘以固定的 1.2 倍作为消隐与余量的大致近似。",
+      disclaimerBullet2:
+        "上限为常见标称峰值（如 HDMI 2.0 约 18 Gbit/s，DP HBR3 四通道约 32.4 Gbit/s）。实际芯片、线材、通道数与接收端可能更低。",
+      disclaimerBullet3:
+        "YUV 4:2:2 / 4:2:0 比全 RGB 更省带宽；本工具按打包 RGB 估算，偏保守上限。",
+      formTitle: "输入格式",
+      formSubtitle: "选择线缆或接口代际，再填写关心的时序。",
+      labelInterface: "HDMI 或 DisplayPort 代际",
+      groupHdmi: "HDMI",
+      groupDp: "DisplayPort",
+      ifaces: {
+        "hdmi-1-4": "HDMI 1.4（约 10.2 Gbit/s 级）",
+        "hdmi-2-0": "HDMI 2.0（约 18 Gbit/s 级）",
+        "hdmi-2-1": "HDMI 2.1（约 48 Gbit/s 级）",
+        "dp-1-2": "DisplayPort 1.2 — HBR2，四通道（约 21.6 Gbit/s）",
+        "dp-1-4": "DisplayPort 1.4 — HBR3，四通道（约 32.4 Gbit/s）",
+        "dp-2-0": "DisplayPort 2.0 / 2.1 — UHBR20，四通道（约 80 Gbit/s）",
+      },
+      interfaceMaxHint: "该选项参考上限：约 {gbps} Gbit/s。",
+      labelHz: "刷新率（Hz）",
+      overheadNote:
+        "在有效像素码率上固定乘以 1.2 倍，近似消隐与开销。若超出上限，可降低刷新率、分辨率或色深。",
+      resultTitle: "兼容性（粗略）",
+      resultSummary:
+        "在 {w}×{h}、{hz} Hz 及所选色深下，估算需求约 {need} Gbit/s；所选接口参考上限约 {max} Gbit/s。",
+      badgeOk: "在参考上限内（粗略）",
+      badgeOver: "超出参考上限（粗略）",
+      utilLine: "约占接口参考上限的 {pct}%",
+      outRequired: "估算需求",
+      outCeiling: "接口参考上限（所选代际）",
+      withOverhead: "含时序开销",
+      ceilingHelp: "所选代际的常见标称峰值；实际硬件可能更低。",
+    },
   },
   inventory: {
     title: "仓库库存",
