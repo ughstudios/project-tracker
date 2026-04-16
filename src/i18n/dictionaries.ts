@@ -216,7 +216,7 @@ const en: MessageTree = {
     couldNotArchive: "Could not archive issue.",
     attachmentsOptional: "Attachments (optional)",
     attachmentsOnCreateHelp:
-      "Add files now or later on the issue page. Max 100 MB per file; up to 20 files. If you attach files, an upload note is required.",
+      "Add files now or later on the issue page. Max 1 GB per file; up to 20 files. If you attach files, an upload note is required.",
     copyIssueLink: "Copy issue link",
     assigneesMultiHint:
       "You can assign more than one person to an issue.",
@@ -255,7 +255,7 @@ const en: MessageTree = {
     metaLine: "Reporter: {name} · Opened {at}",
     projectColon: "Project:",
     attachmentsTitle: "Attachments",
-    attachmentsHelp: "Upload images, videos, or any files linked to this issue (max 100 MB each).",
+    attachmentsHelp: "Upload images, videos, or any files linked to this issue (max 1 GB each).",
     chooseFiles: "Choose files",
     uploadingFiles: "Uploading…",
     noAttachments: "No files attached yet.",
@@ -895,7 +895,7 @@ const zh: MessageTree = {
     couldNotArchive: "无法归档问题。",
     attachmentsOptional: "附件（可选）",
     attachmentsOnCreateHelp:
-      "可在此添加，或稍后在问题详情页上传。单个最大 100 MB，最多 20 个。若添加附件，须填写上传说明。",
+      "可在此添加，或稍后在问题详情页上传。单个最大 1 GB，最多 20 个。若添加附件，须填写上传说明。",
     copyIssueLink: "复制问题链接",
     assigneesMultiHint: "一个问题可以分配给多位负责人。",
     assigneeSearchPlaceholder: "按姓名或邮箱搜索员工…",
@@ -932,7 +932,7 @@ const zh: MessageTree = {
     metaLine: "报告人：{name} · 创建于 {at}",
     projectColon: "项目：",
     attachmentsTitle: "附件",
-    attachmentsHelp: "可上传图片、视频或任意文件（单个最大 100 MB）。",
+    attachmentsHelp: "可上传图片、视频或任意文件（单个最大 1 GB）。",
     chooseFiles: "选择文件",
     uploadingFiles: "上传中…",
     noAttachments: "暂无附件。",

@@ -124,7 +124,7 @@ Seed promotes `daniel.gleason@lednets.com` to **SUPER_ADMIN** (new installs: `SE
 
 1. Add **`BLOB_READ_WRITE_TOKEN`** (see environment table): **Storage → Blob** → create/connect a store for this project.
 2. Objects are uploaded with **`put(..., { access: 'public' })`** so stored URLs work directly in the UI (`<img>`, `<a href>`, `<video src>`). Vercel’s snippets often use `access: 'private'`; **private** blobs need signed URLs or a download proxy, which this app does not implement.
-3. **Request size:** Server-side uploads run in Serverless Functions with a **~4.5 MB** body limit. On Vercel (`VERCEL=1`), total file bytes per request (plus thread message text for multipart replies) must stay under **4 MB** so the request is accepted. **Local** dev without Blob still allows up to **100 MB** per file under `public/uploads`.
+3. **Request size:** Server-side uploads run in Serverless Functions with a **~4.5 MB** body limit. On Vercel (`VERCEL=1`), total file bytes per request (plus thread message text for multipart replies) must stay under **4 MB** so the request is accepted. **Local** dev without Blob still allows up to **1 GB** per file under `public/uploads`.
 
 For files **larger than ~4 MB** in production, plan **[client-side uploads](https://vercel.com/docs/storage/vercel-blob/client-upload)** (not in this repo yet).
 

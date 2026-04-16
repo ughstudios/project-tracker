@@ -1,9 +1,17 @@
 import { VERCEL_SERVER_MULTIPART_BUDGET_BYTES } from "@/lib/vercel-upload-budget";
 
-export const ISSUE_UPLOAD_MAX_BYTES = 100 * 1024 * 1024;
+export const ISSUE_UPLOAD_MAX_BYTES = 1024 * 1024 * 1024;
 export const ISSUE_UPLOAD_MAX_FILES_PER_POST = 20;
 
 const MB = 1024 * 1024;
+const GB = 1024 * 1024 * 1024;
+
+function formatIssueUploadMaxPerFileLabel(): string {
+  if (ISSUE_UPLOAD_MAX_BYTES >= GB && ISSUE_UPLOAD_MAX_BYTES % GB === 0) {
+    return `${ISSUE_UPLOAD_MAX_BYTES / GB} GB`;
+  }
+  return `${Math.floor(ISSUE_UPLOAD_MAX_BYTES / MB)} MB`;
+}
 
 /** Steps to link Blob (shown with size-limit errors and when uploads are blocked). */
 export const VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS =
@@ -11,10 +19,6 @@ export const VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS =
 
 /** Shared copy when uploads hit the ~4 MB serverless request budget on Vercel. */
 export const VERCEL_BLOB_SETUP_AND_REDEPLOY_MESSAGE = `Files over about 4 MB must upload via Vercel Blob on this deployment. ${VERCEL_BLOB_CONNECT_AND_REDEPLOY_STEPS}`;
-
-export function uploadMaxPerFileMb(): number {
-  return Math.floor(ISSUE_UPLOAD_MAX_BYTES / MB);
-}
 
 /** Multipart / request-body uploads: low cap on Vercel vs Blob browser uploads. */
 export function perFileExceedsMultipartRouteLimitMessage(limitBytes: number): string {
@@ -24,8 +28,8 @@ export function perFileExceedsMultipartRouteLimitMessage(limitBytes: number): st
 
 /** Client Blob + product cap (token + complete routes). */
 export function perFileExceedsBlobProductLimitMessage(): string {
-  const maxMb = uploadMaxPerFileMb();
-  return `This file is larger than the ${maxMb} MB per-file maximum. Compress it, shorten or re-export the video, or split into smaller parts.`;
+  const limit = formatIssueUploadMaxPerFileLabel();
+  return `This file is larger than the ${limit} per-file maximum. Try compressing it, using a smaller export, or splitting it into smaller parts.`;
 }
 
 /**
