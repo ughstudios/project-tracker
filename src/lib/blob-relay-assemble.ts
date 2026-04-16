@@ -1,34 +1,33 @@
-import { del } from "@vercel/blob";
+import { del, get } from "@vercel/blob";
+import { getBlobStoreAccess } from "@/lib/blob-access";
 import { getBlobReadWriteToken } from "@/lib/file-storage";
-
-const blobAuthHeaders = (token: string): { authorization: string } => ({
-  authorization: `Bearer ${token}`,
-});
 
 /** ReadableStream of all part bodies in order (bounded memory: one network chunk at a time). */
 export function mergedReadableStreamFromRelayPartUrls(
   partUrls: string[],
   token: string,
 ): ReadableStream<Uint8Array> {
+  const access = getBlobStoreAccess();
   return new ReadableStream<Uint8Array>({
     async start(controller) {
       try {
         for (const url of partUrls) {
-          const res = await fetch(url, {
-            headers: blobAuthHeaders(token),
-            cache: "no-store",
-          });
-          if (!res.ok) {
-            throw new Error(`Staging part fetch failed (${res.status}).`);
+          const result = await get(url, { access, token, useCache: false });
+          if (!result || result.statusCode !== 200 || !result.stream) {
+            throw new Error("Staging part read failed.");
           }
-          if (!res.body) {
-            throw new Error("Staging part has no body.");
-          }
-          const reader = res.body.getReader();
-          for (;;) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            if (value) controller.enqueue(value);
+          const reader = result.stream.getReader();
+          try {
+            for (;;) {
+              const { done, value } = await reader.read();
+              if (done) break;
+              if (value && value.byteLength) {
+                // Copy: undici may reuse buffers; put() may read asynchronously.
+                controller.enqueue(new Uint8Array(value));
+              }
+            }
+          } finally {
+            reader.releaseLock();
           }
         }
         controller.close();
@@ -41,16 +40,25 @@ export function mergedReadableStreamFromRelayPartUrls(
 
 /** Load all parts into one buffer (HEIC conversion needs a full file; keep for smaller images). */
 export async function bufferFromRelayPartUrls(partUrls: string[], token: string): Promise<Buffer> {
+  const access = getBlobStoreAccess();
   const chunks: Buffer[] = [];
   for (const url of partUrls) {
-    const res = await fetch(url, {
-      headers: blobAuthHeaders(token),
-      cache: "no-store",
-    });
-    if (!res.ok) {
-      throw new Error(`Staging part fetch failed (${res.status}).`);
+    const result = await get(url, { access, token, useCache: false });
+    if (!result || result.statusCode !== 200 || !result.stream) {
+      throw new Error("Staging part read failed.");
     }
-    chunks.push(Buffer.from(await res.arrayBuffer()));
+    const reader = result.stream.getReader();
+    const partChunks: Buffer[] = [];
+    try {
+      for (;;) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value && value.byteLength) partChunks.push(Buffer.from(value));
+      }
+    } finally {
+      reader.releaseLock();
+    }
+    chunks.push(Buffer.concat(partChunks));
   }
   return Buffer.concat(chunks);
 }

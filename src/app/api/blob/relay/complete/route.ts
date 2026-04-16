@@ -115,9 +115,8 @@ export async function POST(request: Request): Promise<NextResponse> {
 
   let url: string;
   try {
-    // Multipart uploads require a known size; `computeBodyLength` is 0 for ReadableStream.
-    const useMultipart =
-      Buffer.isBuffer(putBody) && outFileSize >= MULTIPART_PUT_THRESHOLD;
+    // Large final objects: multipart upload (works with streams; total size comes from the stream).
+    const useMultipart = outFileSize >= MULTIPART_PUT_THRESHOLD;
     const blob = await put(putPathname, putBody, {
       access: getBlobStoreAccess(),
       token,
