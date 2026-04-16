@@ -18,7 +18,12 @@ export const DEFAULT_USABLE_MBPS_1G = 940;
 /** ~94% of 5 Gbit/s line rate, same overhead assumption as 1G preset. */
 export const DEFAULT_USABLE_MBPS_5G = 4700;
 
-export const BPP_PRESETS = [8, 16, 24] as const;
-export type BppPreset = (typeof BPP_PRESETS)[number];
+/** Full RGB triplets: total bits per pixel = bpc × 3 (e.g. 8→RGB888 / 24 bpp). */
+export const RGB_BPC_PRESETS = [8, 10, 12] as const;
+export type RgbBitsPerChannel = (typeof RGB_BPC_PRESETS)[number];
+
+export function totalBppRgbPacked(bpc: number): number {
+  return Math.max(0, bpc) * 3;
+}
 
 export const FPS_REFERENCE = [30, 60] as const;

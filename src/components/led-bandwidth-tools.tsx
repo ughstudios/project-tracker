@@ -2,12 +2,14 @@
 
 import { useI18n } from "@/i18n/context";
 import {
-  BPP_PRESETS,
   DEFAULT_USABLE_MBPS_1G,
   DEFAULT_USABLE_MBPS_5G,
   FPS_REFERENCE,
+  RGB_BPC_PRESETS,
   maxPixelsForLink,
   streamBandwidthMbps,
+  totalBppRgbPacked,
+  type RgbBitsPerChannel,
 } from "@/lib/led-bandwidth";
 import { useMemo, useState } from "react";
 
@@ -37,11 +39,11 @@ export function LedBandwidthTools() {
   const [hStr, setHStr] = useState("");
   const [pixelStr, setPixelStr] = useState("720000");
   const [fpsStr, setFpsStr] = useState("60");
-  const [bpp, setBpp] = useState<8 | 16 | 24>(24);
+  const [rgbBpc, setRgbBpc] = useState<RgbBitsPerChannel>(8);
 
   const [capMbpsStr, setCapMbpsStr] = useState(String(DEFAULT_USABLE_MBPS_1G));
   const [capFpsStr, setCapFpsStr] = useState("60");
-  const [capBpp, setCapBpp] = useState<8 | 16 | 24>(24);
+  const [capRgbBpc, setCapRgbBpc] = useState<RgbBitsPerChannel>(8);
 
   const w = parsePositiveInt(wStr, 0);
   const h = parsePositiveInt(hStr, 0);
@@ -49,12 +51,14 @@ export function LedBandwidthTools() {
   const fps = parsePositiveFloat(fpsStr, 60);
   const pixels = w > 0 && h > 0 ? w * h : manualPixels;
 
-  const streamMbps = streamBandwidthMbps(pixels, fps, bpp);
+  const streamBpp = totalBppRgbPacked(rgbBpc);
+  const streamMbps = streamBandwidthMbps(pixels, fps, streamBpp);
   const util1g = (streamMbps / DEFAULT_USABLE_MBPS_1G) * 100;
   const util5g = (streamMbps / DEFAULT_USABLE_MBPS_5G) * 100;
 
   const capMbps = parsePositiveFloat(capMbpsStr, DEFAULT_USABLE_MBPS_1G);
   const capFps = parsePositiveFloat(capFpsStr, 60);
+  const capBpp = totalBppRgbPacked(capRgbBpc);
   const capMaxPx = maxPixelsForLink(capMbps, capFps, capBpp);
   const capSqrt = capMaxPx > 0 ? Math.floor(Math.sqrt(capMaxPx)) : 0;
 
@@ -66,14 +70,15 @@ export function LedBandwidthTools() {
         : "text-emerald-700 dark:text-emerald-400";
 
   const refRows = useMemo(() => {
-    const rows: { bpp: 8 | 16 | 24; fps: number; max1g: number; max5g: number }[] = [];
-    for (const b of BPP_PRESETS) {
+    const rows: { bpc: RgbBitsPerChannel; fps: number; max1g: number; max5g: number }[] = [];
+    for (const bpc of RGB_BPC_PRESETS) {
+      const bpp = totalBppRgbPacked(bpc);
       for (const f of FPS_REFERENCE) {
         rows.push({
-          bpp: b,
+          bpc,
           fps: f,
-          max1g: maxPixelsForLink(DEFAULT_USABLE_MBPS_1G, f, b),
-          max5g: maxPixelsForLink(DEFAULT_USABLE_MBPS_5G, f, b),
+          max1g: maxPixelsForLink(DEFAULT_USABLE_MBPS_1G, f, bpp),
+          max5g: maxPixelsForLink(DEFAULT_USABLE_MBPS_5G, f, bpp),
         });
       }
     }
@@ -99,7 +104,7 @@ export function LedBandwidthTools() {
           <table className="w-full min-w-[520px] border-collapse text-sm">
             <thead>
               <tr className="border-b border-zinc-200 text-left dark:border-zinc-700">
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colBpp")}</th>
+                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colRgbDepth")}</th>
                 <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colFps")}</th>
                 <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax1g")}</th>
                 <th className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax5g")}</th>
@@ -107,8 +112,10 @@ export function LedBandwidthTools() {
             </thead>
             <tbody>
               {refRows.map((row) => (
-                <tr key={`${row.bpp}-${row.fps}`} className="border-b border-zinc-100 dark:border-zinc-800">
-                  <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-200">{row.bpp}</td>
+                <tr key={`${row.bpc}-${row.fps}`} className="border-b border-zinc-100 dark:border-zinc-800">
+                  <td className="max-w-[220px] py-2 pr-3 text-zinc-800 dark:text-zinc-200">
+                    {t(`tools.depthOption.${row.bpc}`)}
+                  </td>
                   <td className="py-2 pr-3 text-zinc-800 dark:text-zinc-200">{nf0.format(row.fps)}</td>
                   <td className="py-2 pr-3 tabular-nums text-zinc-700 dark:text-zinc-300">{nf.format(row.max1g)}</td>
                   <td className="py-2 tabular-nums text-zinc-700 dark:text-zinc-300">{nf.format(row.max5g)}</td>
@@ -145,11 +152,15 @@ export function LedBandwidthTools() {
             <input className="input w-full" inputMode="decimal" value={fpsStr} onChange={(e) => setFpsStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelBpp")}</span>
-            <select className="input w-full" value={bpp} onChange={(e) => setBpp(Number(e.target.value) as 8 | 16 | 24)}>
-              {BPP_PRESETS.map((b) => (
-                <option key={b} value={b}>
-                  {t(`tools.bppOption.${b}`)}
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelRgbDepth")}</span>
+            <select
+              className="input w-full"
+              value={rgbBpc}
+              onChange={(e) => setRgbBpc(Number(e.target.value) as RgbBitsPerChannel)}
+            >
+              {RGB_BPC_PRESETS.map((bpc) => (
+                <option key={bpc} value={bpc}>
+                  {t(`tools.depthOption.${bpc}`)}
                 </option>
               ))}
             </select>
@@ -214,11 +225,15 @@ export function LedBandwidthTools() {
             <input className="input w-full" inputMode="decimal" value={capFpsStr} onChange={(e) => setCapFpsStr(e.target.value)} />
           </label>
           <label className="block text-sm sm:col-span-2">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelBpp")}</span>
-            <select className="input w-full max-w-xs" value={capBpp} onChange={(e) => setCapBpp(Number(e.target.value) as 8 | 16 | 24)}>
-              {BPP_PRESETS.map((b) => (
-                <option key={b} value={b}>
-                  {t(`tools.bppOption.${b}`)}
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelRgbDepth")}</span>
+            <select
+              className="input w-full max-w-xs"
+              value={capRgbBpc}
+              onChange={(e) => setCapRgbBpc(Number(e.target.value) as RgbBitsPerChannel)}
+            >
+              {RGB_BPC_PRESETS.map((bpc) => (
+                <option key={bpc} value={bpc}>
+                  {t(`tools.depthOption.${bpc}`)}
                 </option>
               ))}
             </select>
