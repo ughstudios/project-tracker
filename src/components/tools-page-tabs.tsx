@@ -9,17 +9,32 @@ function tabLabelKey(id: ToolsPageTabId): string {
   return `tools.tabs.${id}`;
 }
 
+function renderToolPanel(id: ToolsPageTabId) {
+  switch (id) {
+    case "led-bandwidth":
+      return <LedBandwidthTools />;
+    default:
+      return null;
+  }
+}
+
 export function ToolsPageTabs() {
   const { t } = useI18n();
   const baseId = useId();
-  const [active, setActive] = useState<ToolsPageTabId>("led-bandwidth");
+  const [active, setActive] = useState<ToolsPageTabId>(TOOLS_PAGE_TAB_IDS[0]);
+  const showTabBar = TOOLS_PAGE_TAB_IDS.length > 1;
+
+  if (!showTabBar) {
+    const only = TOOLS_PAGE_TAB_IDS[0];
+    return <div className="min-w-0">{renderToolPanel(only)}</div>;
+  }
 
   return (
-    <div className="space-y-0">
+    <div className="panel-surface min-w-0 overflow-hidden rounded-xl">
       <div
         role="tablist"
         aria-label={t("tools.pageTabListAria")}
-        className="flex flex-wrap gap-1 border-b border-zinc-200 dark:border-zinc-700"
+        className="flex flex-wrap gap-1 rounded-t-xl bg-zinc-100/90 p-1.5 dark:bg-zinc-950/60 sm:p-2"
       >
         {TOOLS_PAGE_TAB_IDS.map((id) => {
           const selected = active === id;
@@ -36,10 +51,10 @@ export function ToolsPageTabs() {
               tabIndex={selected ? 0 : -1}
               onClick={() => setActive(id)}
               className={[
-                "relative -mb-px rounded-t-lg px-3 py-2.5 text-sm font-medium transition-colors",
+                "min-h-10 flex-1 rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors sm:flex-none sm:px-4",
                 selected
-                  ? "border border-b-0 border-zinc-200 bg-white text-zinc-900 dark:border-zinc-600 dark:bg-zinc-900 dark:text-zinc-100"
-                  : "border border-transparent text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-100",
+                  ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900"
+                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
               ].join(" ")}
             >
               {t(tabLabelKey(id))}
@@ -47,21 +62,20 @@ export function ToolsPageTabs() {
           );
         })}
       </div>
-
-      <div className="pt-4">
+      <div className="border-t border-zinc-200/80 p-4 dark:border-zinc-700/80 sm:p-5">
         {TOOLS_PAGE_TAB_IDS.map((id) => {
           const panelId = `${baseId}-panel-${id}`;
           const tabId = `${baseId}-tab-${id}`;
-          const hidden = active !== id;
+          const isActive = active === id;
           return (
             <div
               key={id}
               id={panelId}
               role="tabpanel"
               aria-labelledby={tabId}
-              hidden={hidden}
+              hidden={!isActive}
             >
-              {id === "led-bandwidth" ? <LedBandwidthTools /> : null}
+              {isActive ? renderToolPanel(id) : null}
             </div>
           );
         })}
