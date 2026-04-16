@@ -171,33 +171,75 @@ export function HdmiDpCompatibilityTools() {
           })}
         </p>
         <div
-          className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-xs leading-relaxed text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200"
+          className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-4 text-zinc-800 dark:border-zinc-700 dark:bg-zinc-900/60 dark:text-zinc-200"
           aria-label={t("tools.displayIo.mathBlockAria")}
         >
-          <p className="mb-2 font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathHeading")}</p>
-          <p className="whitespace-pre-wrap font-mono tabular-nums">
-            {t("tools.displayIo.mathStep1", {
-              w: nfFormula.format(w),
-              h: nfFormula.format(h),
-              hz: nfFormulaHz.format(hz),
-              bpp: nfFormula.format(bpp),
-              active: nf2.format(activeGbps),
-            })}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap font-mono tabular-nums">
-            {t("tools.displayIo.mathStep2", {
-              active: nf2.format(activeGbps),
-              overhead: String(DEFAULT_DISPLAY_TIMING_OVERHEAD),
-              need: nf2.format(needGbps),
-            })}
-          </p>
-          <p className="mt-2 whitespace-pre-wrap font-mono tabular-nums">
-            {t("tools.displayIo.mathStep3", {
-              need: nf2.format(needGbps),
-              max: nf2.format(maxGbps),
-              verdict: fits ? t("tools.displayIo.mathVerdictOk") : t("tools.displayIo.mathVerdictNo"),
-            })}
-          </p>
+          <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathHeading")}</p>
+          <ol className="mt-4 list-none space-y-5 border-t border-zinc-200/90 pt-4 dark:border-zinc-700/90">
+            <li className="grid gap-2 sm:grid-cols-[2rem_1fr] sm:gap-x-3">
+              <span className="text-left text-xs font-bold leading-6 text-zinc-400 dark:text-zinc-500">1</span>
+              <div>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathStep1Title")}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {t("tools.displayIo.mathStep1Hint")}
+                </p>
+                <div className="mt-2 rounded-md border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-600 dark:bg-zinc-950">
+                  <p className="font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
+                    {nfFormula.format(w)} × {nfFormula.format(h)} × {nfFormulaHz.format(hz)} Hz × {nfFormula.format(bpp)}{" "}
+                    <span className="text-zinc-500 dark:text-zinc-400">{t("tools.displayIo.mathBitsPerPixelUnit")}</span>
+                  </p>
+                  <div className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 font-mono text-sm tabular-nums">
+                    <span className="text-zinc-500 dark:text-zinc-400">
+                      ÷ 10<sup className="text-[0.65em]">9</sup>
+                    </span>
+                    <span className="text-zinc-400">=</span>
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{nf2.format(activeGbps)} Gbit/s</span>
+                  </div>
+                </div>
+              </div>
+            </li>
+            <li className="grid gap-2 sm:grid-cols-[2rem_1fr] sm:gap-x-3">
+              <span className="text-left text-xs font-bold leading-6 text-zinc-400 dark:text-zinc-500">2</span>
+              <div>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathStep2Title")}</p>
+                <p className="mt-1 text-xs leading-relaxed text-zinc-500 dark:text-zinc-400">
+                  {t("tools.displayIo.mathStep2Hint", { overhead: String(DEFAULT_DISPLAY_TIMING_OVERHEAD) })}
+                </p>
+                <div className="mt-2 rounded-md border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-600 dark:bg-zinc-950">
+                  <p className="font-mono text-sm tabular-nums text-zinc-700 dark:text-zinc-300">
+                    <span className="text-zinc-500 dark:text-zinc-400">(1)</span> {nf2.format(activeGbps)} Gbit/s ×{" "}
+                    {String(DEFAULT_DISPLAY_TIMING_OVERHEAD)}
+                  </p>
+                  <p className="mt-1.5 font-mono text-sm tabular-nums">
+                    <span className="text-zinc-400">=</span>{" "}
+                    <span className="font-semibold text-zinc-900 dark:text-zinc-100">{nf2.format(needGbps)} Gbit/s</span>
+                  </p>
+                </div>
+              </div>
+            </li>
+            <li className="grid gap-2 sm:grid-cols-[2rem_1fr] sm:gap-x-3">
+              <span className="text-left text-xs font-bold leading-6 text-zinc-400 dark:text-zinc-500">3</span>
+              <div>
+                <p className="text-xs font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.mathStep3Title")}</p>
+                <dl className="mt-2 space-y-2 rounded-md border border-zinc-200 bg-white px-3 py-2.5 dark:border-zinc-600 dark:bg-zinc-950">
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 font-mono text-sm tabular-nums">
+                    <dt className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{t("tools.displayIo.mathStep3Required")}</dt>
+                    <dd className="font-semibold text-zinc-900 dark:text-zinc-100">{nf2.format(needGbps)} Gbit/s</dd>
+                  </div>
+                  <div className="flex flex-wrap items-baseline justify-between gap-2 font-mono text-sm tabular-nums">
+                    <dt className="text-xs font-normal text-zinc-500 dark:text-zinc-400">{t("tools.displayIo.mathStep3Ceiling")}</dt>
+                    <dd className="font-medium text-zinc-800 dark:text-zinc-200">~{nf2.format(maxGbps)} Gbit/s</dd>
+                  </div>
+                </dl>
+                <p className="mt-3 text-sm">
+                  <span className="font-medium text-zinc-600 dark:text-zinc-400">{t("tools.displayIo.mathVerdictLabel")}: </span>
+                  <span className={fits ? "font-semibold text-emerald-800 dark:text-emerald-200" : "font-semibold text-red-800 dark:text-red-200"}>
+                    {fits ? t("tools.displayIo.mathVerdictOk") : t("tools.displayIo.mathVerdictNo")}
+                  </span>
+                </p>
+              </div>
+            </li>
+          </ol>
         </div>
 
         <div className="mt-4 flex flex-wrap items-center gap-2">
