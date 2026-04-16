@@ -297,8 +297,8 @@ export async function uploadWorkRecordPasteImages(options: {
 }
 
 /**
- * Upload files to Vercel Blob via same-origin relay (small chunks → Postgres → server `put()`).
- * Works on custom domains; never touches `vercel.com` from the browser.
+ * Upload files to Vercel Blob via same-origin relay (chunks → staging Blob objects → server `put()`).
+ * Chunk bytes are not stored in Postgres (Neon-friendly). Works on custom domains.
  */
 export async function uploadFilesViaBlobClient(options: {
   files: File[];

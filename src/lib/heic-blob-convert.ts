@@ -8,6 +8,21 @@ function replaceBlobPathExtension(pathname: string, newExtWithDot: string): stri
   return `${dir}${stem}${newExtWithDot}`;
 }
 
+/** True when pathname / declared type indicate HEIC/HEIF (full buffer not yet read). */
+export function uploadLooksHeicFromMeta(pathname: string, contentType: string): boolean {
+  const ct = (contentType ?? "").toLowerCase().split(";")[0]?.trim() ?? "";
+  if (
+    ct === "image/heic" ||
+    ct === "image/heif" ||
+    ct === "image/heic-sequence" ||
+    ct === "image/heif-sequence"
+  ) {
+    return true;
+  }
+  const pl = pathname.toLowerCase();
+  return pl.endsWith(".heic") || pl.endsWith(".heif");
+}
+
 /**
  * Detect iOS / HEIF still images we should convert for web display.
  * Skips AVIF and unrelated ISO-BMFF types.

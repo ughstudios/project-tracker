@@ -1,17 +1,24 @@
 import { auth } from "@/auth";
 import { getBlobStoreAccess } from "@/lib/blob-access";
 import {
+  bufferFromRelayPartUrls,
+  deleteRelayStagingBlobUrls,
+  mergedReadableStreamFromRelayPartUrls,
+} from "@/lib/blob-relay-assemble";
+import {
   getBlobReadWriteToken,
   isBlobStorageEnabled,
   vercelUploadsNotReadyResponse,
 } from "@/lib/file-storage";
-import { maybeConvertHeicForBlobUpload } from "@/lib/heic-blob-convert";
+import { maybeConvertHeicForBlobUpload, uploadLooksHeicFromMeta } from "@/lib/heic-blob-convert";
 import { prisma } from "@/lib/prisma";
 import { put } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 export const runtime = "nodejs";
 export const maxDuration = 300;
+
+const MULTIPART_PUT_THRESHOLD = 8 * 1024 * 1024;
 
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await auth();
@@ -57,56 +64,81 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "No data uploaded." }, { status: 400 });
   }
 
-  const buffer = Buffer.concat(upload.chunks.map((c) => Buffer.from(c.data)));
+  const partUrls = upload.chunks.map((c) => c.partUrl);
 
-  if (buffer.length !== upload.totalSize) {
+  const releaseSession = async () => {
+    await deleteRelayStagingBlobUrls(partUrls);
     await prisma.blobRelayUpload.delete({ where: { id: upload.id } }).catch(() => {});
-    return NextResponse.json({ error: "Size mismatch after assembly." }, { status: 500 });
-  }
+  };
 
   const contentType = upload.contentType || "application/octet-stream";
 
-  let putBuffer: typeof buffer = buffer;
   let putPathname = upload.pathname;
   let putContentType = contentType;
   let heicConverted = false;
+  let putBody: Buffer | ReadableStream<Uint8Array>;
+  let outFileSize: number;
+
   try {
-    const converted = await maybeConvertHeicForBlobUpload({
-      buffer,
-      pathname: upload.pathname,
-      contentType,
-    });
-    putBuffer = converted.buffer as typeof buffer;
-    putPathname = converted.pathname;
-    putContentType = converted.contentType;
-    heicConverted = converted.heicConverted;
+    if (uploadLooksHeicFromMeta(upload.pathname, upload.contentType)) {
+      const buffer = await bufferFromRelayPartUrls(partUrls, token);
+      if (buffer.length !== upload.totalSize) {
+        await releaseSession();
+        return NextResponse.json({ error: "Size mismatch after assembly." }, { status: 500 });
+      }
+      let converted;
+      try {
+        converted = await maybeConvertHeicForBlobUpload({
+          buffer,
+          pathname: upload.pathname,
+          contentType,
+        });
+      } catch (e) {
+        const message = e instanceof Error ? e.message : "Could not convert image.";
+        await releaseSession();
+        return NextResponse.json({ error: message }, { status: 422 });
+      }
+      putBody = converted.buffer;
+      putPathname = converted.pathname;
+      putContentType = converted.contentType;
+      heicConverted = converted.heicConverted;
+      outFileSize = putBody.length;
+    } else {
+      putBody = mergedReadableStreamFromRelayPartUrls(partUrls, token);
+      outFileSize = upload.totalSize;
+    }
   } catch (e) {
-    const message = e instanceof Error ? e.message : "Could not convert image.";
-    await prisma.blobRelayUpload.delete({ where: { id: upload.id } }).catch(() => {});
-    return NextResponse.json({ error: message }, { status: 422 });
+    const message = e instanceof Error ? e.message : "Could not read staging parts.";
+    await releaseSession();
+    return NextResponse.json({ error: message }, { status: 502 });
   }
 
   let url: string;
   try {
-    const blob = await put(putPathname, putBuffer, {
+    // Multipart uploads require a known size; `computeBodyLength` is 0 for ReadableStream.
+    const useMultipart =
+      Buffer.isBuffer(putBody) && outFileSize >= MULTIPART_PUT_THRESHOLD;
+    const blob = await put(putPathname, putBody, {
       access: getBlobStoreAccess(),
       token,
       contentType: putContentType || "application/octet-stream",
       addRandomSuffix: false,
+      multipart: useMultipart,
     });
     url = blob.url;
   } catch (e) {
     const message = e instanceof Error ? e.message : "Blob put failed.";
-    await prisma.blobRelayUpload.delete({ where: { id: upload.id } }).catch(() => {});
+    await releaseSession();
     return NextResponse.json({ error: message }, { status: 502 });
   }
 
+  await deleteRelayStagingBlobUrls(partUrls).catch(() => {});
   await prisma.blobRelayUpload.delete({ where: { id: upload.id } });
 
   return NextResponse.json({
     url,
     pathname: putPathname,
-    fileSize: putBuffer.length,
+    fileSize: outFileSize,
     heicConverted,
   });
 }

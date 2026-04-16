@@ -5,6 +5,7 @@ import {
   parseBlobClientUploadPayloadFromUnknown,
 } from "@/lib/blob-upload-auth";
 import { BLOB_RELAY_CHUNK_BYTES } from "@/lib/blob-relay-chunk";
+import { deleteRelayStagingBlobUrls } from "@/lib/blob-relay-assemble";
 import {
   getBlobReadWriteToken,
   isBlobStorageEnabled,
@@ -69,9 +70,18 @@ export async function POST(request: Request): Promise<NextResponse> {
   const pathname = `${prefix}${stored}`;
 
   const staleBefore = new Date(Date.now() - 2 * 60 * 60 * 1000);
-  await prisma.blobRelayUpload.deleteMany({
+  const staleRows = await prisma.blobRelayUpload.findMany({
     where: { userId: session.user.id, createdAt: { lt: staleBefore } },
+    include: { chunks: { select: { partUrl: true } } },
   });
+  for (const row of staleRows) {
+    await deleteRelayStagingBlobUrls(row.chunks.map((c) => c.partUrl));
+  }
+  if (staleRows.length > 0) {
+    await prisma.blobRelayUpload.deleteMany({
+      where: { id: { in: staleRows.map((r) => r.id) } },
+    });
+  }
 
   const row = await prisma.blobRelayUpload.create({
     data: {
