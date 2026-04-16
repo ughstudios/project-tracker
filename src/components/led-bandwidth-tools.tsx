@@ -117,7 +117,7 @@ export function LedBandwidthTools() {
             <thead>
               <tr className="border-b border-zinc-200 text-left dark:border-zinc-700">
                 <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colPerColor")}</th>
-                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colBpp")}</th>
+                <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colBitsPerPixel")}</th>
                 <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colFps")}</th>
                 <th className="py-2 pr-3 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax1g")}</th>
                 <th className="py-2 font-medium text-zinc-900 dark:text-zinc-100">{t("tools.colMax5g")}</th>
