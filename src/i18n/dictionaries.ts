@@ -174,7 +174,8 @@ const en: MessageTree = {
     chartByStatus: "Issues by status",
     chartByStatusHint: "Share of work in each workflow column.",
     chartByProject: "Top projects by issue count",
-    chartByProjectHint: "Projects with the most active issues (up to 12).",
+    chartByProjectHint:
+      "Projects with the most active issues (up to 12). Click a bar or project name to open the filtered issue list.",
     axisIssues: "Issues",
     chartUnassigned: "Unassigned",
     workRecordsChartsAria: "Aggregated work record statistics",
@@ -1007,7 +1008,8 @@ const zh: MessageTree = {
     chartByStatus: "按状态分布",
     chartByStatusHint: "各流程状态下问题占比。",
     chartByProject: "问题最多的项目",
-    chartByProjectHint: "进行中问题最多的项目（最多 12 个）。",
+    chartByProjectHint:
+      "进行中问题最多的项目（最多 12 个）。点击条形或项目名称可打开已筛选的问题列表。",
     axisIssues: "问题数",
     chartUnassigned: "未分配",
     workRecordsChartsAria: "工作记录汇总统计",

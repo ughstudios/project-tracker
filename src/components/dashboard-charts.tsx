@@ -4,7 +4,8 @@ import { WorkRecordsDashboardCharts } from "@/components/work-records-dashboard-
 import { useI18n } from "@/i18n/context";
 import { getDashboardChartChrome } from "@/lib/dashboard-chart-theme";
 import { useTheme } from "next-themes";
-import { useMemo } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useMemo } from "react";
 import {
   Bar,
   BarChart,
@@ -52,6 +53,7 @@ type Props = {
 export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, customers }: Props) {
   const { t } = useI18n();
   const { resolvedTheme } = useTheme();
+  const router = useRouter();
 
   const assigneeSource = assigneeLeaderboardIssues ?? issues;
 
@@ -131,6 +133,50 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
 
   const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
+  const goToProjectIssues = useCallback(
+    (projectId: string) => {
+      router.push(`/issues?project=${encodeURIComponent(projectId)}`);
+    },
+    [router],
+  );
+
+  const projectBarChartTick = useCallback(
+    (props: { x: number; y: number; payload: { value: string }; textAnchor?: string }) => {
+      const { x, y, payload, textAnchor = "end" } = props;
+      const name = String(payload?.value ?? "");
+      const row = byProject.find((p) => p.name === name);
+      const common = {
+        x,
+        y,
+        textAnchor: textAnchor as "start" | "middle" | "end" | "inherit",
+        dominantBaseline: "central" as const,
+        fill: chartChrome.tickFill,
+        fontSize: 11,
+      };
+      if (!row?.id) {
+        return <text {...common}>{name}</text>;
+      }
+      return (
+        <text
+          {...common}
+          role="link"
+          tabIndex={0}
+          className="cursor-pointer outline-none hover:fill-indigo-400 dark:hover:fill-indigo-300"
+          onClick={() => goToProjectIssues(row.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              goToProjectIssues(row.id);
+            }
+          }}
+        >
+          {name}
+        </text>
+      );
+    },
+    [byProject, chartChrome.tickFill, goToProjectIssues],
+  );
+
   return (
     <div className="space-y-4">
       <section
@@ -169,7 +215,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByProjectHint")}</p>
-              <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
+              <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px] [&_.recharts-bar-rectangle]:cursor-pointer">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     layout="vertical"
@@ -187,7 +233,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
                       type="category"
                       dataKey="name"
                       width={120}
-                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      tick={projectBarChartTick}
                       stroke={chartChrome.axisStroke}
                       interval={0}
                     />
@@ -204,6 +250,10 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
                       fill="#818cf8"
                       radius={[0, 4, 4, 0]}
                       activeBar={false}
+                      onClick={(rect: { payload?: ProjectSlice }) => {
+                        const id = rect?.payload?.id;
+                        if (id) goToProjectIssues(id);
+                      }}
                     />
                   </BarChart>
                 </ResponsiveContainer>
