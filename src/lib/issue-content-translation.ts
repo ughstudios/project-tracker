@@ -1,4 +1,9 @@
 import type { Locale } from "@/i18n/types";
+import {
+  buildTranslationCacheKey,
+  readTranslationCache,
+  writeTranslationCache,
+} from "@/lib/redis-translation-cache";
 import { getOppositeLocale, type ContentLanguage } from "./translated-content";
 
 type IssueTranslationInput = {
@@ -28,7 +33,8 @@ function countMatches(text: string, re: RegExp) {
   return text.match(re)?.length ?? 0;
 }
 
-function detectContentLanguage(values: string[]): ContentLanguage | null {
+/** Dominant language of the combined issue text (title + fields), for EN/CH display routing. */
+export function detectIssueContentLanguage(values: string[]): ContentLanguage | null {
   const joined = values.join(" ").trim();
   if (!joined) return null;
 
@@ -50,7 +56,7 @@ function getOpenAiApiKey() {
   return process.env.AI_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
 }
 
-function isTranslationConfigured() {
+export function isTranslationConfigured() {
   return Boolean(getOpenAiApiKey());
 }
 
@@ -66,6 +72,17 @@ async function translateJson<T>({
   const apiKey = getOpenAiApiKey();
   if (!apiKey) return null;
 
+  const model = getTranslationModel();
+  const cacheKey = buildTranslationCacheKey(model, sourceLanguage, targetLanguage, payload);
+  const cachedRaw = await readTranslationCache(cacheKey);
+  if (cachedRaw) {
+    try {
+      return JSON.parse(cachedRaw) as T;
+    } catch {
+      /* stale or corrupt — fall through */
+    }
+  }
+
   const sourceLabel = sourceLanguage === "zh" ? "Chinese" : "English";
   const targetLabel = targetLanguage === "zh" ? "Chinese" : "English";
 
@@ -76,7 +93,7 @@ async function translateJson<T>({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      model: getTranslationModel(),
+      model,
       temperature: 0,
       response_format: { type: "json_object" },
       messages: [
@@ -107,7 +124,9 @@ async function translateJson<T>({
   const content = data.choices?.[0]?.message?.content?.trim();
   if (!content) return null;
 
-  return JSON.parse(content) as T;
+  const parsed = JSON.parse(content) as T;
+  await writeTranslationCache(cacheKey, JSON.stringify(parsed));
+  return parsed;
 }
 
 function toNullableText(value: unknown, fallback: string) {
@@ -119,7 +138,7 @@ function toNullableText(value: unknown, fallback: string) {
 export async function translateIssueContent(
   input: IssueTranslationInput,
 ): Promise<IssueTranslationResult> {
-  const contentLanguage = detectContentLanguage([
+  const contentLanguage = detectIssueContentLanguage([
     input.title,
     input.symptom,
     input.cause,
@@ -170,7 +189,7 @@ export async function translateIssueContent(
 }
 
 export async function translateThreadContent(content: string): Promise<ThreadTranslationResult> {
-  const contentLanguage = detectContentLanguage([content]);
+  const contentLanguage = detectIssueContentLanguage([content]);
   if (!contentLanguage || !content.trim() || !isTranslationConfigured()) {
     return { contentLanguage, contentTranslated: null };
   }

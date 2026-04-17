@@ -29,6 +29,11 @@ export function AiAssistantClient() {
 
   const { messages, sendMessage, status, stop, error, clearError } = useChat({
     transport,
+    onError: (err) => {
+      if (process.env.NODE_ENV === "development") {
+        console.error("[ai-assistant]", err);
+      }
+    },
   });
 
   const busy = status === "submitted" || status === "streaming";
@@ -73,7 +78,7 @@ export function AiAssistantClient() {
           role="alert"
           className="flex flex-wrap items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-950 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100"
         >
-          <span>{error.message || t("aiAssistant.genericError")}</span>
+          <span>{t("aiAssistant.serviceError")}</span>
           <button
             type="button"
             className="rounded-md border border-amber-400 px-2 py-1 text-xs font-medium dark:border-amber-600"

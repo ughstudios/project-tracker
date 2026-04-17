@@ -95,5 +95,15 @@ export async function POST(request: Request) {
     messages: modelMessages,
   });
 
-  return result.toUIMessageStreamResponse();
+  const safeStreamError =
+    replyLocale === "zh"
+      ? "AI 服务出错，请稍后再试。若持续失败，请让管理员检查 AI 服务配置。"
+      : "Something went wrong with the AI service. Please try again. If it keeps failing, ask an admin to verify the AI service configuration.";
+
+  return result.toUIMessageStreamResponse({
+    onError: (error) => {
+      console.error("[ai/chat] stream error:", error);
+      return safeStreamError;
+    },
+  });
 }

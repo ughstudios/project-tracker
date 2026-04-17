@@ -91,5 +91,5 @@ export function useIssueBoardData(paths: readonly string[]) {
     return () => window.removeEventListener("storage", onStorage);
   }, [active, loadData]);
 
-  return { users, projects, customers, issues, loading, isAdmin, loadData };
+  return { users, projects, customers, issues, setIssues, loading, isAdmin, loadData };
 }

@@ -505,6 +505,8 @@ const en: MessageTree = {
     sending: "Sending…",
     stop: "Stop",
     genericError: "Something went wrong.",
+    serviceError:
+      "The AI assistant could not complete that request. Please try again. If it keeps failing, ask an admin to check the server configuration.",
     dismissError: "Dismiss",
   },
   tools: {
@@ -1392,6 +1394,8 @@ const zh: MessageTree = {
     sending: "发送中…",
     stop: "停止",
     genericError: "出错了。",
+    serviceError:
+      "AI 助手无法完成此次请求，请稍后再试。若持续失败，请让管理员检查服务器配置。",
     dismissError: "关闭",
   },
   tools: {

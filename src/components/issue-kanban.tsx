@@ -5,6 +5,7 @@ import { useI18n } from "@/i18n/context";
 import { getLocalizedText } from "@/lib/translated-content";
 import type { IssueBoardIssue } from "@/hooks/use-issue-board-data";
 import { useIssueBoardData } from "@/hooks/use-issue-board-data";
+import { useIssueTranslationSync } from "@/hooks/use-issue-translation-sync";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -21,7 +22,8 @@ function matchesLinkFilter(issue: IssueBoardIssue, filter: string) {
 
 export function IssueKanban() {
   const { t, locale } = useI18n();
-  const { users, projects, customers, issues, loading, loadData } = useIssueBoardData(["/kanban"]);
+  const { users, projects, customers, issues, setIssues, loading, loadData } = useIssueBoardData(["/kanban"]);
+  useIssueTranslationSync(issues, setIssues, locale, !loading);
 
   const [query, setQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("");
