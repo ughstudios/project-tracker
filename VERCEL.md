@@ -1,12 +1,12 @@
 # Deploy on Vercel
 
-This app uses **PostgreSQL**. Vercel’s build runs Prisma, so **`DATABASE_URL`** and **`DATABASE_DIRECT_URL`** must exist before `npm run build`** — otherwise you get `P1012 Environment variable not found: …`.
+This app uses **PostgreSQL**. Vercel’s build runs Prisma, so **`DATABASE_URL`** must exist before `npm run build`**. **`DATABASE_DIRECT_URL`** is optional: if omitted, the build defaults it to `DATABASE_URL` (set it separately when using Neon’s **pooler** for `DATABASE_URL` to avoid Prisma **P1002** on `migrate deploy`).
 
 ## 0. Order of operations (important)
 
-1. Create Postgres (Neon below) and copy **`DATABASE_URL`** (pooled is best for serverless) plus **`DATABASE_DIRECT_URL`** (non-pooled for migrations — avoids Prisma **P1002** / `pg_advisory_lock` timeouts on Neon’s pooler).
+1. Create Postgres (Neon below) and copy **`DATABASE_URL`**. If it uses Neon’s **pooler** (`-pooler` in the host), also add **`DATABASE_DIRECT_URL`** (non-pooled) so migrations do not hit **P1002**; otherwise the build reuses `DATABASE_URL` for migrations.
 2. In Vercel → **Settings → Environment Variables**, add **all** variables below for **Production** (and **Preview** if you use preview deployments).
-3. **Redeploy** (or trigger a new deploy). Do not expect the first deploy to succeed if **`DATABASE_URL`** or **`DATABASE_DIRECT_URL`** was missing.
+3. **Redeploy** (or trigger a new deploy). Do not expect the first deploy to succeed if **`DATABASE_URL`** was missing.
 
 ## 1. Postgres on Neon (free)
 
@@ -84,7 +84,7 @@ Vercel → **Project → Settings → Environment Variables**:
 | Name | Notes |
 |------|--------|
 | **`DATABASE_URL`** | Pooled Neon URI (**`npm run neon:url`**). **Required for build** and for the app at runtime. |
-| **`DATABASE_DIRECT_URL`** | Non-pooled Neon URI (**`npm run neon:url:direct`**). **Required for build** so `prisma migrate deploy` uses a direct session (avoids **P1002** / `pg_advisory_lock` timeouts). If you use a single non-pooled URL locally, you may set this to the **same** value as `DATABASE_URL`. |
+| **`DATABASE_DIRECT_URL`** | Optional. Non-pooled Neon URI (**`npm run neon:url:direct`**). **Strongly recommended** when `DATABASE_URL` uses Neon’s pooler so `prisma migrate deploy` avoids **P1002** / `pg_advisory_lock` timeouts. If unset, the build uses `DATABASE_URL` for migrations (same value is fine when you are not using `-pooler`). |
 | **`AUTH_SECRET`** | Long random string, e.g. run `openssl rand -base64 32` locally. |
 | **`AUTH_URL`** | **Exact origin users use in the browser** (no trailing slash). Examples: `https://tracker.colorlightcloud.com` for a custom domain, or `https://<project>.vercel.app`. **Do not use `http://localhost:3000` in production** — mismatched Auth.js cookies often cause “page couldn’t load” with `200` on RSC requests. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
@@ -114,8 +114,9 @@ After a successful deploy, create users in the **same** database Neon URI:
 
 ```bash
 cd issue-tracker
-export DATABASE_URL="postgresql://..."          # same as Vercel
-export DATABASE_DIRECT_URL="postgresql://..."   # same as Vercel (non-pooled, or same as URL if not using pooler)
+export DATABASE_URL="postgresql://..."   # same as Vercel
+# Optional unless DATABASE_URL uses Neon pooling; if needed, same as Vercel non-pooled URI:
+# export DATABASE_DIRECT_URL="postgresql://..."
 npm ci
 npm run db:generate
 npm run db:seed

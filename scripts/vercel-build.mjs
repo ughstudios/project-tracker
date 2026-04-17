@@ -99,19 +99,15 @@ See VERCEL.md in this repo for the full checklist.
 
 const directUrl = process.env.DATABASE_DIRECT_URL?.trim();
 if (!directUrl) {
-  console.error(`
-================================================================================
-BUILD FAILED: DATABASE_DIRECT_URL is not set.
-
-Migrations (\`prisma migrate deploy\`) must use a direct Postgres connection.
-Use your normal pooled DATABASE_URL for the app; set DATABASE_DIRECT_URL to Neon’s
-non-pooled Prisma string (host without \`-pooler\`). Same password and database name.
-
-CLI (after \`neonctl\` context):  npm run neon:url:direct
-See VERCEL.md → Environment Variables.
-================================================================================
-`);
-  process.exit(1);
+  process.env.DATABASE_DIRECT_URL = dbUrl;
+  const pooled = dbUrl.includes("-pooler");
+  console.warn(
+    pooled
+      ? "DATABASE_DIRECT_URL is not set; using DATABASE_URL for migrations. " +
+          "Neon’s pooler often causes Prisma P1002 (pg_advisory_lock) during migrate — " +
+          "add a non-pooled DATABASE_DIRECT_URL (see VERCEL.md, `npm run neon:url:direct`)."
+      : "DATABASE_DIRECT_URL is not set; using DATABASE_URL for migrations (fine for non-pooled URLs).",
+  );
 }
 
 await runOrExit("npx", ["prisma", "generate"]);
