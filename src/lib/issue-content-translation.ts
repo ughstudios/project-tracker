@@ -46,8 +46,12 @@ function getTranslationModel() {
   return process.env.OPENAI_TRANSLATION_MODEL?.trim() || "gpt-4o-mini";
 }
 
+function getOpenAiApiKey() {
+  return process.env.AI_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+}
+
 function isTranslationConfigured() {
-  return Boolean(process.env.OPENAI_API_KEY?.trim());
+  return Boolean(getOpenAiApiKey());
 }
 
 async function translateJson<T>({
@@ -59,7 +63,7 @@ async function translateJson<T>({
   targetLanguage: Locale;
   payload: Record<string, string>;
 }): Promise<T | null> {
-  const apiKey = process.env.OPENAI_API_KEY?.trim();
+  const apiKey = getOpenAiApiKey();
   if (!apiKey) return null;
 
   const sourceLabel = sourceLanguage === "zh" ? "Chinese" : "English";

@@ -14,6 +14,7 @@ export const EMPLOYEE_NAV_TAB_IDS = [
   "inventory",
   "logs",
   "tools",
+  "ai",
   "archive",
 ] as const;
 
@@ -66,6 +67,9 @@ export const TABS_PRODUCTS_CATALOG: readonly EmployeeNavTabId[] = ["inventory", 
 export const TABS_LOGS: readonly EmployeeNavTabId[] = ["logs"];
 
 export const TABS_INVENTORY: readonly EmployeeNavTabId[] = ["inventory"];
+
+/** AI assistant page + chat API. */
+export const TABS_AI_PAGE: readonly EmployeeNavTabId[] = ["ai"];
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
