@@ -16,7 +16,10 @@ export function PublicAccessTabs() {
       className="mb-4 grid w-full grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900"
     >
       {TABS.map((tab) => {
-        const active = pathname === tab.href;
+        const active =
+          tab.href === "/forms"
+            ? pathname === "/forms" || pathname.startsWith("/forms/")
+            : pathname === tab.href;
         return (
           <Link
             key={tab.href}
