@@ -18,12 +18,10 @@
     "neon:init": "npx neonctl@latest init --agent cursor"
   },
   "dependencies": {
-    "@ai-sdk/react": "^3.0.170",
     "@prisma/client": "6.16.2",
     "@vercel/analytics": "^2.0.1",
     "@vercel/blob": "^2.3.3",
     "@vercel/speed-insights": "^2.0.0",
-    "ai": "^6.0.168",
     "bcryptjs": "^3.0.3",
     "dotenv": "^17.3.1",
     "heic-convert": "^2.1.0",

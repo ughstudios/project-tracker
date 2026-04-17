@@ -89,8 +89,7 @@ Vercel → **Project → Settings → Environment Variables**:
 | **`AUTH_URL`** | **Exact origin users use in the browser** (no trailing slash). Examples: `https://tracker.colorlightcloud.com` for a custom domain, or `https://<project>.vercel.app`. **Do not use `http://localhost:3000` in production** — mismatched Auth.js cookies often cause “page couldn’t load” with `200` on RSC requests. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
 | **`BLOB_READ_WRITE_TOKEN`** | **Required for file uploads on Vercel.** Create a Blob store under **Storage** → connect it to this project so Vercel injects this token. Serverless functions cannot write under `public/uploads`. |
-| **`AI_GATEWAY_API_KEY`** | Optional; from **Vercel → AI Gateway → API keys**. Required for the in-app **AI assistant** and (when set) for **EN↔ZH issue/thread translation** via the [AI Gateway](https://vercel.com/docs/ai-gateway/getting-started/text). If omitted, the assistant is disabled and translations fall back to direct OpenAI keys below, or original text only. |
-| **`AI_CHAT_MODEL`** | Optional chat model id for the assistant. Default: `gpt-5.4` (sent to the gateway as `openai/gpt-5.4`). You may set a full gateway id such as `anthropic/claude-sonnet-4.5`. |
+| **`AI_GATEWAY_API_KEY`** | Optional; from **Vercel → AI Gateway → API keys**. When set, **EN↔ZH issue/thread translation** uses the [AI Gateway](https://vercel.com/docs/ai-gateway/getting-started/text). If omitted, translations fall back to direct OpenAI keys below, or original text only. |
 | **`OPENAI_TRANSLATION_MODEL`** | Optional override for the translation model. Default: `gpt-4o-mini` (gateway: `openai/gpt-4o-mini`). |
 | **`AI_KEY`** or **`OPENAI_API_KEY`** | Optional **fallback** for translation **only** when `AI_GATEWAY_API_KEY` is not set. Uses the public OpenAI API. |
 

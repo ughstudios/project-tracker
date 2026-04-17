@@ -113,7 +113,6 @@ export function AppShell({ user, onboardingCompleted, navAccess, onLogout, child
                 ) : null}
                 {showTab("logs") ? <NavItem href="/logs" label={t("nav.logs")} /> : null}
                 {showTab("tools") ? <NavItem href="/tools" label={t("nav.tools")} /> : null}
-                {showTab("ai") ? <NavItem href="/ai" label={t("nav.ai")} /> : null}
                 <NavItem href="/forms" label="Forms" />
                 <NavItem href="/pending-customer-requests" label="Pending Requests" />
                 {showTab("archive") ? (
