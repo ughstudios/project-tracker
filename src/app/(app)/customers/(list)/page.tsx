@@ -1,11 +1,12 @@
 "use client";
 
+import { CustomerContactsPanel } from "@/components/customer-contacts-panel";
 import { useI18n } from "@/i18n/context";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
-type Customer = { id: string; name: string; _count?: { projects: number } };
+type Customer = { id: string; name: string; _count?: { projects: number; contacts: number } };
 
 export default function CustomersPage() {
   const { t } = useI18n();
@@ -100,6 +101,22 @@ export default function CustomersPage() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+          {t("customerContacts.addSection")}
+        </h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+          {t("customerContacts.addSectionHelp")}
+        </p>
+        <div className="mt-3">
+          <CustomerContactsPanel
+            customers={customers}
+            showList={false}
+            onChanged={load}
+          />
+        </div>
+      </section>
+
+      <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("customers.listSection")}</h2>
         {loading ? (
           <p className="mt-3 text-sm text-zinc-600 dark:text-zinc-400">{t("customers.loading")}</p>
@@ -112,6 +129,7 @@ export default function CustomersPage() {
                 <tr className="border-b border-zinc-200 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:text-zinc-300">
                   <th className="px-2 py-2 font-medium">{t("common.customer")}</th>
                   <th className="px-2 py-2 font-medium">{t("common.projects")}</th>
+                  <th className="px-2 py-2 font-medium">{t("customerContacts.contacts")}</th>
                   {isAdmin ? (
                     <th className="px-2 py-2 font-medium">{t("common.actions")}</th>
                   ) : null}
@@ -138,6 +156,15 @@ export default function CustomersPage() {
                         title={t("customers.viewProjectsFor", { name: c.name })}
                       >
                         {c._count?.projects ?? 0}
+                      </Link>
+                    </td>
+                    <td className="px-2 py-2 text-zinc-800 dark:text-zinc-200">
+                      <Link
+                        href={`/customers/${encodeURIComponent(c.id)}`}
+                        className="link-accent tabular-nums font-medium underline underline-offset-2"
+                        title={t("customerContacts.viewFor", { name: c.name })}
+                      >
+                        {c._count?.contacts ?? 0}
                       </Link>
                     </td>
                     {isAdmin ? (

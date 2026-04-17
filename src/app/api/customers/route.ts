@@ -17,7 +17,12 @@ export async function GET() {
     where: { archivedAt: null },
     orderBy: { name: "asc" },
     include: {
-      _count: { select: { projects: { where: { archivedAt: null } } } },
+      _count: {
+        select: {
+          projects: { where: { archivedAt: null } },
+          contacts: true,
+        },
+      },
     },
   });
 
@@ -43,7 +48,12 @@ export async function POST(request: Request) {
     update: { archivedAt: null },
     create: { name },
     include: {
-      _count: { select: { projects: { where: { archivedAt: null } } } },
+      _count: {
+        select: {
+          projects: { where: { archivedAt: null } },
+          contacts: true,
+        },
+      },
     },
   });
 

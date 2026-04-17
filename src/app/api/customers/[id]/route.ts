@@ -22,7 +22,16 @@ export async function GET(
     where: { id },
     include: {
       attachments: { orderBy: { createdAt: "desc" } },
-      _count: { select: { projects: { where: { archivedAt: null } } } },
+      contacts: {
+        orderBy: [{ name: "asc" }, { createdAt: "desc" }],
+        include: { customer: { select: { id: true, name: true } } },
+      },
+      _count: {
+        select: {
+          projects: { where: { archivedAt: null } },
+          contacts: true,
+        },
+      },
     },
   });
 

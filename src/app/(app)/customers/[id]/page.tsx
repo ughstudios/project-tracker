@@ -1,6 +1,10 @@
 "use client";
 
 import { AttachmentNoteInlineEditor } from "@/components/attachment-note-inline-editor";
+import {
+  CustomerContactsPanel,
+  type CustomerContact,
+} from "@/components/customer-contacts-panel";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
 import { useI18n } from "@/i18n/context";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
@@ -34,6 +38,7 @@ export default function CustomerDetailPage() {
   const [name, setName] = useState("");
   const [projectCount, setProjectCount] = useState(0);
   const [attachments, setAttachments] = useState<CustomerAttachment[]>([]);
+  const [contacts, setContacts] = useState<CustomerContact[]>([]);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<number | null>(null);
   const [fileUploadNote, setFileUploadNote] = useState("");
@@ -50,6 +55,7 @@ export default function CustomerDetailPage() {
         setMissing(true);
         setName("");
         setAttachments([]);
+        setContacts([]);
         setProjectCount(0);
       }
       return;
@@ -58,7 +64,8 @@ export default function CustomerDetailPage() {
       name: string;
       archivedAt?: string | null;
       attachments?: CustomerAttachment[];
-      _count?: { projects: number };
+      contacts?: CustomerContact[];
+      _count?: { projects: number; contacts: number };
     };
     setName(data.name ?? "");
     setArchivedAt(data.archivedAt ?? null);
@@ -66,6 +73,15 @@ export default function CustomerDetailPage() {
       (data.attachments ?? []).map((a) => ({
         ...a,
         uploadNote: a.uploadNote ?? "",
+      })),
+    );
+    setContacts(
+      (data.contacts ?? []).map((contact) => ({
+        ...contact,
+        email: contact.email ?? "",
+        phone: contact.phone ?? "",
+        title: contact.title ?? "",
+        notes: contact.notes ?? "",
       })),
     );
     setProjectCount(data._count?.projects ?? 0);
@@ -215,6 +231,17 @@ export default function CustomerDetailPage() {
           </p>
         </div>
       ) : null}
+
+      <section className="panel-surface rounded-xl p-4 space-y-4">
+        <h2 className="text-base font-semibold">{t("customerContacts.detailTitle")}</h2>
+        <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("customerContacts.detailHelp")}</p>
+        <CustomerContactsPanel
+          contacts={contacts}
+          fixedCustomerId={customerId}
+          readOnly={readOnly}
+          onChanged={() => load("customerOnly")}
+        />
+      </section>
 
       <section className="panel-surface rounded-xl p-4 space-y-4">
         <h2 className="text-base font-semibold">{t("customerDetail.filesTitle")}</h2>
