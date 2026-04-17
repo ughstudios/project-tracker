@@ -60,6 +60,7 @@ function IssuesPageContent() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const customerFromQuery = searchParams.get("customer")?.trim() ?? "";
+  const projectFromQuery = searchParams.get("project")?.trim() ?? "";
   const [users, setUsers] = useState<User[]>([]);
   const [projects, setProjects] = useState<ProjectSummary[]>([]);
   const [customers, setCustomers] = useState<CustomerSummary[]>([]);
@@ -125,9 +126,12 @@ function IssuesPageContent() {
 
   useEffect(() => {
     if (pathname !== "/issues") return;
-    if (!customerFromQuery) return;
-    setLinkFilter(`c:${customerFromQuery}`);
-  }, [pathname, customerFromQuery]);
+    if (projectFromQuery) {
+      setLinkFilter(`p:${projectFromQuery}`);
+      return;
+    }
+    if (customerFromQuery) setLinkFilter(`c:${customerFromQuery}`);
+  }, [pathname, projectFromQuery, customerFromQuery]);
 
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
