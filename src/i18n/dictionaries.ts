@@ -165,7 +165,8 @@ const en: MessageTree = {
     statCustomers: "Customers",
     chartsNoIssues: "No active issues yet — charts will appear when issues exist.",
     chartByAssignee: "Issues by assignee",
-    chartByAssigneeHint: "How many active issues each person owns (unassigned included).",
+    chartByAssigneeHint:
+      "Lifetime totals per person: every issue they were assigned to, including archived (unassigned bucket included).",
     chartByStatus: "Issues by status",
     chartByStatusHint: "Share of work in each workflow column.",
     chartByProject: "Top projects by issue count",
@@ -994,7 +995,8 @@ const zh: MessageTree = {
     statCustomers: "客户数",
     chartsNoIssues: "暂无进行中问题，创建问题后将显示图表。",
     chartByAssignee: "按负责人分布",
-    chartByAssigneeHint: "每位成员负责的进行中问题数（含未分配）。",
+    chartByAssigneeHint:
+      "累计统计：每位成员曾被分配过的全部问题（含已归档；含未分配项）。",
     chartByStatus: "按状态分布",
     chartByStatusHint: "各流程状态下问题占比。",
     chartByProject: "问题最多的项目",

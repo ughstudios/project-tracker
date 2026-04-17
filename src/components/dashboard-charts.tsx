@@ -41,14 +41,19 @@ type ChartProject = {
 };
 
 type Props = {
+  /** Non-archived issues: KPI, status, and project charts. */
   issues: ChartIssue[];
+  /** All issues (including archived) for the assignee totals chart; defaults to `issues` when omitted. */
+  assigneeLeaderboardIssues?: ChartIssue[];
   projects: ChartProject[];
   customers: { id: string }[];
 };
 
-export function DashboardCharts({ issues, projects, customers }: Props) {
+export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, customers }: Props) {
   const { t } = useI18n();
   const { resolvedTheme } = useTheme();
+
+  const assigneeSource = assigneeLeaderboardIssues ?? issues;
 
   const { byAssignee, byStatus, byProject } = useMemo(() => {
     const labelForStatus = (key: string) => {
@@ -57,7 +62,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
     };
 
     const assigneeMap = new Map<string, AssigneeSlice>();
-    for (const issue of issues) {
+    for (const issue of assigneeSource) {
       if (issue.assignees.length === 0) {
         const id = "";
         const name = t("dashboard.chartUnassigned");
@@ -116,7 +121,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
       .slice(0, 12);
 
     return { byAssignee, byStatus, byProject };
-  }, [issues, t]);
+  }, [issues, assigneeSource, t]);
 
   const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
@@ -148,7 +153,7 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
         </div>
       </section>
 
-      {issues.length === 0 ? (
+      {issues.length === 0 && assigneeSource.length === 0 ? (
         <p className="rounded-xl border border-dashed border-zinc-300 dark:border-zinc-600 bg-zinc-50 dark:bg-zinc-950 p-6 text-center text-sm text-zinc-600 dark:text-zinc-400">
           {t("dashboard.chartsNoIssues")}
         </p>
@@ -200,7 +205,13 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
             </section>
           ) : null}
 
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div
+            className={
+              byStatus.length > 0
+                ? "grid gap-4 lg:grid-cols-2"
+                : "grid gap-4 lg:grid-cols-1"
+            }
+          >
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
@@ -245,55 +256,57 @@ export function DashboardCharts({ issues, projects, customers }: Props) {
               </div>
             </section>
 
-            <section className="panel-surface rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
-              <div className="mt-3 h-[280px] w-full min-w-0">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={byStatus}
-                      dataKey="count"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      stroke={chartChrome.pieStroke}
-                      strokeWidth={1}
-                      label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
-                        const RADIAN = Math.PI / 180;
-                        const or = outerRadius ?? 0;
-                        const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
-                        const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
-                        return (
-                          <text
-                            x={x}
-                            y={y}
-                            fill={fill as string}
-                            textAnchor={x > (cx ?? 0) ? "start" : "end"}
-                            dominantBaseline="central"
-                            fontSize={11}
-                          >
-                            {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                          </text>
-                        );
-                      }}
-                      labelLine={false}
-                    >
-                      {byStatus.map((entry) => (
-                        <Cell key={entry.key} fill={entry.fill} />
-                      ))}
-                    </Pie>
-                    <Tooltip
-                      contentStyle={chartChrome.tooltipContentStyle}
-                      labelStyle={chartChrome.tooltipLabelStyle}
-                      itemStyle={chartChrome.tooltipItemStyle}
-                      formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                    />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </section>
+            {byStatus.length > 0 ? (
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
+                <div className="mt-3 h-[280px] w-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={byStatus}
+                        dataKey="count"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        stroke={chartChrome.pieStroke}
+                        strokeWidth={1}
+                        label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
+                          const RADIAN = Math.PI / 180;
+                          const or = outerRadius ?? 0;
+                          const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
+                          const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill={fill as string}
+                              textAnchor={x > (cx ?? 0) ? "start" : "end"}
+                              dominantBaseline="central"
+                              fontSize={11}
+                            >
+                              {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
+                        labelLine={false}
+                      >
+                        {byStatus.map((entry) => (
+                          <Cell key={entry.key} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            ) : null}
           </div>
         </div>
       )}

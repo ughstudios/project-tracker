@@ -18,6 +18,7 @@ export type IssueBoardProject = {
 export type IssueBoardCustomer = { id: string; name: string };
 export type IssueBoardIssue = {
   id: string;
+  archivedAt?: string | null;
   createdAt: string;
   title: string;
   titleTranslated: string | null;
@@ -51,9 +52,11 @@ export function useIssueBoardData(paths: readonly string[]) {
   const loadData = useCallback(async () => {
     setLoading(true);
     try {
+      const issuesPath =
+        pathname === "/dashboard" ? "/api/issues?withArchived=1" : "/api/issues";
       const [usersRes, issuesRes, projectsRes, customersRes] = await Promise.all([
         fetch("/api/users", fetchFresh),
-        fetch("/api/issues", fetchFresh),
+        fetch(issuesPath, fetchFresh),
         fetch("/api/projects", fetchFresh),
         fetch("/api/customers", fetchFresh),
       ]);
@@ -72,7 +75,7 @@ export function useIssueBoardData(paths: readonly string[]) {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [pathname]);
 
   useEffect(() => {
     if (!active) return;

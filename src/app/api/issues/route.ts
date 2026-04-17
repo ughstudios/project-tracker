@@ -12,7 +12,7 @@ import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
-export async function GET() {
+export async function GET(request: Request) {
   const session = await auth();
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -22,8 +22,12 @@ export async function GET() {
 
   await autoArchiveExpiredDoneIssues();
 
+  const { searchParams } = new URL(request.url);
+  const withArchived =
+    searchParams.get("withArchived") === "1" || searchParams.get("withArchived") === "true";
+
   const issues = await prisma.issue.findMany({
-    where: { archivedAt: null } as Record<string, null>,
+    where: withArchived ? undefined : { archivedAt: null },
     orderBy: { createdAt: "desc" },
     include: {
       project: true,
