@@ -58,6 +58,9 @@ const RECEIVER_MODELS = [
   "5A-75B",
 ] as const;
 
+const FILE_INPUT_CLASS =
+  "w-full rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm text-zinc-700 file:mr-3 file:cursor-pointer file:rounded-md file:border-0 file:bg-zinc-900 file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-white file:transition-colors hover:file:bg-zinc-800 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:file:bg-zinc-100 dark:file:text-zinc-900 dark:hover:file:bg-zinc-300";
+
 function hasAnyControllerField(item: ControllerConfig): boolean {
   return item.model.trim() !== "" || item.firmware.trim() !== "" || item.quantity !== 1;
 }
@@ -408,7 +411,7 @@ export function PublicCalibrationRequestForm() {
               type="file"
               accept="image/*"
               required
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              className={FILE_INPUT_CLASS}
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
@@ -419,7 +422,7 @@ export function PublicCalibrationRequestForm() {
               accept="image/*"
               multiple
               required
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              className={FILE_INPUT_CLASS}
             />
           </label>
         </div>
@@ -433,7 +436,7 @@ export function PublicCalibrationRequestForm() {
             accept="image/*"
             multiple
             required
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            className={FILE_INPUT_CLASS}
           />
         </label>
       </section>
