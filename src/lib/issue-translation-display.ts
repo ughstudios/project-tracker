@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/types";
-import { detectIssueContentLanguage } from "@/lib/issue-content-translation";
+import { detectIssueContentLanguage } from "@/lib/issue-content-language";
 import { getLocalizedText } from "@/lib/translated-content";
 
 export type IssueTranslationFields = {
