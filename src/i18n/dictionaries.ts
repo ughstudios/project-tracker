@@ -183,7 +183,8 @@ const en: MessageTree = {
       "Active issues grouped by issue customer or the linked project's customer (up to 12). Click a customer bar to open the filtered issue list.",
     chartByCustomerMonthly: "Issues by customer, monthly",
     chartByCustomerMonthlyHint:
-      "Active issues by customer and creation month (last 12 months, UTC), using the same customer set as the chart beside it.",
+      "Active issues by creation month (last 12 months, UTC). The top seven customers by open count each get a color; everyone else is combined as “Other customers” so the chart stays readable.",
+    chartCustomerMonthlyOther: "Other customers",
     chartCustomerProjectTreemap: "Customer & project breakdown",
     chartCustomerProjectTreemapHint:
       "Each card is a customer (active issues). Expand to see projects with a share bar. Click the customer name to filter by customer; click a project row to open the filtered issue list.",
@@ -1058,7 +1059,8 @@ const zh: MessageTree = {
       "按问题客户或关联项目的客户统计未归档问题（最多 12 个）。点击客户条形可打开已筛选的问题列表。",
     chartByCustomerMonthly: "按客户和月份分布的问题",
     chartByCustomerMonthlyHint:
-      "按客户和创建月份统计未归档问题（最近 12 个月，UTC），使用左侧图表中的同一组客户。",
+      "按创建月份统计未归档问题（最近 12 个月，UTC）。进行中问题数最多的前 7 位客户各占一色，其余客户合并为「其他客户」，避免图例过长。",
+    chartCustomerMonthlyOther: "其他客户",
     chartCustomerProjectTreemap: "客户与项目分布",
     chartCustomerProjectTreemapHint:
       "每张卡片对应一位客户（进行中问题数）。展开可查看各项目及占比条。点击客户名称按客户筛选；点击项目行打开已筛选问题列表。",

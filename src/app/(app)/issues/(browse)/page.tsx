@@ -38,11 +38,19 @@ type IssueListItem = {
   assignees: { id: string; name: string | null; email: string | null }[];
 };
 
-function matchesLinkFilter(issue: IssueListItem, filter: string) {
+function matchesLinkFilter(
+  issue: IssueListItem,
+  filter: string,
+  projectCustomerById: Map<string, string>,
+) {
   if (!filter) return true;
   if (filter === FILTER_UNLINKED) return !issue.project && !issue.customer;
   if (filter.startsWith("p:")) return issue.project?.id === filter.slice(2);
-  if (filter.startsWith("c:")) return issue.customer?.id === filter.slice(2);
+  if (filter.startsWith("c:")) {
+    const customerId =
+      issue.customer?.id ?? (issue.project ? projectCustomerById.get(issue.project.id) : undefined);
+    return customerId === filter.slice(2);
+  }
   return true;
 }
 
@@ -133,10 +141,15 @@ function IssuesPageContent() {
     if (customerFromQuery) setLinkFilter(`c:${customerFromQuery}`);
   }, [pathname, projectFromQuery, customerFromQuery]);
 
+  const projectCustomerById = useMemo(
+    () => new Map(projects.map((project) => [project.id, project.customer?.id ?? ""])),
+    [projects],
+  );
+
   const filteredIssues = useMemo(() => {
     const q = listQuery.trim().toLowerCase();
     return issues.filter((i) => {
-      const matchLink = matchesLinkFilter(i, linkFilter);
+      const matchLink = matchesLinkFilter(i, linkFilter, projectCustomerById);
       const matchAssignee =
         !assigneeListFilter ||
         (assigneeListFilter === FILTER_ASSIGNEE_UNASSIGNED
@@ -159,7 +172,7 @@ function IssuesPageContent() {
           .includes(q);
       return matchLink && matchAssignee && matchText;
     });
-  }, [issues, listQuery, linkFilter, assigneeListFilter]);
+  }, [issues, listQuery, linkFilter, projectCustomerById, assigneeListFilter]);
 
   const createIssue = async (e: React.FormEvent) => {
     e.preventDefault();

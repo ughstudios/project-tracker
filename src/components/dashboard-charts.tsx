@@ -34,6 +34,17 @@ type CustomerMonthlyDatum = {
   label: string;
 } & Record<string, string | number>;
 
+type CustomerMonthlySeriesSlice = {
+  id: string;
+  dataKey: string;
+  name: string;
+  fill: string;
+};
+
+/** Stacked monthly chart: at most this many customers get their own series; the rest roll into "Other". */
+const MONTHLY_STACK_TOP = 7;
+const OTHER_MONTHLY_KEY = "customer_month_other";
+
 const CUSTOMER_CHART_COLORS = [
   "#4f46e5",
   "#7c3aed",
@@ -169,7 +180,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     [locale],
   );
 
-  const { byCustomer, customerMonthlyBreakdown } = useMemo(() => {
+  const { byCustomer, customerMonthlyBreakdown, customerMonthlySeries } = useMemo(() => {
     const projectLookup = new Map(projects.map((p) => [p.id, p]));
     const noCustomerLabel = t("issues.noCustomer");
     const customerForIssue = (issue: ChartIssue) => {
@@ -191,35 +202,59 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
       buckets.set(customer.id, prev);
     }
 
-    const byCustomer: CustomerIssueSlice[] = [...buckets.values()]
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 12)
-      .map((customer, index) => ({
-        ...customer,
-        dataKey: `customer_${index}`,
-        fill: CUSTOMER_CHART_COLORS[index % CUSTOMER_CHART_COLORS.length],
-      }));
+    const sortedCustomers = [...buckets.values()].sort((a, b) => b.count - a.count);
+
+    const byCustomer: CustomerIssueSlice[] = sortedCustomers.slice(0, 12).map((customer, index) => ({
+      ...customer,
+      dataKey: `customer_${index}`,
+      fill: CUSTOMER_CHART_COLORS[index % CUSTOMER_CHART_COLORS.length],
+    }));
+
+    const topMonthly = sortedCustomers.slice(0, MONTHLY_STACK_TOP);
+    const hasOther = sortedCustomers.length > MONTHLY_STACK_TOP;
+    const idToMonthlyKey = new Map<string, string>();
+    topMonthly.forEach((c, i) => {
+      idToMonthlyKey.set(c.id, `monthly_customer_${i}`);
+    });
+
+    const customerMonthlySeries: CustomerMonthlySeriesSlice[] = topMonthly.map((c, i) => ({
+      id: c.id,
+      dataKey: `monthly_customer_${i}`,
+      name: c.name,
+      fill: CUSTOMER_CHART_COLORS[i % CUSTOMER_CHART_COLORS.length],
+    }));
+    if (hasOther) {
+      customerMonthlySeries.push({
+        id: "__other__",
+        dataKey: OTHER_MONTHLY_KEY,
+        name: t("dashboard.chartCustomerMonthlyOther"),
+        fill: "#64748b",
+      });
+    }
 
     const monthKeys = recentUtcMonthKeys(12);
-    const customerById = new Map(byCustomer.map((customer) => [customer.id, customer]));
     const customerMonthlyBreakdown: CustomerMonthlyDatum[] = monthKeys.map((monthKey) => {
       const row: CustomerMonthlyDatum = { monthKey, label: monthLabel(monthKey) };
-      for (const customer of byCustomer) row[customer.dataKey] = 0;
+      for (const slice of customerMonthlySeries) row[slice.dataKey] = 0;
       return row;
     });
     const monthlyRowByKey = new Map(customerMonthlyBreakdown.map((row) => [row.monthKey, row]));
 
     for (const issue of issues) {
-      const customer = customerById.get(customerForIssue(issue).id);
-      if (!customer) continue;
       const d = new Date(issue.createdAt);
       if (Number.isNaN(d.getTime())) continue;
       const row = monthlyRowByKey.get(utcMonthKey(d));
       if (!row) continue;
-      row[customer.dataKey] = Number(row[customer.dataKey] ?? 0) + 1;
+      const cid = customerForIssue(issue).id;
+      const key = idToMonthlyKey.get(cid);
+      if (key) {
+        row[key] = Number(row[key] ?? 0) + 1;
+      } else if (hasOther) {
+        row[OTHER_MONTHLY_KEY] = Number(row[OTHER_MONTHLY_KEY] ?? 0) + 1;
+      }
     }
 
-    return { byCustomer, customerMonthlyBreakdown };
+    return { byCustomer, customerMonthlyBreakdown, customerMonthlySeries };
   }, [issues, projects, t, monthLabel]);
 
   const issuesByMonth = useMemo(() => {
@@ -293,118 +328,6 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
         </p>
       ) : (
         <div className="space-y-4">
-          {byCustomer.length > 0 ? (
-            <div className="grid gap-4 md:grid-cols-2">
-              <section className="panel-surface rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {t("dashboard.chartByCustomer")}
-                </h3>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  {t("dashboard.chartByCustomerHint")}
-                </p>
-                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart
-                      layout="vertical"
-                      data={byCustomer}
-                      margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                      <XAxis
-                        type="number"
-                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
-                        stroke={chartChrome.axisStroke}
-                        allowDecimals={false}
-                      />
-                      <YAxis
-                        type="category"
-                        dataKey="name"
-                        width={116}
-                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
-                        stroke={chartChrome.axisStroke}
-                        interval={0}
-                      />
-                      <Tooltip
-                        contentStyle={chartChrome.tooltipContentStyle}
-                        labelStyle={chartChrome.tooltipLabelStyle}
-                        itemStyle={chartChrome.tooltipItemStyle}
-                        cursor={{ fill: chartChrome.cursorFill }}
-                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                      />
-                      <Bar
-                        dataKey="count"
-                        name={t("dashboard.axisIssues")}
-                        radius={[0, 4, 4, 0]}
-                        activeBar={false}
-                        onClick={onCustomerBarClick}
-                      >
-                        {byCustomer.map((customer) => (
-                          <Cell
-                            key={customer.id || "__no_customer__"}
-                            fill={customer.fill}
-                            cursor={customer.id ? "pointer" : "default"}
-                          />
-                        ))}
-                      </Bar>
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </section>
-
-              <section className="panel-surface rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                  {t("dashboard.chartByCustomerMonthly")}
-                </h3>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                  {t("dashboard.chartByCustomerMonthlyHint")}
-                </p>
-                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={customerMonthlyBreakdown} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                      <XAxis
-                        dataKey="label"
-                        tick={{ fontSize: 10, fill: chartChrome.tickFill }}
-                        stroke={chartChrome.axisStroke}
-                        interval={0}
-                        angle={-35}
-                        textAnchor="end"
-                        height={56}
-                      />
-                      <YAxis
-                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
-                        stroke={chartChrome.axisStroke}
-                        allowDecimals={false}
-                      />
-                      <Tooltip
-                        contentStyle={chartChrome.tooltipContentStyle}
-                        labelStyle={chartChrome.tooltipLabelStyle}
-                        itemStyle={chartChrome.tooltipItemStyle}
-                        cursor={{ fill: chartChrome.cursorFill }}
-                        formatter={(value: number, name: string) => [value, name]}
-                      />
-                      <Legend
-                        verticalAlign="bottom"
-                        height={44}
-                        wrapperStyle={{ color: chartChrome.tickFill, fontSize: "11px" }}
-                      />
-                      {byCustomer.map((customer) => (
-                        <Bar
-                          key={customer.dataKey}
-                          dataKey={customer.dataKey}
-                          name={customer.name}
-                          stackId="customers"
-                          fill={customer.fill}
-                          activeBar={false}
-                        />
-                      ))}
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </section>
-            </div>
-          ) : null}
-
           <div className="grid gap-4 lg:grid-cols-2">
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
@@ -504,6 +427,118 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
               </div>
             </section>
           </div>
+
+          {byCustomer.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {t("dashboard.chartByCustomer")}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.chartByCustomerHint")}
+                </p>
+                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={byCustomer}
+                      margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        allowDecimals={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={116}
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        interval={0}
+                      />
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        cursor={{ fill: chartChrome.cursorFill }}
+                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                      />
+                      <Bar
+                        dataKey="count"
+                        name={t("dashboard.axisIssues")}
+                        radius={[0, 4, 4, 0]}
+                        activeBar={false}
+                        onClick={onCustomerBarClick}
+                      >
+                        {byCustomer.map((customer) => (
+                          <Cell
+                            key={customer.id || "__no_customer__"}
+                            fill={customer.fill}
+                            cursor={customer.id ? "pointer" : "default"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {t("dashboard.chartByCustomerMonthly")}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.chartByCustomerMonthlyHint")}
+                </p>
+                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={customerMonthlyBreakdown} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        interval={0}
+                        angle={-35}
+                        textAnchor="end"
+                        height={56}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        cursor={{ fill: chartChrome.cursorFill }}
+                        formatter={(value: number, name: string) => [value, name]}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={52}
+                        wrapperStyle={{ color: chartChrome.tickFill, fontSize: "10px" }}
+                      />
+                      {customerMonthlySeries.map((slice) => (
+                        <Bar
+                          key={slice.dataKey}
+                          dataKey={slice.dataKey}
+                          name={slice.name}
+                          stackId="customers"
+                          fill={slice.fill}
+                          activeBar={false}
+                        />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            </div>
+          ) : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             <section className="panel-surface rounded-xl p-4">
