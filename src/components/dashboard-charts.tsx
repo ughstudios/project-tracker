@@ -22,6 +22,7 @@ import {
 type AssigneeSlice = { id: string; name: string; count: number };
 type StatusSlice = { key: string; name: string; count: number; fill: string };
 type ProjectSlice = { id: string; name: string; count: number };
+type CustomerSlice = { id: string; name: string; count: number };
 
 const STATUS_COLORS: Record<string, string> = {
   OPEN: "#3b82f6",
@@ -31,8 +32,10 @@ const STATUS_COLORS: Record<string, string> = {
 
 type ChartIssue = {
   status: string;
+  createdAt: string;
   assignees: { id: string; name: string }[];
   project: { id: string; name: string; product: string } | null;
+  customer: { id: string; name: string } | null;
 };
 
 type ChartProject = {
@@ -50,14 +53,20 @@ type Props = {
   customers: { id: string }[];
 };
 
+function utcMonthKey(d: Date): string {
+  const y = d.getUTCFullYear();
+  const m = d.getUTCMonth() + 1;
+  return `${y}-${String(m).padStart(2, "0")}`;
+}
+
 export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, customers }: Props) {
-  const { t } = useI18n();
+  const { t, locale } = useI18n();
   const { resolvedTheme } = useTheme();
   const router = useRouter();
 
   const assigneeSource = assigneeLeaderboardIssues ?? issues;
 
-  const { byAssignee, byAssigneeOpenWork, byStatus, byProject } = useMemo(() => {
+  const { byAssignee, byAssigneeOpenWork, byStatus, byProject, byCustomer } = useMemo(() => {
     const labelForStatus = (key: string) => {
       const tr = t(`issueStatus.${key}` as "issueStatus.OPEN");
       return tr === `issueStatus.${key}` ? key : tr;
@@ -128,14 +137,76 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
       .sort((a, b) => b.count - a.count)
       .slice(0, 12);
 
-    return { byAssignee, byAssigneeOpenWork, byStatus, byProject };
+    const customerMap = new Map<string, CustomerSlice>();
+    for (const issue of issues) {
+      if (issue.customer) {
+        const prev = customerMap.get(issue.customer.id) ?? {
+          id: issue.customer.id,
+          name: issue.customer.name,
+          count: 0,
+        };
+        prev.count += 1;
+        customerMap.set(issue.customer.id, prev);
+      }
+    }
+    const byCustomer = [...customerMap.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12);
+
+    return { byAssignee, byAssigneeOpenWork, byStatus, byProject, byCustomer };
   }, [issues, assigneeSource, t]);
+
+  const monthLabel = useCallback(
+    (monthKey: string) => {
+      const [y, m] = monthKey.split("-").map(Number);
+      const d = new Date(Date.UTC(y, m - 1, 1));
+      return d.toLocaleDateString(locale === "zh" ? "zh-CN" : "en-US", {
+        month: "short",
+        year: "numeric",
+        timeZone: "UTC",
+      });
+    },
+    [locale],
+  );
+
+  const issuesByMonth = useMemo(() => {
+    const now = new Date();
+    const endY = now.getUTCFullYear();
+    const endM = now.getUTCMonth();
+    const keys: string[] = [];
+    for (let i = 11; i >= 0; i -= 1) {
+      keys.push(utcMonthKey(new Date(Date.UTC(endY, endM - i, 1))));
+    }
+    const windowKeys = new Set(keys);
+    const counts = new Map<string, number>();
+    for (const issue of assigneeSource) {
+      const raw = issue.createdAt;
+      if (!raw) continue;
+      const d = new Date(raw);
+      if (Number.isNaN(d.getTime())) continue;
+      const key = utcMonthKey(d);
+      if (!windowKeys.has(key)) continue;
+      counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return keys.map((monthKey) => ({
+      monthKey,
+      label: monthLabel(monthKey),
+      count: counts.get(monthKey) ?? 0,
+    }));
+  }, [assigneeSource, monthLabel]);
 
   const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
   const goToProjectIssues = useCallback(
     (projectId: string) => {
       router.push(`/issues?project=${encodeURIComponent(projectId)}`);
+    },
+    [router],
+  );
+
+  const goToCustomerIssues = useCallback(
+    (customerId: string) => {
+      router.push(`/issues?customer=${encodeURIComponent(customerId)}`);
     },
     [router],
   );
@@ -180,6 +251,46 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     [byProject, chartChrome.tickFill, goToProjectIssues],
   );
 
+  const customerBarChartTick = useCallback(
+    (props: { x: number; y: number; payload: { value: string }; textAnchor?: string }) => {
+      const { x, y, payload, textAnchor = "end" } = props;
+      const name = String(payload?.value ?? "");
+      const row = byCustomer.find((c) => c.name === name);
+      const common = {
+        x,
+        y,
+        textAnchor: textAnchor as "start" | "middle" | "end" | "inherit",
+        dominantBaseline: "central" as const,
+        fontSize: 11,
+      };
+      if (!row?.id) {
+        return (
+          <text {...common} fill={chartChrome.tickFill}>
+            {name}
+          </text>
+        );
+      }
+      return (
+        <text
+          {...common}
+          role="link"
+          tabIndex={0}
+          className="cursor-pointer fill-indigo-600 underline decoration-indigo-500/80 decoration-2 underline-offset-[3px] outline-none transition-[fill,opacity] hover:fill-indigo-500 dark:fill-indigo-400 dark:decoration-indigo-300/70 dark:hover:fill-indigo-300"
+          onClick={() => goToCustomerIssues(row.id)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault();
+              goToCustomerIssues(row.id);
+            }
+          }}
+        >
+          {name}
+        </text>
+      );
+    },
+    [byCustomer, chartChrome.tickFill, goToCustomerIssues],
+  );
+
   return (
     <div className="space-y-4">
       <section
@@ -214,6 +325,46 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
         </p>
       ) : (
         <div className="space-y-4">
+          <section className="panel-surface rounded-xl p-4">
+            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartIssuesByMonth")}</h3>
+            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartIssuesByMonthHint")}</p>
+            <div className="mt-3 h-[260px] w-full min-w-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={issuesByMonth} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                  <XAxis
+                    dataKey="label"
+                    tick={{ fontSize: 10, fill: chartChrome.tickFill }}
+                    stroke={chartChrome.axisStroke}
+                    interval={0}
+                    angle={-35}
+                    textAnchor="end"
+                    height={56}
+                  />
+                  <YAxis
+                    tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                    stroke={chartChrome.axisStroke}
+                    allowDecimals={false}
+                  />
+                  <Tooltip
+                    contentStyle={chartChrome.tooltipContentStyle}
+                    labelStyle={chartChrome.tooltipLabelStyle}
+                    itemStyle={chartChrome.tooltipItemStyle}
+                    cursor={{ fill: chartChrome.cursorFill }}
+                    formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                  />
+                  <Bar
+                    dataKey="count"
+                    name={t("dashboard.axisIssues")}
+                    fill="#6366f1"
+                    radius={[4, 4, 0, 0]}
+                    activeBar={false}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </section>
+
           {byProject.length > 0 ? (
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
@@ -265,6 +416,65 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
                       onClick={(rect: { payload?: ProjectSlice }) => {
                         const id = rect?.payload?.id;
                         if (id) goToProjectIssues(id);
+                      }}
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </section>
+          ) : null}
+
+          {byCustomer.length > 0 ? (
+            <section className="panel-surface rounded-xl p-4">
+              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByCustomer")}</h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByCustomerHint")}</p>
+              <div
+                className={
+                  "mt-3 h-[300px] w-full min-w-0 md:h-[340px] " +
+                  "[&_.recharts-bar-rectangle]:cursor-pointer " +
+                  "[&_.recharts-bar-rectangle]:transition-[filter] " +
+                  "[&_.recharts-bar-rectangle]:duration-150 " +
+                  "[&_.recharts-bar-rectangle:hover]:[filter:brightness(1.12)_drop-shadow(0_0_10px_rgb(167_139_250/0.75))]"
+                }
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart
+                    layout="vertical"
+                    data={byCustomer}
+                    margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                  >
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                    <XAxis
+                      type="number"
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      allowDecimals={false}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={120}
+                      tick={customerBarChartTick}
+                      stroke={chartChrome.axisStroke}
+                      interval={0}
+                    />
+                    <Tooltip
+                      contentStyle={chartChrome.tooltipContentStyle}
+                      labelStyle={chartChrome.tooltipLabelStyle}
+                      itemStyle={chartChrome.tooltipItemStyle}
+                      cursor={{ fill: chartChrome.cursorFill }}
+                      formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                    />
+                    <Bar
+                      dataKey="count"
+                      name={t("dashboard.axisIssues")}
+                      fill="#a78bfa"
+                      radius={[0, 4, 4, 0]}
+                      activeBar={false}
+                      className="[vector-effect:non-scaling-stroke] stroke-transparent stroke-0 transition-[stroke-width,stroke] duration-150 hover:stroke-2 hover:stroke-violet-200/95 dark:hover:stroke-violet-100/85"
+                      onClick={(rect: { payload?: CustomerSlice }) => {
+                        const id = rect?.payload?.id;
+                        if (id) goToCustomerIssues(id);
                       }}
                     />
                   </BarChart>

@@ -176,6 +176,11 @@ const en: MessageTree = {
     chartByProject: "Top projects by issue count",
     chartByProjectHint:
       "Projects with the most active issues (up to 12). Click a bar or project name to open the filtered issue list.",
+    chartByCustomer: "Top customers by issue count",
+    chartByCustomerHint:
+      "Customers with the most active issues linked directly on the issue (up to 12). Click a bar or name to open the filtered issue list.",
+    chartIssuesByMonth: "Issues created by month",
+    chartIssuesByMonthHint: "New issues by calendar month of creation (last 12 months, UTC). Includes archived.",
     axisIssues: "Issues",
     chartUnassigned: "Unassigned",
     workRecordsChartsAria: "Aggregated work record statistics",
@@ -1010,6 +1015,11 @@ const zh: MessageTree = {
     chartByProject: "问题最多的项目",
     chartByProjectHint:
       "进行中问题最多的项目（最多 12 个）。点击条形或项目名称可打开已筛选的问题列表。",
+    chartByCustomer: "问题最多的客户",
+    chartByCustomerHint:
+      "在问题上直接关联的客户中，进行中问题最多的客户（最多 12 个）。点击条形或名称可打开已筛选的问题列表。",
+    chartIssuesByMonth: "按月新建问题",
+    chartIssuesByMonthHint: "按创建日所在自然月统计的新问题数量（最近 12 个月，UTC）。含已归档。",
     axisIssues: "问题数",
     chartUnassigned: "未分配",
     workRecordsChartsAria: "工作记录汇总统计",
