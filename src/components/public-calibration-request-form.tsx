@@ -250,7 +250,7 @@ export function PublicCalibrationRequestForm() {
           {controllers.map((item, idx) => (
             <div
               key={`controller-${idx}`}
-              className="grid gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-4 dark:border-zinc-800 dark:bg-zinc-900/30"
+              className="grid grid-cols-1 gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.1fr)_minmax(84px,0.7fr)_120px] dark:border-zinc-800 dark:bg-zinc-900/30"
             >
               <select
                 value={item.model}
@@ -259,7 +259,7 @@ export function PublicCalibrationRequestForm() {
                     prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               >
                 <option value="">Select controller model</option>
                 {CONTROLLER_MODELS.map((model) => (
@@ -277,7 +277,7 @@ export function PublicCalibrationRequestForm() {
                     prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               />
               <input
                 type="number"
@@ -292,14 +292,14 @@ export function PublicCalibrationRequestForm() {
                     ),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
               />
               <button
                 type="button"
                 onClick={() =>
                   setControllers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 lg:w-[120px] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
                 Remove
               </button>
@@ -328,7 +328,7 @@ export function PublicCalibrationRequestForm() {
           {receivers.map((item, idx) => (
             <div
               key={`receiver-${idx}`}
-              className="grid gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-4 dark:border-zinc-800 dark:bg-zinc-900/30"
+              className="grid grid-cols-1 gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-2 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1.1fr)_minmax(84px,0.7fr)_120px] dark:border-zinc-800 dark:bg-zinc-900/30"
             >
               <select
                 value={item.model}
@@ -337,7 +337,7 @@ export function PublicCalibrationRequestForm() {
                     prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               >
                 <option value="">Select receiver model</option>
                 {RECEIVER_MODELS.map((model) => (
@@ -355,7 +355,7 @@ export function PublicCalibrationRequestForm() {
                     prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               />
               <input
                 type="number"
@@ -370,14 +370,14 @@ export function PublicCalibrationRequestForm() {
                     ),
                   )
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm tabular-nums dark:border-zinc-700 dark:bg-zinc-900"
               />
               <button
                 type="button"
                 onClick={() =>
                   setReceivers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
                 }
-                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 lg:w-[120px] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
                 Remove
               </button>
