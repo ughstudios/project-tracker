@@ -167,6 +167,10 @@ const en: MessageTree = {
     chartByAssignee: "Issues by assignee",
     chartByAssigneeHint:
       "Lifetime totals per person: every issue they were assigned to, including archived (unassigned bucket included).",
+    chartByAssigneeOpenWork: "Open work by assignee",
+    chartByAssigneeOpenWorkHint:
+      "Only issues that are not archived and not marked done (unassigned bucket included).",
+    chartByAssigneeOpenWorkEmpty: "No open or in-progress issues.",
     chartByStatus: "Issues by status",
     chartByStatusHint: "Share of work in each workflow column.",
     chartByProject: "Top projects by issue count",
@@ -997,6 +1001,9 @@ const zh: MessageTree = {
     chartByAssignee: "按负责人分布",
     chartByAssigneeHint:
       "累计统计：每位成员曾被分配过的全部问题（含已归档；含未分配项）。",
+    chartByAssigneeOpenWork: "待完成工作（按负责人）",
+    chartByAssigneeOpenWorkHint: "未归档且未完成的问题（含未分配）。",
+    chartByAssigneeOpenWorkEmpty: "暂无待处理或进行中的问题。",
     chartByStatus: "按状态分布",
     chartByStatusHint: "各流程状态下问题占比。",
     chartByProject: "问题最多的项目",

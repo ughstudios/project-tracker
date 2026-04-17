@@ -55,29 +55,35 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
 
   const assigneeSource = assigneeLeaderboardIssues ?? issues;
 
-  const { byAssignee, byStatus, byProject } = useMemo(() => {
+  const { byAssignee, byAssigneeOpenWork, byStatus, byProject } = useMemo(() => {
     const labelForStatus = (key: string) => {
       const tr = t(`issueStatus.${key}` as "issueStatus.OPEN");
       return tr === `issueStatus.${key}` ? key : tr;
     };
 
-    const assigneeMap = new Map<string, AssigneeSlice>();
-    for (const issue of assigneeSource) {
-      if (issue.assignees.length === 0) {
-        const id = "";
-        const name = t("dashboard.chartUnassigned");
-        const prev = assigneeMap.get(id) ?? { id, name, count: 0 };
-        prev.count += 1;
-        assigneeMap.set(id, prev);
-      } else {
-        for (const a of issue.assignees) {
-          const prev = assigneeMap.get(a.id) ?? { id: a.id, name: a.name, count: 0 };
+    const countByAssignee = (source: ChartIssue[]): AssigneeSlice[] => {
+      const assigneeMap = new Map<string, AssigneeSlice>();
+      for (const issue of source) {
+        if (issue.assignees.length === 0) {
+          const id = "";
+          const name = t("dashboard.chartUnassigned");
+          const prev = assigneeMap.get(id) ?? { id, name, count: 0 };
           prev.count += 1;
-          assigneeMap.set(a.id, prev);
+          assigneeMap.set(id, prev);
+        } else {
+          for (const a of issue.assignees) {
+            const prev = assigneeMap.get(a.id) ?? { id: a.id, name: a.name, count: 0 };
+            prev.count += 1;
+            assigneeMap.set(a.id, prev);
+          }
         }
       }
-    }
-    const byAssignee = [...assigneeMap.values()].sort((a, b) => b.count - a.count);
+      return [...assigneeMap.values()].sort((a, b) => b.count - a.count);
+    };
+
+    const byAssignee = countByAssignee(assigneeSource);
+    const openWorkIssues = issues.filter((i) => i.status !== "DONE");
+    const byAssigneeOpenWork = countByAssignee(openWorkIssues);
 
     const statusOrder = ["OPEN", "IN_PROGRESS", "DONE"] as const;
     const statusCounts = new Map<string, number>();
@@ -120,7 +126,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
       .sort((a, b) => b.count - a.count)
       .slice(0, 12);
 
-    return { byAssignee, byStatus, byProject };
+    return { byAssignee, byAssigneeOpenWork, byStatus, byProject };
   }, [issues, assigneeSource, t]);
 
   const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
@@ -205,17 +211,125 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
             </section>
           ) : null}
 
-          <div
-            className={
-              byStatus.length > 0
-                ? "grid gap-4 lg:grid-cols-2"
-                : "grid gap-4 lg:grid-cols-1"
-            }
-          >
+          <div className="space-y-4">
+            <div
+              className={
+                byStatus.length > 0
+                  ? "grid gap-4 lg:grid-cols-2"
+                  : "grid gap-4 lg:grid-cols-1"
+              }
+            >
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {t("dashboard.chartByAssigneeOpenWork")}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.chartByAssigneeOpenWorkHint")}
+                </p>
+                {byAssigneeOpenWork.length === 0 ? (
+                  <p className="mt-6 text-center text-sm text-zinc-500 dark:text-zinc-400">
+                    {t("dashboard.chartByAssigneeOpenWorkEmpty")}
+                  </p>
+                ) : (
+                  <div className="mt-3 h-[280px] w-full min-w-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart
+                        layout="vertical"
+                        data={byAssigneeOpenWork}
+                        margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                      >
+                        <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                        <XAxis
+                          type="number"
+                          tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                          stroke={chartChrome.axisStroke}
+                          allowDecimals={false}
+                        />
+                        <YAxis
+                          type="category"
+                          dataKey="name"
+                          width={100}
+                          tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                          stroke={chartChrome.axisStroke}
+                          interval={0}
+                        />
+                        <Tooltip
+                          contentStyle={chartChrome.tooltipContentStyle}
+                          labelStyle={chartChrome.tooltipLabelStyle}
+                          itemStyle={chartChrome.tooltipItemStyle}
+                          cursor={{ fill: chartChrome.cursorFill }}
+                          formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                        />
+                        <Bar
+                          dataKey="count"
+                          name={t("dashboard.axisIssues")}
+                          fill="#3b82f6"
+                          radius={[0, 4, 4, 0]}
+                          activeBar={false}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+                )}
+              </section>
+
+              {byStatus.length > 0 ? (
+                <section className="panel-surface rounded-xl p-4">
+                  <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
+                  <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
+                  <div className="mt-3 h-[280px] w-full min-w-0">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={byStatus}
+                          dataKey="count"
+                          nameKey="name"
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={100}
+                          stroke={chartChrome.pieStroke}
+                          strokeWidth={1}
+                          label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
+                            const RADIAN = Math.PI / 180;
+                            const or = outerRadius ?? 0;
+                            const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
+                            const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
+                            return (
+                              <text
+                                x={x}
+                                y={y}
+                                fill={fill as string}
+                                textAnchor={x > (cx ?? 0) ? "start" : "end"}
+                                dominantBaseline="central"
+                                fontSize={11}
+                              >
+                                {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                              </text>
+                            );
+                          }}
+                          labelLine={false}
+                        >
+                          {byStatus.map((entry) => (
+                            <Cell key={entry.key} fill={entry.fill} />
+                          ))}
+                        </Pie>
+                        <Tooltip
+                          contentStyle={chartChrome.tooltipContentStyle}
+                          labelStyle={chartChrome.tooltipLabelStyle}
+                          itemStyle={chartChrome.tooltipItemStyle}
+                          formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                </section>
+              ) : null}
+            </div>
+
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByAssignee")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByAssigneeHint")}</p>
-              <div className="mt-3 h-[280px] w-full min-w-0">
+              <div className="mt-3 h-[280px] w-full min-w-0 md:h-[320px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     layout="vertical"
@@ -255,58 +369,6 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
                 </ResponsiveContainer>
               </div>
             </section>
-
-            {byStatus.length > 0 ? (
-              <section className="panel-surface rounded-xl p-4">
-                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
-                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
-                <div className="mt-3 h-[280px] w-full min-w-0">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Pie
-                        data={byStatus}
-                        dataKey="count"
-                        nameKey="name"
-                        cx="50%"
-                        cy="50%"
-                        outerRadius={100}
-                        stroke={chartChrome.pieStroke}
-                        strokeWidth={1}
-                        label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
-                          const RADIAN = Math.PI / 180;
-                          const or = outerRadius ?? 0;
-                          const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
-                          const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
-                          return (
-                            <text
-                              x={x}
-                              y={y}
-                              fill={fill as string}
-                              textAnchor={x > (cx ?? 0) ? "start" : "end"}
-                              dominantBaseline="central"
-                              fontSize={11}
-                            >
-                              {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                            </text>
-                          );
-                        }}
-                        labelLine={false}
-                      >
-                        {byStatus.map((entry) => (
-                          <Cell key={entry.key} fill={entry.fill} />
-                        ))}
-                      </Pie>
-                      <Tooltip
-                        contentStyle={chartChrome.tooltipContentStyle}
-                        labelStyle={chartChrome.tooltipLabelStyle}
-                        itemStyle={chartChrome.tooltipItemStyle}
-                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                      />
-                    </PieChart>
-                  </ResponsiveContainer>
-                </div>
-              </section>
-            ) : null}
           </div>
         </div>
       )}
