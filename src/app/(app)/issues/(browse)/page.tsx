@@ -386,9 +386,20 @@ function IssuesPageContent() {
                   onChange={(e) => setFormRnd(e.target.value)}
                 />
               </label>
-              <label className="block text-sm md:col-span-2">
+              <div className="block text-sm md:col-span-2">
                 <span className="text-zinc-600 dark:text-zinc-400">{t("issues.attachmentsOptional")}</span>
                 <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("issues.attachmentsOnCreateHelp")}</p>
+                <label className="mt-2 block text-sm">
+                  <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
+                  <textarea
+                    className="input mt-1 min-h-[64px] w-full"
+                    value={formAttachmentUploadNote}
+                    onChange={(e) => setFormAttachmentUploadNote(e.target.value)}
+                    placeholder={t("common.attachmentUploadNotePlaceholder")}
+                    disabled={creating}
+                    required={formFiles.length > 0}
+                  />
+                </label>
                 <div className="input-file-zone mt-1 max-w-xl">
                   <input
                     ref={createFileInputRef}
@@ -400,29 +411,16 @@ function IssuesPageContent() {
                   />
                 </div>
                 {formFiles.length > 0 ? (
-                  <>
-                    <label className="mt-2 block text-sm">
-                      <span className="text-zinc-600 dark:text-zinc-400">{t("common.attachmentUploadNoteLabel")}</span>
-                      <textarea
-                        className="input mt-1 min-h-[64px] w-full"
-                        value={formAttachmentUploadNote}
-                        onChange={(e) => setFormAttachmentUploadNote(e.target.value)}
-                        placeholder={t("common.attachmentUploadNotePlaceholder")}
-                        disabled={creating}
-                        required
-                      />
-                    </label>
-                    <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-                      {formFiles.map((f) => f.name).join(", ")}
-                    </p>
-                  </>
+                  <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+                    {formFiles.map((f) => f.name).join(", ")}
+                  </p>
                 ) : null}
                 <UploadProgressBar
                   value={createAttachmentProgress}
                   label={t("issueDetail.uploadingFiles")}
                   className="mt-2 max-w-xl"
                 />
-              </label>
+              </div>
               <div className="md:col-span-2 flex flex-wrap gap-2">
                 <button
                   type="submit"
