@@ -5,12 +5,13 @@ import { useI18n } from "@/i18n/context";
 import { getDashboardChartChrome } from "@/lib/dashboard-chart-theme";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo } from "react";
 import {
   Bar,
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
   Pie,
   PieChart,
   ResponsiveContainer,
@@ -21,8 +22,19 @@ import {
 
 type AssigneeSlice = { id: string; name: string; count: number };
 type StatusSlice = { key: string; name: string; count: number; fill: string };
+type CustomerIssueSlice = {
+  id: string;
+  name: string;
+  count: number;
+  dataKey: string;
+  fill: string;
+};
+type CustomerMonthlyDatum = {
+  monthKey: string;
+  label: string;
+} & Record<string, string | number>;
 
-const CUSTOMER_PROJECT_ROW_ACCENT = [
+const CUSTOMER_CHART_COLORS = [
   "#4f46e5",
   "#7c3aed",
   "#0d9488",
@@ -66,6 +78,17 @@ function utcMonthKey(d: Date): string {
   const y = d.getUTCFullYear();
   const m = d.getUTCMonth() + 1;
   return `${y}-${String(m).padStart(2, "0")}`;
+}
+
+function recentUtcMonthKeys(count: number): string[] {
+  const now = new Date();
+  const endY = now.getUTCFullYear();
+  const endM = now.getUTCMonth();
+  const keys: string[] = [];
+  for (let i = count - 1; i >= 0; i -= 1) {
+    keys.push(utcMonthKey(new Date(Date.UTC(endY, endM - i, 1))));
+  }
+  return keys;
 }
 
 export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, customers }: Props) {
@@ -133,97 +156,6 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     return { byAssignee, byAssigneeOpenWork, byStatus };
   }, [issues, assigneeSource, t]);
 
-  type BreakdownProjectRow = {
-    name: string;
-    value: number;
-    projectId: string;
-    customerId: string;
-  };
-  type BreakdownCustomerRow = {
-    name: string;
-    customerId: string;
-    total: number;
-    children: BreakdownProjectRow[];
-  };
-
-  const customerProjectBreakdown = useMemo((): BreakdownCustomerRow[] => {
-    const projectLookup = new Map(projects.map((p) => [p.id, p]));
-    const noCustomerLabel = t("dashboard.treemapNoCustomer");
-    const noProjectLabel = t("issues.noProject");
-
-    type Acc = {
-      customerName: string;
-      projects: Map<string, { name: string; value: number; projectId: string }>;
-    };
-    const buckets = new Map<string, Acc>();
-
-    for (const issue of issues) {
-      let customerId: string;
-      let customerName: string;
-      if (issue.customer) {
-        customerId = issue.customer.id;
-        customerName = issue.customer.name;
-      } else if (issue.project) {
-        const meta = projectLookup.get(issue.project.id);
-        if (meta?.customer) {
-          customerId = meta.customer.id;
-          customerName = meta.customer.name;
-        } else {
-          customerId = "";
-          customerName = noCustomerLabel;
-        }
-      } else {
-        customerId = "";
-        customerName = noCustomerLabel;
-      }
-
-      const projectId = issue.project?.id ?? "__none__";
-      const projectName = issue.project?.name ?? noProjectLabel;
-
-      let acc = buckets.get(customerId);
-      if (!acc) {
-        acc = { customerName, projects: new Map() };
-        buckets.set(customerId, acc);
-      }
-      let proj = acc.projects.get(projectId);
-      if (!proj) {
-        proj = { name: projectName, value: 0, projectId };
-        acc.projects.set(projectId, proj);
-      }
-      proj.value += 1;
-    }
-
-    const rows: BreakdownCustomerRow[] = [...buckets.entries()].map(([cid, acc]) => {
-      const children: BreakdownProjectRow[] = [...acc.projects.values()]
-        .sort((a, b) => b.value - a.value)
-        .slice(0, 14)
-        .map((p) => ({
-          name: p.name,
-          value: p.value,
-          projectId: p.projectId,
-          customerId: cid,
-        }));
-      const total = children.reduce((s, x) => s + x.value, 0);
-      return { name: acc.customerName, customerId: cid, total, children };
-    });
-
-    return rows
-      .filter((r) => r.children.length > 0)
-      .sort((a, b) => b.total - a.total)
-      .slice(0, 12);
-  }, [issues, projects, t]);
-
-  const [expandedCustomerIds, setExpandedCustomerIds] = useState<Set<string>>(() => new Set());
-
-  const toggleCustomerExpanded = useCallback((customerId: string) => {
-    setExpandedCustomerIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(customerId)) next.delete(customerId);
-      else next.add(customerId);
-      return next;
-    });
-  }, []);
-
   const monthLabel = useCallback(
     (monthKey: string) => {
       const [y, m] = monthKey.split("-").map(Number);
@@ -237,14 +169,61 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     [locale],
   );
 
-  const issuesByMonth = useMemo(() => {
-    const now = new Date();
-    const endY = now.getUTCFullYear();
-    const endM = now.getUTCMonth();
-    const keys: string[] = [];
-    for (let i = 11; i >= 0; i -= 1) {
-      keys.push(utcMonthKey(new Date(Date.UTC(endY, endM - i, 1))));
+  const { byCustomer, customerMonthlyBreakdown } = useMemo(() => {
+    const projectLookup = new Map(projects.map((p) => [p.id, p]));
+    const noCustomerLabel = t("issues.noCustomer");
+    const customerForIssue = (issue: ChartIssue) => {
+      if (issue.customer) {
+        return { id: issue.customer.id, name: issue.customer.name };
+      }
+      if (issue.project) {
+        const project = projectLookup.get(issue.project.id);
+        if (project?.customer) return { id: project.customer.id, name: project.customer.name };
+      }
+      return { id: "", name: noCustomerLabel };
+    };
+
+    const buckets = new Map<string, { id: string; name: string; count: number }>();
+    for (const issue of issues) {
+      const customer = customerForIssue(issue);
+      const prev = buckets.get(customer.id) ?? { ...customer, count: 0 };
+      prev.count += 1;
+      buckets.set(customer.id, prev);
     }
+
+    const byCustomer: CustomerIssueSlice[] = [...buckets.values()]
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 12)
+      .map((customer, index) => ({
+        ...customer,
+        dataKey: `customer_${index}`,
+        fill: CUSTOMER_CHART_COLORS[index % CUSTOMER_CHART_COLORS.length],
+      }));
+
+    const monthKeys = recentUtcMonthKeys(12);
+    const customerById = new Map(byCustomer.map((customer) => [customer.id, customer]));
+    const customerMonthlyBreakdown: CustomerMonthlyDatum[] = monthKeys.map((monthKey) => {
+      const row: CustomerMonthlyDatum = { monthKey, label: monthLabel(monthKey) };
+      for (const customer of byCustomer) row[customer.dataKey] = 0;
+      return row;
+    });
+    const monthlyRowByKey = new Map(customerMonthlyBreakdown.map((row) => [row.monthKey, row]));
+
+    for (const issue of issues) {
+      const customer = customerById.get(customerForIssue(issue).id);
+      if (!customer) continue;
+      const d = new Date(issue.createdAt);
+      if (Number.isNaN(d.getTime())) continue;
+      const row = monthlyRowByKey.get(utcMonthKey(d));
+      if (!row) continue;
+      row[customer.dataKey] = Number(row[customer.dataKey] ?? 0) + 1;
+    }
+
+    return { byCustomer, customerMonthlyBreakdown };
+  }, [issues, projects, t, monthLabel]);
+
+  const issuesByMonth = useMemo(() => {
+    const keys = recentUtcMonthKeys(12);
     const windowKeys = new Set(keys);
     const counts = new Map<string, number>();
     for (const issue of assigneeSource) {
@@ -265,13 +244,6 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
 
   const chartChrome = useMemo(() => getDashboardChartChrome(resolvedTheme), [resolvedTheme]);
 
-  const goToProjectIssues = useCallback(
-    (projectId: string) => {
-      router.push(`/issues?project=${encodeURIComponent(projectId)}`);
-    },
-    [router],
-  );
-
   const goToCustomerIssues = useCallback(
     (customerId: string) => {
       router.push(`/issues?customer=${encodeURIComponent(customerId)}`);
@@ -279,12 +251,12 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     [router],
   );
 
-  const onBreakdownProjectRowClick = useCallback(
-    (projectId: string, customerId: string) => {
-      if (projectId && projectId !== "__none__") goToProjectIssues(projectId);
-      else if (projectId === "__none__" && customerId) goToCustomerIssues(customerId);
+  const onCustomerBarClick = useCallback(
+    (entry: unknown) => {
+      const payload = (entry as { payload?: CustomerIssueSlice }).payload;
+      if (payload?.id) goToCustomerIssues(payload.id);
     },
-    [goToCustomerIssues, goToProjectIssues],
+    [goToCustomerIssues],
   );
 
   return (
@@ -321,6 +293,118 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
         </p>
       ) : (
         <div className="space-y-4">
+          {byCustomer.length > 0 ? (
+            <div className="grid gap-4 md:grid-cols-2">
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {t("dashboard.chartByCustomer")}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.chartByCustomerHint")}
+                </p>
+                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      layout="vertical"
+                      data={byCustomer}
+                      margin={{ top: 4, right: 8, left: 8, bottom: 4 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                      <XAxis
+                        type="number"
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        allowDecimals={false}
+                      />
+                      <YAxis
+                        type="category"
+                        dataKey="name"
+                        width={116}
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        interval={0}
+                      />
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        cursor={{ fill: chartChrome.cursorFill }}
+                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                      />
+                      <Bar
+                        dataKey="count"
+                        name={t("dashboard.axisIssues")}
+                        radius={[0, 4, 4, 0]}
+                        activeBar={false}
+                        onClick={onCustomerBarClick}
+                      >
+                        {byCustomer.map((customer) => (
+                          <Cell
+                            key={customer.id || "__no_customer__"}
+                            fill={customer.fill}
+                            cursor={customer.id ? "pointer" : "default"}
+                          />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                  {t("dashboard.chartByCustomerMonthly")}
+                </h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                  {t("dashboard.chartByCustomerMonthlyHint")}
+                </p>
+                <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px]">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={customerMonthlyBreakdown} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                      <XAxis
+                        dataKey="label"
+                        tick={{ fontSize: 10, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        interval={0}
+                        angle={-35}
+                        textAnchor="end"
+                        height={56}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                        stroke={chartChrome.axisStroke}
+                        allowDecimals={false}
+                      />
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        cursor={{ fill: chartChrome.cursorFill }}
+                        formatter={(value: number, name: string) => [value, name]}
+                      />
+                      <Legend
+                        verticalAlign="bottom"
+                        height={44}
+                        wrapperStyle={{ color: chartChrome.tickFill, fontSize: "11px" }}
+                      />
+                      {byCustomer.map((customer) => (
+                        <Bar
+                          key={customer.dataKey}
+                          dataKey={customer.dataKey}
+                          name={customer.name}
+                          stackId="customers"
+                          fill={customer.fill}
+                          activeBar={false}
+                        />
+                      ))}
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            </div>
+          ) : null}
+
           <div className="grid gap-4 lg:grid-cols-2">
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
@@ -420,101 +504,6 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
               </div>
             </section>
           </div>
-
-          {customerProjectBreakdown.length > 0 ? (
-            <section className="panel-surface rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
-                {t("dashboard.chartCustomerProjectTreemap")}
-              </h3>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
-                {t("dashboard.chartCustomerProjectTreemapHint")}
-              </p>
-              <div className="mt-3 max-h-[min(28rem,70vh)] w-full min-w-0 space-y-2 overflow-y-auto pr-1">
-                {customerProjectBreakdown.map((row, customerIndex) => {
-                  const expanded = expandedCustomerIds.has(row.customerId);
-                  const accent =
-                    CUSTOMER_PROJECT_ROW_ACCENT[customerIndex % CUSTOMER_PROJECT_ROW_ACCENT.length];
-                  return (
-                    <div
-                      key={row.customerId || "__none__"}
-                      className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950"
-                    >
-                      <div className="flex items-center gap-2 border-b border-zinc-100 px-2 py-2 dark:border-zinc-800 sm:px-3">
-                        <button
-                          type="button"
-                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
-                          aria-expanded={expanded}
-                          aria-controls={`customer-breakdown-${row.customerId || "none"}`}
-                          onClick={() => toggleCustomerExpanded(row.customerId)}
-                        >
-                          <span className="sr-only">{expanded ? t("dashboard.collapse") : t("dashboard.expand")}</span>
-                          <span aria-hidden className="text-xs tabular-nums">
-                            {expanded ? "▾" : "▸"}
-                          </span>
-                        </button>
-                        {row.customerId ? (
-                          <button
-                            type="button"
-                            className="min-w-0 flex-1 truncate text-left text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-100"
-                            onClick={() => goToCustomerIssues(row.customerId)}
-                          >
-                            {row.name}
-                          </button>
-                        ) : (
-                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                            {row.name}
-                          </span>
-                        )}
-                        <span className="shrink-0 text-sm tabular-nums text-zinc-600 dark:text-zinc-300">
-                          {row.total}
-                        </span>
-                      </div>
-                      {expanded ? (
-                        <ul
-                          id={`customer-breakdown-${row.customerId || "none"}`}
-                          className="divide-y divide-zinc-100 dark:divide-zinc-800"
-                        >
-                          {row.children.map((proj) => {
-                            const pct = row.total > 0 ? Math.round((proj.value / row.total) * 100) : 0;
-                            return (
-                              <li key={`${row.customerId}-${proj.projectId}`}>
-                                <button
-                                  type="button"
-                                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900/80"
-                                  onClick={() => onBreakdownProjectRowClick(proj.projectId, proj.customerId)}
-                                >
-                                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-800 dark:text-zinc-200">
-                                    {proj.name}
-                                  </span>
-                                  <div
-                                    className="hidden w-28 shrink-0 sm:block"
-                                    title={`${pct}% ${t("dashboard.axisIssues")}`}
-                                  >
-                                    <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
-                                      <div
-                                        className="h-2 rounded-full"
-                                        style={{
-                                          width: `${pct}%`,
-                                          backgroundColor: accent,
-                                        }}
-                                      />
-                                    </div>
-                                  </div>
-                                  <span className="w-10 shrink-0 text-right text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
-                                    {proj.value}
-                                  </span>
-                                </button>
-                              </li>
-                            );
-                          })}
-                        </ul>
-                      ) : null}
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-          ) : null}
 
           <div className="grid gap-4 md:grid-cols-2">
             <section className="panel-surface rounded-xl p-4">
