@@ -19,6 +19,15 @@ import { NextResponse } from "next/server";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+function parsePositiveFileSize(input: unknown): number {
+  if (typeof input === "number") return input;
+  if (typeof input === "string" && input.trim() !== "") {
+    const parsed = Number(input);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return Number.NaN;
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   const session = await auth();
   if (!session?.user) {
@@ -31,7 +40,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: "Blob storage is not configured." }, { status: 503 });
   }
 
-  let body: Record<string, unknown>;
+  let body: Record<string, unknown> & { fileSize?: number | string; size?: number | string };
   try {
     body = (await request.json()) as Record<string, unknown>;
   } catch {
@@ -43,7 +52,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return NextResponse.json({ error: parsed.error }, { status: 400 });
   }
 
-  const fileSize = typeof body.fileSize === "number" ? body.fileSize : Number.NaN;
+  const fileSize = parsePositiveFileSize(body.fileSize ?? body.size);
   if (!Number.isFinite(fileSize) || fileSize < 1) {
     return NextResponse.json({ error: "fileSize is required." }, { status: 400 });
   }

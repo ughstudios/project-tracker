@@ -173,17 +173,20 @@ export function PublicCalibrationRequestForm() {
 
   return (
     <form className="space-y-6" onSubmit={onSubmit}>
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Calibration Type</h2>
+      <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Calibration Type</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Choose all services you need.</p>
+        </div>
         <div className="grid gap-2 sm:grid-cols-2">
           {CALIBRATION_OPTIONS.map((option) => (
             <label
               key={option.id}
-              className="flex items-start gap-2 rounded-lg border border-zinc-200 p-3 text-sm dark:border-zinc-700"
+              className="flex cursor-pointer items-start gap-2 rounded-lg border border-zinc-200 bg-white p-3 text-sm transition-colors hover:border-zinc-300 dark:border-zinc-700 dark:bg-zinc-900 dark:hover:border-zinc-600"
             >
               <input
                 type="checkbox"
-                className="mt-0.5"
+                className="mt-0.5 accent-zinc-900 dark:accent-zinc-100"
                 checked={selectedTypes.includes(option.id)}
                 onChange={() => toggleType(option.id)}
               />
@@ -193,202 +196,237 @@ export function PublicCalibrationRequestForm() {
         </div>
       </section>
 
-      <section className="grid gap-4 sm:grid-cols-2">
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium">Screen resolution</span>
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Screen Details</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Basic display information for planning.</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Screen resolution</span>
+            <input
+              name="screenResolution"
+              type="text"
+              required
+              placeholder="e.g. 1920 x 1080"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">How many controllers</span>
+            <input
+              name="controllerCount"
+              type="number"
+              min={0}
+              required
+              readOnly
+              value={controllerCount}
+              className="rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
+            />
+          </label>
+        </div>
+        <label className="mt-4 flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">Type of screen (spherical, curved, etc.)</span>
           <input
-            name="screenResolution"
+            name="screenType"
             type="text"
             required
-            placeholder="e.g. 1920 x 1080"
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium">How many controllers</span>
-          <input
-            name="controllerCount"
-            type="number"
-            min={0}
-            required
-            readOnly
-            value={controllerCount}
+            placeholder="e.g. Curved"
             className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
       </section>
 
-      <label className="flex flex-col gap-2 text-sm">
-        <span className="font-medium">Type of screen (spherical, curved, etc.)</span>
-        <input
-          name="screenType"
-          type="text"
-          required
-          placeholder="e.g. Curved"
-          className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-        />
-      </label>
-
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Controllers (model + firmware required)</h2>
-        {controllers.map((item, idx) => (
-          <div key={`controller-${idx}`} className="grid gap-2 sm:grid-cols-4">
-            <select
-              value={item.model}
-              onChange={(e) =>
-                setControllers((prev) =>
-                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            Controllers (model + firmware required)
+          </h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            Use one line per controller model/firmware combination.
+          </p>
+        </div>
+        <div className="space-y-2.5">
+          {controllers.map((item, idx) => (
+            <div
+              key={`controller-${idx}`}
+              className="grid gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-4 dark:border-zinc-800 dark:bg-zinc-900/30"
             >
-              <option value="">Select controller model</option>
-              {CONTROLLER_MODELS.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Firmware"
-              value={item.firmware}
-              onChange={(e) =>
-                setControllers((prev) =>
-                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-            <input
-              type="number"
-              min={1}
-              value={item.quantity}
-              onChange={(e) =>
-                setControllers((prev) =>
-                  prev.map((line, lineIdx) =>
-                    lineIdx === idx
-                      ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
-                      : line,
-                  ),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                setControllers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
-              }
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+              <select
+                value={item.model}
+                onChange={(e) =>
+                  setControllers((prev) =>
+                    prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="">Select controller model</option>
+                {CONTROLLER_MODELS.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Firmware"
+                value={item.firmware}
+                onChange={(e) =>
+                  setControllers((prev) =>
+                    prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+              <input
+                type="number"
+                min={1}
+                value={item.quantity}
+                onChange={(e) =>
+                  setControllers((prev) =>
+                    prev.map((line, lineIdx) =>
+                      lineIdx === idx
+                        ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
+                        : line,
+                    ),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setControllers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setControllers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+          className="mt-3 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
           Add controller line
         </button>
       </section>
 
-      <section className="space-y-3">
-        <h2 className="text-base font-semibold">Receiver cards (model + firmware required)</h2>
-        {receivers.map((item, idx) => (
-          <div key={`receiver-${idx}`} className="grid gap-2 sm:grid-cols-4">
-            <select
-              value={item.model}
-              onChange={(e) =>
-                setReceivers((prev) =>
-                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+            Receiver cards (model + firmware required)
+          </h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            Add each receiver configuration and quantity.
+          </p>
+        </div>
+        <div className="space-y-2.5">
+          {receivers.map((item, idx) => (
+            <div
+              key={`receiver-${idx}`}
+              className="grid gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-2.5 sm:grid-cols-4 dark:border-zinc-800 dark:bg-zinc-900/30"
             >
-              <option value="">Select receiver model</option>
-              {RECEIVER_MODELS.map((model) => (
-                <option key={model} value={model}>
-                  {model}
-                </option>
-              ))}
-            </select>
-            <input
-              type="text"
-              placeholder="Firmware"
-              value={item.firmware}
-              onChange={(e) =>
-                setReceivers((prev) =>
-                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-            <input
-              type="number"
-              min={1}
-              value={item.quantity}
-              onChange={(e) =>
-                setReceivers((prev) =>
-                  prev.map((line, lineIdx) =>
-                    lineIdx === idx
-                      ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
-                      : line,
-                  ),
-                )
-              }
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
-            />
-            <button
-              type="button"
-              onClick={() =>
-                setReceivers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
-              }
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
-            >
-              Remove
-            </button>
-          </div>
-        ))}
+              <select
+                value={item.model}
+                onChange={(e) =>
+                  setReceivers((prev) =>
+                    prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              >
+                <option value="">Select receiver model</option>
+                {RECEIVER_MODELS.map((model) => (
+                  <option key={model} value={model}>
+                    {model}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="Firmware"
+                value={item.firmware}
+                onChange={(e) =>
+                  setReceivers((prev) =>
+                    prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+              <input
+                type="number"
+                min={1}
+                value={item.quantity}
+                onChange={(e) =>
+                  setReceivers((prev) =>
+                    prev.map((line, lineIdx) =>
+                      lineIdx === idx
+                        ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
+                        : line,
+                    ),
+                  )
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+              />
+              <button
+                type="button"
+                onClick={() =>
+                  setReceivers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
+                }
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
+              >
+                Remove
+              </button>
+            </div>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => setReceivers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+          className="mt-3 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
           Add receiver line
         </button>
       </section>
 
-      <section className="space-y-4">
-        <h2 className="text-base font-semibold">Required Photos</h2>
-
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium">Photo of the screen</span>
-          <input
-            name="screenPhoto"
-            type="file"
-            accept="image/*"
-            required
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium">3 separate photos of the screen</span>
-          <input
-            name="screenPhotosExtra"
-            type="file"
-            accept="image/*"
-            multiple
-            required
-            className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-          />
-        </label>
-
-        <label className="flex flex-col gap-2 text-sm">
-          <span className="font-medium">Photos of work environment for doing the calibration</span>
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Required Photos</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            Upload clear reference images to speed up calibration prep.
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Photo of the screen</span>
+            <input
+              name="screenPhoto"
+              type="file"
+              accept="image/*"
+              required
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">3 separate photos of the screen</span>
+            <input
+              name="screenPhotosExtra"
+              type="file"
+              accept="image/*"
+              multiple
+              required
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+        </div>
+        <label className="mt-4 flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">
+            Photos of work environment for doing the calibration
+          </span>
           <input
             name="workEnvironmentPhotos"
             type="file"
@@ -400,11 +438,11 @@ export function PublicCalibrationRequestForm() {
         </label>
       </section>
 
-      <div className="flex items-center gap-3">
+      <section className="flex items-center gap-3 border-t border-zinc-200 pt-4 dark:border-zinc-800">
         <button
           type="submit"
           disabled={!canSubmit}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-opacity disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900"
+          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900"
         >
           {submitState.status === "submitting" ? "Submitting..." : "Submit Form"}
         </button>
@@ -419,7 +457,7 @@ export function PublicCalibrationRequestForm() {
             {submitState.message}
           </p>
         ) : null}
-      </div>
+      </section>
     </form>
   );
 }

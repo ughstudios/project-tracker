@@ -19,6 +19,15 @@ function singleSegmentAfterPrefix(pathname: string, prefix: string): boolean {
   return rest.length > 0 && !rest.includes("/");
 }
 
+function parsePositiveFileSize(input: unknown): number {
+  if (typeof input === "number") return input;
+  if (typeof input === "string" && input.trim() !== "") {
+    const parsed = Number(input);
+    if (Number.isFinite(parsed)) return parsed;
+  }
+  return Number.NaN;
+}
+
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string; entryId: string }> },
@@ -55,7 +64,8 @@ export async function POST(
     fileName?: string;
     pathname?: string;
     fileUrl?: string;
-    fileSize?: number;
+    fileSize?: number | string;
+    size?: number | string;
     uploadNote?: string;
   };
   const noteParsed = parseRequiredUploadNote(body.uploadNote);
@@ -65,7 +75,7 @@ export async function POST(
   const fileName = typeof body.fileName === "string" ? body.fileName.trim() : "";
   const pathname = typeof body.pathname === "string" ? body.pathname.trim() : "";
   const fileUrl = typeof body.fileUrl === "string" ? body.fileUrl.trim() : "";
-  const fileSize = typeof body.fileSize === "number" ? body.fileSize : Number.NaN;
+  const fileSize = parsePositiveFileSize(body.fileSize ?? body.size);
 
   if (!fileName || !pathname || !fileUrl || !Number.isFinite(fileSize) || fileSize < 1) {
     return NextResponse.json({ error: "Invalid request body." }, { status: 400 });

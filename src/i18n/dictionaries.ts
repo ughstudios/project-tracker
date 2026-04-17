@@ -532,12 +532,12 @@ const en: MessageTree = {
     receiverPlanner: {
       disclaimerTitle: "Receiver card planner",
       disclaimerBody:
-        "This tool uses the receiver-card JSON specs to estimate output ports and receiver card counts from screen size, refresh rate, color depth, cabinet size, and pixel pitch.",
+        "Estimate output ports and receiver card quantities using screen size, refresh rate, color depth, cabinet size, and pixel pitch.",
       disclaimerBulletPorts:
-        "Port count is based on an ideal uncompressed RGB stream using the same usable 1G / 5G payload ceilings as the LED bandwidth tool.",
+        "Port estimates assume an ideal uncompressed RGB stream and use the same effective 1G / 5G payload limits as the LED bandwidth tool.",
       disclaimerBulletCards:
-        "Card count uses each receiver card's published pixel loading capacity. Actual mapping can change with scan type, driver IC, grayscale mode, calibration, and cabinet wiring.",
-      disclaimerBulletController: "Controller and I/O-card recommendations are intentionally left out for now.",
+        "Card totals use each receiver card's published pixel-loading capacity. Actual mapping can vary with scan type, driver IC, grayscale settings, calibration, and cabinet wiring.",
+      disclaimerBulletController: "Controller and I/O card recommendations are not included yet.",
       formTitle: "Screen, cabinet, and card",
       formSubtitle: "Enter the target signal and cabinet geometry, then pick a receiver card to inspect.",
       labelRefresh: "Refresh rate (Hz)",
