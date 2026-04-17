@@ -134,12 +134,14 @@ export function WorkRecordsDashboardCharts() {
             </div>
           ) : null}
 
-          <div className="panel-surface rounded-lg p-3 lg:col-span-2">
+          <div
+            className={`panel-surface rounded-lg p-3${summary.byUser.length > 0 ? "" : " lg:col-span-2"}`}
+          >
             <h3 className="text-xs font-semibold text-zinc-800 dark:text-zinc-200">
               {t("dashboard.chartWorkRecordsByMonth")}
             </h3>
             <p className="mt-0.5 text-[11px] text-zinc-500 dark:text-zinc-400">{t("dashboard.chartWorkRecordsByMonthHint")}</p>
-            <div className="mt-2 h-[240px] w-full min-w-0 lg:col-span-2">
+            <div className="mt-2 h-[240px] w-full min-w-0">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={byMonthLabeled} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
