@@ -114,12 +114,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
 
     const screenResolution = asNonEmptyString(formData.get("screenResolution"));
-    const controllerCountRaw = asNonEmptyString(formData.get("controllerCount"));
     const screenType = asNonEmptyString(formData.get("screenType"));
 
-    if (!screenResolution || !controllerCountRaw || !screenType) {
+    if (!screenResolution || !screenType) {
       return NextResponse.json(
-        { error: "Screen resolution, controller count, and screen type are required." },
+        { error: "Screen resolution and screen type are required." },
         { status: 400 },
       );
     }
@@ -140,18 +139,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const controllerCount = Number.parseInt(controllerCountRaw, 10);
-    if (!Number.isFinite(controllerCount) || controllerCount < 1) {
-      return NextResponse.json({ error: "Controller count must be at least 1." }, { status: 400 });
-    }
-
-    const computedControllerCount = controllerConfigs.reduce((sum, item) => sum + item.quantity, 0);
-    if (controllerCount !== computedControllerCount) {
-      return NextResponse.json(
-        { error: "Controller count must match selected controller quantities." },
-        { status: 400 },
-      );
-    }
+    const controllerCount = controllerConfigs.reduce((sum, item) => sum + item.quantity, 0);
 
     const screenPhoto = formData.get("screenPhoto");
     if (!(screenPhoto instanceof File)) {

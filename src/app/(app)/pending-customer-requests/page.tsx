@@ -155,7 +155,6 @@ export default async function PendingCustomerRequestsPage() {
                   </p>
                   <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
                     <li>Resolution: {payload.screenResolution || "-"}</li>
-                    <li>Controllers: {payload.controllerCount || 0}</li>
                     <li>Screen type: {payload.screenType || "-"}</li>
                   </ul>
                 </div>

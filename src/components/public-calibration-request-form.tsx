@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useState } from "react";
 
 const CALIBRATION_OPTIONS = [
   { id: "single-layer", label: "Single layer calibration" },
@@ -79,15 +79,7 @@ export function PublicCalibrationRequestForm() {
     { model: "", firmware: "", quantity: 1 },
   ]);
 
-  const canSubmit = useMemo(() => submitState.status !== "submitting", [submitState.status]);
-  const controllerCount = useMemo(
-    () =>
-      controllers.reduce((sum, item) => {
-        if (!item.model.trim()) return sum;
-        return sum + Math.max(1, Number(item.quantity) || 1);
-      }, 0),
-    [controllers],
-  );
+  const canSubmit = submitState.status !== "submitting";
 
   function toggleType(id: string) {
     setSelectedTypes((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -204,30 +196,16 @@ export function PublicCalibrationRequestForm() {
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Screen Details</h2>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Basic display information for planning.</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">Screen resolution</span>
-            <input
-              name="screenResolution"
-              type="text"
-              required
-              placeholder="e.g. 1920 x 1080"
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">How many controllers</span>
-            <input
-              name="controllerCount"
-              type="number"
-              min={0}
-              required
-              readOnly
-              value={controllerCount}
-              className="rounded-md border border-zinc-300 bg-zinc-100 px-3 py-2 text-zinc-700 dark:border-zinc-700 dark:bg-zinc-800 dark:text-zinc-200"
-            />
-          </label>
-        </div>
+        <label className="flex flex-col gap-1.5 text-sm">
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">Screen resolution</span>
+          <input
+            name="screenResolution"
+            type="text"
+            required
+            placeholder="e.g. 1920 x 1080"
+            className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+          />
+        </label>
         <label className="mt-4 flex flex-col gap-1.5 text-sm">
           <span className="font-medium text-zinc-800 dark:text-zinc-200">Type of screen (spherical, curved, etc.)</span>
           <input

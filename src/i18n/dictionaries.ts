@@ -179,6 +179,10 @@ const en: MessageTree = {
     chartByCustomer: "Top customers by issue count",
     chartByCustomerHint:
       "Customers with the most active issues linked directly on the issue (up to 12). Click a bar or name to open the filtered issue list.",
+    chartCustomerProjectTreemap: "Customer & project breakdown",
+    chartCustomerProjectTreemapHint:
+      "Nested tiles: each large block is a customer; inner tiles are projects (active issues). Click a customer block to zoom in; click a project tile to open the filtered issue list.",
+    treemapNoCustomer: "No customer",
     chartIssuesByMonth: "Issues created by month",
     chartIssuesByMonthHint: "New issues by calendar month of creation (last 12 months, UTC). Includes archived.",
     axisIssues: "Issues",
@@ -1018,6 +1022,10 @@ const zh: MessageTree = {
     chartByCustomer: "问题最多的客户",
     chartByCustomerHint:
       "在问题上直接关联的客户中，进行中问题最多的客户（最多 12 个）。点击条形或名称可打开已筛选的问题列表。",
+    chartCustomerProjectTreemap: "客户与项目分布",
+    chartCustomerProjectTreemapHint:
+      "嵌套方块：大块为客户，内部为项目（进行中问题数）。点击客户块可下钻；点击项目块打开已筛选问题列表。",
+    treemapNoCustomer: "无客户",
     chartIssuesByMonth: "按月新建问题",
     chartIssuesByMonthHint: "按创建日所在自然月统计的新问题数量（最近 12 个月，UTC）。含已归档。",
     axisIssues: "问题数",
