@@ -23,8 +23,13 @@ export function getLocalizedText({
 }) {
   const normalizedSource = normalizeContentLanguage(sourceLanguage);
   const cleanTranslated = translated?.trim() ?? "";
+  const cleanOriginal = original.trim();
+  const differsFromOriginal = cleanTranslated !== cleanOriginal;
   const shouldUseTranslation =
-    Boolean(cleanTranslated) && normalizedSource !== null && normalizedSource !== locale;
+    Boolean(cleanTranslated) &&
+    differsFromOriginal &&
+    normalizedSource !== null &&
+    normalizedSource !== locale;
 
   return {
     sourceLanguage: normalizedSource,

@@ -30,18 +30,25 @@ const listSelect = {
   contentLanguage: true,
 } as const;
 
-function hasUsableTranslation(t: {
-  titleTranslated: string | null;
-  symptomTranslated: string | null;
-  causeTranslated: string | null;
-  solutionTranslated: string | null;
-}) {
-  return Boolean(
-    t.titleTranslated?.trim() ||
-      t.symptomTranslated?.trim() ||
-      t.causeTranslated?.trim() ||
-      t.solutionTranslated?.trim(),
-  );
+function hasUsableTranslation(
+  originals: { title: string; symptom: string; cause: string; solution: string },
+  t: {
+    titleTranslated: string | null;
+    symptomTranslated: string | null;
+    causeTranslated: string | null;
+    solutionTranslated: string | null;
+  },
+) {
+  const pairs: [string, string | null][] = [
+    [originals.title, t.titleTranslated],
+    [originals.symptom, t.symptomTranslated],
+    [originals.cause, t.causeTranslated],
+    [originals.solution, t.solutionTranslated],
+  ];
+  return pairs.some(([orig, tr]) => {
+    const tv = tr?.trim() ?? "";
+    return Boolean(tv) && tv !== orig.trim();
+  });
 }
 
 /**
@@ -79,7 +86,7 @@ export async function persistIssueTranslations(
 
   const langChanged =
     translated.contentLanguage != null && translated.contentLanguage !== row.contentLanguage;
-  const gotText = hasUsableTranslation(translated);
+  const gotText = hasUsableTranslation(row, translated);
 
   if (!gotText) {
     if (!langChanged) return null;
