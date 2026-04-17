@@ -150,18 +150,21 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
         y,
         textAnchor: textAnchor as "start" | "middle" | "end" | "inherit",
         dominantBaseline: "central" as const,
-        fill: chartChrome.tickFill,
         fontSize: 11,
       };
       if (!row?.id) {
-        return <text {...common}>{name}</text>;
+        return (
+          <text {...common} fill={chartChrome.tickFill}>
+            {name}
+          </text>
+        );
       }
       return (
         <text
           {...common}
           role="link"
           tabIndex={0}
-          className="cursor-pointer outline-none hover:fill-indigo-400 dark:hover:fill-indigo-300"
+          className="cursor-pointer fill-indigo-600 underline decoration-indigo-500/80 decoration-2 underline-offset-[3px] outline-none transition-[fill,opacity] hover:fill-indigo-500 dark:fill-indigo-400 dark:decoration-indigo-300/70 dark:hover:fill-indigo-300"
           onClick={() => goToProjectIssues(row.id)}
           onKeyDown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
@@ -215,7 +218,15 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByProject")}</h3>
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByProjectHint")}</p>
-              <div className="mt-3 h-[300px] w-full min-w-0 md:h-[340px] [&_.recharts-bar-rectangle]:cursor-pointer">
+              <div
+                className={
+                  "mt-3 h-[300px] w-full min-w-0 md:h-[340px] " +
+                  "[&_.recharts-bar-rectangle]:cursor-pointer " +
+                  "[&_.recharts-bar-rectangle]:transition-[filter] " +
+                  "[&_.recharts-bar-rectangle]:duration-150 " +
+                  "[&_.recharts-bar-rectangle:hover]:[filter:brightness(1.12)_drop-shadow(0_0_10px_rgb(129_140_248/0.75))]"
+                }
+              >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     layout="vertical"
@@ -250,6 +261,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
                       fill="#818cf8"
                       radius={[0, 4, 4, 0]}
                       activeBar={false}
+                      className="[vector-effect:non-scaling-stroke] stroke-transparent stroke-0 transition-[stroke-width,stroke] duration-150 hover:stroke-2 hover:stroke-indigo-200/95 dark:hover:stroke-indigo-100/85"
                       onClick={(rect: { payload?: ProjectSlice }) => {
                         const id = rect?.payload?.id;
                         if (id) goToProjectIssues(id);
