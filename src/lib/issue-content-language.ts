@@ -21,3 +21,27 @@ export function detectIssueContentLanguage(values: string[]): ContentLanguage | 
 
   return chineseCount >= englishCount ? "zh" : "en";
 }
+
+/**
+ * Language hint for “should we request a missing translation?”.
+ * When the title contains CJK, prefer title-only detection so a long English symptom
+ * does not drown out a Chinese title (which previously skipped backfill entirely).
+ */
+export function detectIssueContentLanguageForBackfill(issue: {
+  title: string;
+  symptom: string;
+  cause: string;
+  solution: string;
+}): ContentLanguage | null {
+  const t = issue.title.trim();
+  if (t && /\p{Script=Han}/u.test(t)) {
+    const titleOnly = detectIssueContentLanguage([issue.title]);
+    if (titleOnly) return titleOnly;
+  }
+  return detectIssueContentLanguage([
+    issue.title,
+    issue.symptom,
+    issue.cause,
+    issue.solution,
+  ]);
+}

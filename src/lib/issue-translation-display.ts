@@ -1,5 +1,5 @@
 import type { Locale } from "@/i18n/types";
-import { detectIssueContentLanguage } from "@/lib/issue-content-language";
+import { detectIssueContentLanguageForBackfill } from "@/lib/issue-content-language";
 import { getLocalizedText } from "@/lib/translated-content";
 
 export type IssueTranslationFields = {
@@ -30,12 +30,7 @@ export function issueNeedsDisplayTranslationBackfill(
   });
   if (titleView.usedTranslation) return false;
 
-  const detected = detectIssueContentLanguage([
-    issue.title,
-    issue.symptom,
-    issue.cause,
-    issue.solution,
-  ]);
+  const detected = detectIssueContentLanguageForBackfill(issue);
   if (!detected) return false;
   return detected !== locale;
 }

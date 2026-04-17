@@ -23,7 +23,7 @@ function matchesLinkFilter(issue: IssueBoardIssue, filter: string) {
 export function IssueKanban() {
   const { t, locale } = useI18n();
   const { users, projects, customers, issues, setIssues, loading, loadData } = useIssueBoardData(["/kanban"]);
-  useIssueTranslationSync(issues, setIssues, locale, !loading);
+  useIssueTranslationSync(issues, setIssues, locale, !loading, loadData);
 
   const [query, setQuery] = useState("");
   const [assigneeFilter, setAssigneeFilter] = useState("");

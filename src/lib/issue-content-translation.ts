@@ -1,5 +1,8 @@
 import type { Locale } from "@/i18n/types";
-import { detectIssueContentLanguage } from "@/lib/issue-content-language";
+import {
+  detectIssueContentLanguage,
+  detectIssueContentLanguageForBackfill,
+} from "@/lib/issue-content-language";
 import {
   buildTranslationCacheKey,
   readTranslationCache,
@@ -141,12 +144,12 @@ function toNullableText(value: unknown, fallback: string) {
 export async function translateIssueContent(
   input: IssueTranslationInput,
 ): Promise<IssueTranslationResult> {
-  const contentLanguage = detectIssueContentLanguage([
-    input.title,
-    input.symptom,
-    input.cause,
-    input.solution,
-  ]);
+  const contentLanguage = detectIssueContentLanguageForBackfill({
+    title: input.title,
+    symptom: input.symptom,
+    cause: input.cause,
+    solution: input.solution,
+  });
 
   if (!contentLanguage || !isTranslationConfigured()) {
     return {
