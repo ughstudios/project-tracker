@@ -5,7 +5,7 @@ import { useI18n } from "@/i18n/context";
 import { getDashboardChartChrome } from "@/lib/dashboard-chart-theme";
 import { useTheme } from "next-themes";
 import { useRouter } from "next/navigation";
-import { useCallback, useMemo, type ReactElement } from "react";
+import { useCallback, useMemo, useState } from "react";
 import {
   Bar,
   BarChart,
@@ -15,7 +15,6 @@ import {
   PieChart,
   ResponsiveContainer,
   Tooltip,
-  Treemap,
   XAxis,
   YAxis,
 } from "recharts";
@@ -23,7 +22,7 @@ import {
 type AssigneeSlice = { id: string; name: string; count: number };
 type StatusSlice = { key: string; name: string; count: number; fill: string };
 
-const CUSTOMER_PROJECT_TREEMAP_PARENT_FILLS = [
+const CUSTOMER_PROJECT_ROW_ACCENT = [
   "#4f46e5",
   "#7c3aed",
   "#0d9488",
@@ -32,16 +31,6 @@ const CUSTOMER_PROJECT_TREEMAP_PARENT_FILLS = [
   "#1d4ed8",
   "#6d28d9",
   "#0f766e",
-];
-const CUSTOMER_PROJECT_TREEMAP_CHILD_FILLS = [
-  "#c7d2fe",
-  "#ddd6fe",
-  "#99f6e4",
-  "#fed7aa",
-  "#fbcfe8",
-  "#bfdbfe",
-  "#e9d5ff",
-  "#ccfbf1",
 ];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -144,19 +133,20 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     return { byAssignee, byAssigneeOpenWork, byStatus };
   }, [issues, assigneeSource, t]);
 
-  type TreemapProjectNode = {
+  type BreakdownProjectRow = {
     name: string;
     value: number;
     projectId: string;
     customerId: string;
   };
-  type TreemapCustomerNode = {
+  type BreakdownCustomerRow = {
     name: string;
     customerId: string;
-    children: TreemapProjectNode[];
+    total: number;
+    children: BreakdownProjectRow[];
   };
 
-  const customerProjectTreemapData = useMemo((): TreemapCustomerNode[] => {
+  const customerProjectBreakdown = useMemo((): BreakdownCustomerRow[] => {
     const projectLookup = new Map(projects.map((p) => [p.id, p]));
     const noCustomerLabel = t("dashboard.treemapNoCustomer");
     const noProjectLabel = t("issues.noProject");
@@ -203,12 +193,8 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
       proj.value += 1;
     }
 
-    const sumChildren = (c: TreemapCustomerNode) => c.children.reduce((s, x) => s + x.value, 0);
-
-    const rows: TreemapCustomerNode[] = [...buckets.entries()].map(([cid, acc]) => ({
-      name: acc.customerName,
-      customerId: cid,
-      children: [...acc.projects.values()]
+    const rows: BreakdownCustomerRow[] = [...buckets.entries()].map(([cid, acc]) => {
+      const children: BreakdownProjectRow[] = [...acc.projects.values()]
         .sort((a, b) => b.value - a.value)
         .slice(0, 14)
         .map((p) => ({
@@ -216,14 +202,27 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
           value: p.value,
           projectId: p.projectId,
           customerId: cid,
-        })),
-    }));
+        }));
+      const total = children.reduce((s, x) => s + x.value, 0);
+      return { name: acc.customerName, customerId: cid, total, children };
+    });
 
     return rows
       .filter((r) => r.children.length > 0)
-      .sort((a, b) => sumChildren(b) - sumChildren(a))
+      .sort((a, b) => b.total - a.total)
       .slice(0, 12);
   }, [issues, projects, t]);
+
+  const [expandedCustomerIds, setExpandedCustomerIds] = useState<Set<string>>(() => new Set());
+
+  const toggleCustomerExpanded = useCallback((customerId: string) => {
+    setExpandedCustomerIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(customerId)) next.delete(customerId);
+      else next.add(customerId);
+      return next;
+    });
+  }, []);
 
   const monthLabel = useCallback(
     (monthKey: string) => {
@@ -280,65 +279,12 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
     [router],
   );
 
-  const onCustomerProjectTreemapClick = useCallback(
-    (node: { projectId?: string; customerId?: string; children?: unknown[] | null }) => {
-      if (node.children && node.children.length > 0) return;
-      const pid = node.projectId;
-      const cid = node.customerId ?? "";
-      if (typeof pid === "string" && pid && pid !== "__none__") goToProjectIssues(pid);
-      else if (pid === "__none__" && cid) goToCustomerIssues(cid);
+  const onBreakdownProjectRowClick = useCallback(
+    (projectId: string, customerId: string) => {
+      if (projectId && projectId !== "__none__") goToProjectIssues(projectId);
+      else if (projectId === "__none__" && customerId) goToCustomerIssues(customerId);
     },
     [goToCustomerIssues, goToProjectIssues],
-  );
-
-  const renderCustomerProjectTreemapNode = useCallback(
-    (props: Record<string, unknown>) => {
-      const depth = Number(props.depth ?? 0);
-      if (depth === 0) return <g />;
-
-      const x = Number(props.x);
-      const y = Number(props.y);
-      const w = Number(props.width);
-      const h = Number(props.height);
-      const name = String(props.name ?? "");
-      const index = Number(props.index) || 0;
-      const rawChildren = props.children;
-      const isBranch = Array.isArray(rawChildren) && rawChildren.length > 0;
-      const fill = isBranch
-        ? CUSTOMER_PROJECT_TREEMAP_PARENT_FILLS[index % CUSTOMER_PROJECT_TREEMAP_PARENT_FILLS.length]
-        : CUSTOMER_PROJECT_TREEMAP_CHILD_FILLS[index % CUSTOMER_PROJECT_TREEMAP_CHILD_FILLS.length];
-      const label =
-        name.length > 28 && (w < 120 || name.length > 36) ? `${name.slice(0, 26)}…` : name;
-      const textFill = isBranch ? "#fafafa" : "#0f172a";
-      const fontSize = w < 72 ? 10 : 11;
-      return (
-        <g>
-          <rect
-            x={x}
-            y={y}
-            width={w}
-            height={h}
-            fill={fill}
-            stroke={chartChrome.pieStroke}
-            strokeWidth={1}
-            rx={2}
-            ry={2}
-          />
-          {w > 32 && h > 16 ? (
-            <text
-              x={x + 6}
-              y={y + h / 2 + 4}
-              fill={textFill}
-              fontSize={fontSize}
-              fontWeight={isBranch ? 600 : 500}
-            >
-              {label}
-            </text>
-          ) : null}
-        </g>
-      );
-    },
-    [chartChrome.pieStroke],
   );
 
   return (
@@ -475,7 +421,7 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
             </section>
           </div>
 
-          {customerProjectTreemapData.length > 0 ? (
+          {customerProjectBreakdown.length > 0 ? (
             <section className="panel-surface rounded-xl p-4">
               <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
                 {t("dashboard.chartCustomerProjectTreemap")}
@@ -483,122 +429,190 @@ export function DashboardCharts({ issues, assigneeLeaderboardIssues, projects, c
               <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
                 {t("dashboard.chartCustomerProjectTreemapHint")}
               </p>
-              <div className="mt-3 h-[360px] w-full min-w-0 md:h-[400px]">
-                <ResponsiveContainer width="100%" height="100%">
-                  <Treemap
-                    data={customerProjectTreemapData}
-                    dataKey="value"
-                    type="nest"
-                    stroke={chartChrome.pieStroke}
-                    aspectRatio={4 / 3}
-                    isAnimationActive={false}
-                    isUpdateAnimationActive={false}
-                    content={renderCustomerProjectTreemapNode as unknown as ReactElement}
-                    onClick={onCustomerProjectTreemapClick}
-                  >
-                    <Tooltip
-                      contentStyle={chartChrome.tooltipContentStyle}
-                      labelStyle={chartChrome.tooltipLabelStyle}
-                      itemStyle={chartChrome.tooltipItemStyle}
-                      formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                    />
-                  </Treemap>
-                </ResponsiveContainer>
+              <div className="mt-3 max-h-[min(28rem,70vh)] w-full min-w-0 space-y-2 overflow-y-auto pr-1">
+                {customerProjectBreakdown.map((row, customerIndex) => {
+                  const expanded = expandedCustomerIds.has(row.customerId);
+                  const accent =
+                    CUSTOMER_PROJECT_ROW_ACCENT[customerIndex % CUSTOMER_PROJECT_ROW_ACCENT.length];
+                  return (
+                    <div
+                      key={row.customerId || "__none__"}
+                      className="overflow-hidden rounded-lg border border-zinc-200 bg-white dark:border-zinc-700 dark:bg-zinc-950"
+                    >
+                      <div className="flex items-center gap-2 border-b border-zinc-100 px-2 py-2 dark:border-zinc-800 sm:px-3">
+                        <button
+                          type="button"
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-800 dark:hover:bg-zinc-800 dark:hover:text-zinc-200"
+                          aria-expanded={expanded}
+                          aria-controls={`customer-breakdown-${row.customerId || "none"}`}
+                          onClick={() => toggleCustomerExpanded(row.customerId)}
+                        >
+                          <span className="sr-only">{expanded ? t("dashboard.collapse") : t("dashboard.expand")}</span>
+                          <span aria-hidden className="text-xs tabular-nums">
+                            {expanded ? "▾" : "▸"}
+                          </span>
+                        </button>
+                        {row.customerId ? (
+                          <button
+                            type="button"
+                            className="min-w-0 flex-1 truncate text-left text-sm font-medium text-zinc-900 hover:underline dark:text-zinc-100"
+                            onClick={() => goToCustomerIssues(row.customerId)}
+                          >
+                            {row.name}
+                          </button>
+                        ) : (
+                          <span className="min-w-0 flex-1 truncate text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                            {row.name}
+                          </span>
+                        )}
+                        <span className="shrink-0 text-sm tabular-nums text-zinc-600 dark:text-zinc-300">
+                          {row.total}
+                        </span>
+                      </div>
+                      {expanded ? (
+                        <ul
+                          id={`customer-breakdown-${row.customerId || "none"}`}
+                          className="divide-y divide-zinc-100 dark:divide-zinc-800"
+                        >
+                          {row.children.map((proj) => {
+                            const pct = row.total > 0 ? Math.round((proj.value / row.total) * 100) : 0;
+                            return (
+                              <li key={`${row.customerId}-${proj.projectId}`}>
+                                <button
+                                  type="button"
+                                  className="flex w-full items-center gap-3 px-3 py-2.5 text-left transition hover:bg-zinc-50 dark:hover:bg-zinc-900/80"
+                                  onClick={() => onBreakdownProjectRowClick(proj.projectId, proj.customerId)}
+                                >
+                                  <span className="min-w-0 flex-1 truncate text-sm text-zinc-800 dark:text-zinc-200">
+                                    {proj.name}
+                                  </span>
+                                  <div
+                                    className="hidden w-28 shrink-0 sm:block"
+                                    title={`${pct}% ${t("dashboard.axisIssues")}`}
+                                  >
+                                    <div className="h-2 w-full overflow-hidden rounded-full bg-zinc-200 dark:bg-zinc-800">
+                                      <div
+                                        className="h-2 rounded-full"
+                                        style={{
+                                          width: `${pct}%`,
+                                          backgroundColor: accent,
+                                        }}
+                                      />
+                                    </div>
+                                  </div>
+                                  <span className="w-10 shrink-0 text-right text-sm tabular-nums text-zinc-600 dark:text-zinc-400">
+                                    {proj.value}
+                                  </span>
+                                </button>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      ) : null}
+                    </div>
+                  );
+                })}
               </div>
             </section>
           ) : null}
 
-          <section className="panel-surface rounded-xl p-4">
-            <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartIssuesByMonth")}</h3>
-            <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartIssuesByMonthHint")}</p>
-            <div className="mt-3 h-[260px] w-full min-w-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={issuesByMonth} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
-                  <XAxis
-                    dataKey="label"
-                    tick={{ fontSize: 10, fill: chartChrome.tickFill }}
-                    stroke={chartChrome.axisStroke}
-                    interval={0}
-                    angle={-35}
-                    textAnchor="end"
-                    height={56}
-                  />
-                  <YAxis
-                    tick={{ fontSize: 11, fill: chartChrome.tickFill }}
-                    stroke={chartChrome.axisStroke}
-                    allowDecimals={false}
-                  />
-                  <Tooltip
-                    contentStyle={chartChrome.tooltipContentStyle}
-                    labelStyle={chartChrome.tooltipLabelStyle}
-                    itemStyle={chartChrome.tooltipItemStyle}
-                    cursor={{ fill: chartChrome.cursorFill }}
-                    formatter={(value: number) => [value, t("dashboard.axisIssues")]}
-                  />
-                  <Bar
-                    dataKey="count"
-                    name={t("dashboard.axisIssues")}
-                    fill="#6366f1"
-                    radius={[4, 4, 0, 0]}
-                    activeBar={false}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </section>
-
-          {byStatus.length > 0 ? (
+          <div className="grid gap-4 md:grid-cols-2">
             <section className="panel-surface rounded-xl p-4">
-              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
-              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
+              <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">
+                {t("dashboard.chartIssuesByMonth")}
+              </h3>
+              <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">
+                {t("dashboard.chartIssuesByMonthHint")}
+              </p>
               <div className="mt-3 h-[280px] w-full min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={byStatus}
-                      dataKey="count"
-                      nameKey="name"
-                      cx="50%"
-                      cy="50%"
-                      outerRadius={100}
-                      stroke={chartChrome.pieStroke}
-                      strokeWidth={1}
-                      label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
-                        const RADIAN = Math.PI / 180;
-                        const or = outerRadius ?? 0;
-                        const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
-                        const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
-                        return (
-                          <text
-                            x={x}
-                            y={y}
-                            fill={fill as string}
-                            textAnchor={x > (cx ?? 0) ? "start" : "end"}
-                            dominantBaseline="central"
-                            fontSize={11}
-                          >
-                            {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
-                          </text>
-                        );
-                      }}
-                      labelLine={false}
-                    >
-                      {byStatus.map((entry) => (
-                        <Cell key={entry.key} fill={entry.fill} />
-                      ))}
-                    </Pie>
+                  <BarChart data={issuesByMonth} margin={{ top: 4, right: 8, left: 8, bottom: 4 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke={chartChrome.gridStroke} />
+                    <XAxis
+                      dataKey="label"
+                      tick={{ fontSize: 10, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      interval={0}
+                      angle={-35}
+                      textAnchor="end"
+                      height={56}
+                    />
+                    <YAxis
+                      tick={{ fontSize: 11, fill: chartChrome.tickFill }}
+                      stroke={chartChrome.axisStroke}
+                      allowDecimals={false}
+                    />
                     <Tooltip
                       contentStyle={chartChrome.tooltipContentStyle}
                       labelStyle={chartChrome.tooltipLabelStyle}
                       itemStyle={chartChrome.tooltipItemStyle}
+                      cursor={{ fill: chartChrome.cursorFill }}
                       formatter={(value: number) => [value, t("dashboard.axisIssues")]}
                     />
-                  </PieChart>
+                    <Bar
+                      dataKey="count"
+                      name={t("dashboard.axisIssues")}
+                      fill="#6366f1"
+                      radius={[4, 4, 0, 0]}
+                      activeBar={false}
+                    />
+                  </BarChart>
                 </ResponsiveContainer>
               </div>
             </section>
-          ) : null}
+
+            {byStatus.length > 0 ? (
+              <section className="panel-surface rounded-xl p-4">
+                <h3 className="text-sm font-semibold text-zinc-800 dark:text-zinc-200">{t("dashboard.chartByStatus")}</h3>
+                <p className="mt-0.5 text-xs text-zinc-500 dark:text-zinc-400">{t("dashboard.chartByStatusHint")}</p>
+                <div className="mt-3 h-[280px] w-full min-w-0">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={byStatus}
+                        dataKey="count"
+                        nameKey="name"
+                        cx="50%"
+                        cy="50%"
+                        outerRadius={100}
+                        stroke={chartChrome.pieStroke}
+                        strokeWidth={1}
+                        label={({ name, percent, cx, cy, midAngle, outerRadius, fill }) => {
+                          const RADIAN = Math.PI / 180;
+                          const or = outerRadius ?? 0;
+                          const x = (cx ?? 0) + (or + 14) * Math.cos(-(midAngle ?? 0) * RADIAN);
+                          const y = (cy ?? 0) + (or + 14) * Math.sin(-(midAngle ?? 0) * RADIAN);
+                          return (
+                            <text
+                              x={x}
+                              y={y}
+                              fill={fill as string}
+                              textAnchor={x > (cx ?? 0) ? "start" : "end"}
+                              dominantBaseline="central"
+                              fontSize={11}
+                            >
+                              {`${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                            </text>
+                          );
+                        }}
+                        labelLine={false}
+                      >
+                        {byStatus.map((entry) => (
+                          <Cell key={entry.key} fill={entry.fill} />
+                        ))}
+                      </Pie>
+                      <Tooltip
+                        contentStyle={chartChrome.tooltipContentStyle}
+                        labelStyle={chartChrome.tooltipLabelStyle}
+                        itemStyle={chartChrome.tooltipItemStyle}
+                        formatter={(value: number) => [value, t("dashboard.axisIssues")]}
+                      />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+              </section>
+            ) : null}
+          </div>
         </div>
       )}
 
