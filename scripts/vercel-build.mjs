@@ -30,7 +30,7 @@ function isAdvisoryLockTimeout(output) {
 }
 
 async function runMigrateDeployWithRetry() {
-  const maxAttempts = 5;
+  const maxAttempts = 8;
   for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
     const result = run("npx", ["prisma", "migrate", "deploy"]);
     if (result.status === 0) return;
@@ -41,7 +41,7 @@ async function runMigrateDeployWithRetry() {
       process.exit(result.status ?? 1);
     }
 
-    const waitMs = 2000 * attempt;
+    const waitMs = Math.min(16_000, 2000 * 2 ** (attempt - 1));
     console.warn(
       `Prisma migrate deploy hit advisory lock timeout (attempt ${attempt}/${maxAttempts}). Retrying in ${waitMs}ms...`,
     );
@@ -85,11 +85,30 @@ FIX (about 2 minutes):
    If Neon shows parameters, add: ?sslmode=require
 2. Vercel → your Project → Settings → Environment Variables
    Add DATABASE_URL for Production (and Preview if you deploy previews).
+   If DATABASE_URL uses Neon’s pooler (host contains \`-pooler\`), also add DATABASE_DIRECT_URL
+   (non-pooled Prisma URI — see VERCEL.md / \`npm run neon:url:direct\`) so \`prisma migrate deploy\` avoids P1002 advisory lock timeouts.
 3. Add AUTH_SECRET (run locally: openssl rand -base64 32)
 4. Add AUTH_URL = https://YOUR-PROJECT.vercel.app (your real Vercel URL, no trailing slash)
 5. Save → Deployments → latest → … → Redeploy
 
 See VERCEL.md in this repo for the full checklist.
+================================================================================
+`);
+  process.exit(1);
+}
+
+const directUrl = process.env.DATABASE_DIRECT_URL?.trim();
+if (!directUrl) {
+  console.error(`
+================================================================================
+BUILD FAILED: DATABASE_DIRECT_URL is not set.
+
+Migrations (\`prisma migrate deploy\`) must use a direct Postgres connection.
+Use your normal pooled DATABASE_URL for the app; set DATABASE_DIRECT_URL to Neon’s
+non-pooled Prisma string (host without \`-pooler\`). Same password and database name.
+
+CLI (after \`neonctl\` context):  npm run neon:url:direct
+See VERCEL.md → Environment Variables.
 ================================================================================
 `);
   process.exit(1);

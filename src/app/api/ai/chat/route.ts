@@ -2,20 +2,23 @@ import { auth } from "@/auth";
 import { buildAiKnowledgeSnapshot } from "@/lib/ai-knowledge-snapshot";
 import { TABS_AI_PAGE } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
-import { createOpenAI } from "@ai-sdk/openai";
 import {
   convertToModelMessages,
   streamText,
+  type GatewayModelId,
   type UIMessage,
 } from "ai";
 import { NextResponse } from "next/server";
 
-function getAiApiKey() {
-  return process.env.AI_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+function getAiGatewayApiKey() {
+  return process.env.AI_GATEWAY_API_KEY?.trim();
 }
 
-function getChatModelId() {
-  return process.env.AI_CHAT_MODEL?.trim() || "gpt-5.4";
+/** Gateway model id, e.g. `openai/gpt-5.4` (see Vercel AI Gateway). */
+function getChatGatewayModelId(): GatewayModelId {
+  const raw = process.env.AI_CHAT_MODEL?.trim() || "gpt-5.4";
+  if (raw.includes("/")) return raw as GatewayModelId;
+  return `openai/${raw}` as GatewayModelId;
 }
 
 export async function POST(request: Request) {
@@ -27,10 +30,9 @@ export async function POST(request: Request) {
   const denied = await guardEmployeeNavApi(session, TABS_AI_PAGE);
   if (denied) return denied;
 
-  const apiKey = getAiApiKey();
-  if (!apiKey) {
+  if (!getAiGatewayApiKey()) {
     return NextResponse.json(
-      { error: "AI is not configured (set AI_KEY or OPENAI_API_KEY)." },
+      { error: "AI is not configured (set AI_GATEWAY_API_KEY)." },
       { status: 503 },
     );
   }
@@ -65,8 +67,6 @@ export async function POST(request: Request) {
 
   const snapshotJson = JSON.stringify(snapshot);
 
-  const openai = createOpenAI({ apiKey });
-
   let modelMessages;
   try {
     modelMessages = await convertToModelMessages(
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
   ].join("\n");
 
   const result = streamText({
-    model: openai(getChatModelId()),
+    model: getChatGatewayModelId(),
     system,
     messages: modelMessages,
   });

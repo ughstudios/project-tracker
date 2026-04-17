@@ -14,10 +14,10 @@
     "neon:auth": "npx neonctl@latest auth",
     "neon:create": "npx neonctl@latest projects create --name project-tracker --region-id aws-us-east-1 --set-context",
     "neon:url": "npx neonctl@latest connection-string main --prisma --pooled",
+    "neon:url:direct": "npx neonctl@latest connection-string main --prisma",
     "neon:init": "npx neonctl@latest init --agent cursor"
   },
   "dependencies": {
-    "@ai-sdk/openai": "^3.0.53",
     "@ai-sdk/react": "^3.0.170",
     "@prisma/client": "6.16.2",
     "@vercel/analytics": "^2.0.1",

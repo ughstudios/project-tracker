@@ -1,12 +1,12 @@
 # Deploy on Vercel
 
-This app uses **PostgreSQL**. Vercel’s build runs Prisma, so **`DATABASE_URL` must exist before `npm run build`** — otherwise you get `P1012 Environment variable not found: DATABASE_URL`.
+This app uses **PostgreSQL**. Vercel’s build runs Prisma, so **`DATABASE_URL`** and **`DATABASE_DIRECT_URL`** must exist before `npm run build`** — otherwise you get `P1012 Environment variable not found: …`.
 
 ## 0. Order of operations (important)
 
-1. Create Postgres (Neon below) and copy `DATABASE_URL`.
+1. Create Postgres (Neon below) and copy **`DATABASE_URL`** (pooled is best for serverless) plus **`DATABASE_DIRECT_URL`** (non-pooled for migrations — avoids Prisma **P1002** / `pg_advisory_lock` timeouts on Neon’s pooler).
 2. In Vercel → **Settings → Environment Variables**, add **all** variables below for **Production** (and **Preview** if you use preview deployments).
-3. **Redeploy** (or trigger a new deploy). Do not expect the first deploy to succeed if `DATABASE_URL` was missing.
+3. **Redeploy** (or trigger a new deploy). Do not expect the first deploy to succeed if **`DATABASE_URL`** or **`DATABASE_DIRECT_URL`** was missing.
 
 ## 1. Postgres on Neon (free)
 
@@ -14,7 +14,7 @@ This app uses **PostgreSQL**. Vercel’s build runs Prisma, so **`DATABASE_URL` 
 2. **Create project** → choose a region close to your Vercel region (e.g. US East).
 3. In the Neon dashboard, open **Connection details** / **Connection string**.
 4. Copy the **PostgreSQL URI** (user, password, host, database).  
-   - If Neon offers **pooled** vs **direct**: either works for Prisma migrate; pooled is fine for serverless runtime.
+   - Use **pooled** for `DATABASE_URL` (Neon host contains `-pooler`) and **direct** (non-pooled host) for `DATABASE_DIRECT_URL`. Prisma runs **`migrate deploy`** over `directUrl`; using only the pooler often causes **P1002** advisory lock timeouts during Vercel builds.
    - Append **`?sslmode=require`** if the string does not already include SSL params.
 
 Example shape (yours will differ):
@@ -41,13 +41,14 @@ Install nothing permanently; commands use `npx` under the hood (`package.json` s
 
    Or create manually in the [Neon console](https://console.neon.tech) and run **`npm run neon:url`** after selecting that project with `neonctl set-context` if needed.
 
-3. **Print a Prisma-friendly pooled connection string** (use this as `DATABASE_URL` in `.env` locally and in Vercel):
+3. **Print Prisma-friendly connection strings** (pooled for the app, direct for migrations):
 
    ```bash
    npm run neon:url
+   npm run neon:url:direct
    ```
 
-   Copy the full URI into Vercel → Environment Variables → `DATABASE_URL`.
+   Copy the first URI to **`DATABASE_URL`** and the second to **`DATABASE_DIRECT_URL`** in Vercel (and `.env` locally).
 
 4. **Optional — `neonctl init` for Cursor** (Neon’s “AI assistant” starter; not required for the app to run):
 
@@ -82,13 +83,16 @@ Vercel → **Project → Settings → Environment Variables**:
 
 | Name | Notes |
 |------|--------|
-| **`DATABASE_URL`** | Full Neon URI from step 1. **Required for build.** |
+| **`DATABASE_URL`** | Pooled Neon URI (**`npm run neon:url`**). **Required for build** and for the app at runtime. |
+| **`DATABASE_DIRECT_URL`** | Non-pooled Neon URI (**`npm run neon:url:direct`**). **Required for build** so `prisma migrate deploy` uses a direct session (avoids **P1002** / `pg_advisory_lock` timeouts). If you use a single non-pooled URL locally, you may set this to the **same** value as `DATABASE_URL`. |
 | **`AUTH_SECRET`** | Long random string, e.g. run `openssl rand -base64 32` locally. |
 | **`AUTH_URL`** | **Exact origin users use in the browser** (no trailing slash). Examples: `https://tracker.colorlightcloud.com` for a custom domain, or `https://<project>.vercel.app`. **Do not use `http://localhost:3000` in production** — mismatched Auth.js cookies often cause “page couldn’t load” with `200` on RSC requests. |
 | **`NEXTAUTH_URL`** | Same value as `AUTH_URL` (keeps older NextAuth tooling happy). |
 | **`BLOB_READ_WRITE_TOKEN`** | **Required for file uploads on Vercel.** Create a Blob store under **Storage** → connect it to this project so Vercel injects this token. Serverless functions cannot write under `public/uploads`. |
-| **`OPENAI_API_KEY`** | Optional, but required for automatic English/Chinese issue translation. If omitted, issues still work and the app simply stores the original text only. |
-| **`OPENAI_TRANSLATION_MODEL`** | Optional override for the translation model. Default: `gpt-4o-mini`. |
+| **`AI_GATEWAY_API_KEY`** | Optional; from **Vercel → AI Gateway → API keys**. Required for the in-app **AI assistant** and (when set) for **EN↔ZH issue/thread translation** via the [AI Gateway](https://vercel.com/docs/ai-gateway/getting-started/text). If omitted, the assistant is disabled and translations fall back to direct OpenAI keys below, or original text only. |
+| **`AI_CHAT_MODEL`** | Optional chat model id for the assistant. Default: `gpt-5.4` (sent to the gateway as `openai/gpt-5.4`). You may set a full gateway id such as `anthropic/claude-sonnet-4.5`. |
+| **`OPENAI_TRANSLATION_MODEL`** | Optional override for the translation model. Default: `gpt-4o-mini` (gateway: `openai/gpt-4o-mini`). |
+| **`AI_KEY`** or **`OPENAI_API_KEY`** | Optional **fallback** for translation **only** when `AI_GATEWAY_API_KEY` is not set. Uses the public OpenAI API. |
 
 After saving, **Redeploy** so the build sees the new values.
 
@@ -110,7 +114,8 @@ After a successful deploy, create users in the **same** database Neon URI:
 
 ```bash
 cd issue-tracker
-export DATABASE_URL="postgresql://..."   # same as Vercel
+export DATABASE_URL="postgresql://..."          # same as Vercel
+export DATABASE_DIRECT_URL="postgresql://..."   # same as Vercel (non-pooled, or same as URL if not using pooler)
 npm ci
 npm run db:generate
 npm run db:seed

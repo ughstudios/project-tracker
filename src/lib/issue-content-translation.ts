@@ -48,16 +48,40 @@ export function detectIssueContentLanguage(values: string[]): ContentLanguage | 
   return chineseCount >= englishCount ? "zh" : "en";
 }
 
-function getTranslationModel() {
+function getTranslationModelBase() {
   return process.env.OPENAI_TRANSLATION_MODEL?.trim() || "gpt-4o-mini";
 }
 
-function getOpenAiApiKey() {
-  return process.env.AI_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+/** OpenAI Chat Completions `model` field: short id for api.openai.com, `provider/model` for Vercel AI Gateway. */
+function getTranslationModelForEndpoint(useGateway: boolean) {
+  const m = getTranslationModelBase();
+  if (!useGateway) return m;
+  if (m.includes("/")) return m;
+  return `openai/${m}`;
+}
+
+function getTranslationApiKeyAndUrl():
+  | { apiKey: string; url: string; useGateway: boolean }
+  | null {
+  const gatewayKey = process.env.AI_GATEWAY_API_KEY?.trim();
+  if (gatewayKey) {
+    return {
+      apiKey: gatewayKey,
+      url: "https://ai-gateway.vercel.sh/v1/chat/completions",
+      useGateway: true,
+    };
+  }
+  const openaiKey = process.env.AI_KEY?.trim() || process.env.OPENAI_API_KEY?.trim();
+  if (!openaiKey) return null;
+  return {
+    apiKey: openaiKey,
+    url: "https://api.openai.com/v1/chat/completions",
+    useGateway: false,
+  };
 }
 
 export function isTranslationConfigured() {
-  return Boolean(getOpenAiApiKey());
+  return getTranslationApiKeyAndUrl() != null;
 }
 
 async function translateJson<T>({
@@ -69,10 +93,10 @@ async function translateJson<T>({
   targetLanguage: Locale;
   payload: Record<string, string>;
 }): Promise<T | null> {
-  const apiKey = getOpenAiApiKey();
-  if (!apiKey) return null;
+  const endpoint = getTranslationApiKeyAndUrl();
+  if (!endpoint) return null;
 
-  const model = getTranslationModel();
+  const model = getTranslationModelForEndpoint(endpoint.useGateway);
   const cacheKey = buildTranslationCacheKey(model, sourceLanguage, targetLanguage, payload);
   const cachedRaw = await readTranslationCache(cacheKey);
   if (cachedRaw) {
@@ -86,10 +110,10 @@ async function translateJson<T>({
   const sourceLabel = sourceLanguage === "zh" ? "Chinese" : "English";
   const targetLabel = targetLanguage === "zh" ? "Chinese" : "English";
 
-  const response = await fetch("https://api.openai.com/v1/chat/completions", {
+  const response = await fetch(endpoint.url, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${apiKey}`,
+      Authorization: `Bearer ${endpoint.apiKey}`,
       "Content-Type": "application/json",
     },
     body: JSON.stringify({

@@ -9,8 +9,11 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  /// Pooled Neon URL (e.g. host `…-pooler…`) for the app at runtime.
+  url       = env("DATABASE_URL")
+  /// Non-pooled URL for `prisma migrate deploy` (advisory locks + pooler often cause P1002 timeouts).
+  directUrl = env("DATABASE_DIRECT_URL")
 }
 
 model User {
