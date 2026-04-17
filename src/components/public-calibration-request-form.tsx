@@ -15,11 +15,76 @@ type SubmitState =
   | { status: "success"; message: string }
   | { status: "error"; message: string };
 
+type ControllerConfig = { model: string; firmware: string; quantity: number };
+type ReceiverConfig = { model: string; firmware: string; quantity: number };
+
+const CONTROLLER_MODELS = [
+  "U15",
+  "U6",
+  "U9",
+  "X100 Pro 4U",
+  "X100 Pro 2U",
+  "X100 Pro 7U",
+  "Z8t",
+  "Z6 Pro G2",
+  "Z5",
+  "Z4 Pro",
+  "Z3",
+  "VX20",
+  "VX12F",
+  "VX10",
+  "VX6",
+  "DS40",
+  "DS20",
+  "DS420",
+  "DS410",
+  "S20",
+  "S6F",
+  "S20F",
+  "S4",
+  "S6",
+] as const;
+
+const RECEIVER_MODELS = [
+  "5G Series - HC5",
+  "5G Series - RV5000",
+  "K10",
+  "K5+",
+  "K8",
+  "E320 Pro",
+  "E120",
+  "E80",
+  "5A-75E",
+  "5A-75B",
+] as const;
+
+function hasAnyControllerField(item: ControllerConfig): boolean {
+  return item.model.trim() !== "" || item.firmware.trim() !== "" || item.quantity !== 1;
+}
+
+function hasAnyReceiverField(item: ReceiverConfig): boolean {
+  return item.model.trim() !== "" || item.firmware.trim() !== "" || item.quantity !== 1;
+}
+
 export function PublicCalibrationRequestForm() {
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [controllers, setControllers] = useState<ControllerConfig[]>([
+    { model: "", firmware: "", quantity: 1 },
+  ]);
+  const [receivers, setReceivers] = useState<ReceiverConfig[]>([
+    { model: "", firmware: "", quantity: 1 },
+  ]);
 
   const canSubmit = useMemo(() => submitState.status !== "submitting", [submitState.status]);
+  const controllerCount = useMemo(
+    () =>
+      controllers.reduce((sum, item) => {
+        if (!item.model.trim()) return sum;
+        return sum + Math.max(1, Number(item.quantity) || 1);
+      }, 0),
+    [controllers],
+  );
 
   function toggleType(id: string) {
     setSelectedTypes((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -35,9 +100,51 @@ export function PublicCalibrationRequestForm() {
       return;
     }
 
+    const controllersWithAnyInput = controllers.filter(hasAnyControllerField);
+    const receiversWithAnyInput = receivers.filter(hasAnyReceiverField);
+
+    if (controllersWithAnyInput.length === 0) {
+      setSubmitState({
+        status: "error",
+        message: "Add at least one controller with model, firmware, and quantity.",
+      });
+      return;
+    }
+    if (receiversWithAnyInput.length === 0) {
+      setSubmitState({
+        status: "error",
+        message: "Add at least one receiver with model, firmware, and quantity.",
+      });
+      return;
+    }
+
+    const invalidController = controllersWithAnyInput.some(
+      (item) => !item.model.trim() || !item.firmware.trim() || !Number.isFinite(item.quantity) || item.quantity < 1,
+    );
+    if (invalidController) {
+      setSubmitState({
+        status: "error",
+        message: "Every controller line must include model, firmware, and quantity.",
+      });
+      return;
+    }
+
+    const invalidReceiver = receiversWithAnyInput.some(
+      (item) => !item.model.trim() || !item.firmware.trim() || !Number.isFinite(item.quantity) || item.quantity < 1,
+    );
+    if (invalidReceiver) {
+      setSubmitState({
+        status: "error",
+        message: "Every receiver line must include model, firmware, and quantity.",
+      });
+      return;
+    }
+
     const formEl = event.currentTarget;
     const formData = new FormData(formEl);
     selectedTypes.forEach((type) => formData.append("calibrationTypes", type));
+    formData.set("controllerConfigs", JSON.stringify(controllersWithAnyInput));
+    formData.set("receiverCardConfigs", JSON.stringify(receiversWithAnyInput));
 
     setSubmitState({ status: "submitting", message: "Submitting..." });
     const response = await fetch("/api/public/forms/calibration", {
@@ -56,6 +163,8 @@ export function PublicCalibrationRequestForm() {
 
     formEl.reset();
     setSelectedTypes([]);
+    setControllers([{ model: "", firmware: "", quantity: 1 }]);
+    setReceivers([{ model: "", firmware: "", quantity: 1 }]);
     setSubmitState({
       status: "success",
       message: payload.message ?? "Your request has been submitted.",
@@ -100,8 +209,10 @@ export function PublicCalibrationRequestForm() {
           <input
             name="controllerCount"
             type="number"
-            min={1}
+            min={0}
             required
+            readOnly
+            value={controllerCount}
             className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
@@ -117,6 +228,138 @@ export function PublicCalibrationRequestForm() {
           className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
         />
       </label>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">Controllers (model + firmware required)</h2>
+        {controllers.map((item, idx) => (
+          <div key={`controller-${idx}`} className="grid gap-2 sm:grid-cols-4">
+            <select
+              value={item.model}
+              onChange={(e) =>
+                setControllers((prev) =>
+                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <option value="">Select controller model</option>
+              {CONTROLLER_MODELS.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Firmware"
+              value={item.firmware}
+              onChange={(e) =>
+                setControllers((prev) =>
+                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <input
+              type="number"
+              min={1}
+              value={item.quantity}
+              onChange={(e) =>
+                setControllers((prev) =>
+                  prev.map((line, lineIdx) =>
+                    lineIdx === idx
+                      ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
+                      : line,
+                  ),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setControllers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
+              }
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setControllers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
+          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+        >
+          Add controller line
+        </button>
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-base font-semibold">Receiver cards (model + firmware required)</h2>
+        {receivers.map((item, idx) => (
+          <div key={`receiver-${idx}`} className="grid gap-2 sm:grid-cols-4">
+            <select
+              value={item.model}
+              onChange={(e) =>
+                setReceivers((prev) =>
+                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, model: e.target.value } : line)),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            >
+              <option value="">Select receiver model</option>
+              {RECEIVER_MODELS.map((model) => (
+                <option key={model} value={model}>
+                  {model}
+                </option>
+              ))}
+            </select>
+            <input
+              type="text"
+              placeholder="Firmware"
+              value={item.firmware}
+              onChange={(e) =>
+                setReceivers((prev) =>
+                  prev.map((line, lineIdx) => (lineIdx === idx ? { ...line, firmware: e.target.value } : line)),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <input
+              type="number"
+              min={1}
+              value={item.quantity}
+              onChange={(e) =>
+                setReceivers((prev) =>
+                  prev.map((line, lineIdx) =>
+                    lineIdx === idx
+                      ? { ...line, quantity: Math.max(1, Number.parseInt(e.target.value || "1", 10) || 1) }
+                      : line,
+                  ),
+                )
+              }
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
+            />
+            <button
+              type="button"
+              onClick={() =>
+                setReceivers((prev) => (prev.length > 1 ? prev.filter((_, lineIdx) => lineIdx !== idx) : prev))
+              }
+              className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+            >
+              Remove
+            </button>
+          </div>
+        ))}
+        <button
+          type="button"
+          onClick={() => setReceivers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
+          className="rounded-md border border-zinc-300 px-3 py-2 text-sm dark:border-zinc-700"
+        >
+          Add receiver line
+        </button>
+      </section>
 
       <section className="space-y-4">
         <h2 className="text-base font-semibold">Required Photos</h2>

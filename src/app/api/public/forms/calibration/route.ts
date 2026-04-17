@@ -22,6 +22,12 @@ type SavedFile = {
   storagePath: string;
 };
 
+type HardwareConfig = {
+  model: string;
+  firmware: string;
+  quantity: number;
+};
+
 function cleanName(fileName: string): string {
   const parsed = path.parse(fileName || "upload");
   const safeBase = parsed.name.replace(/[^a-zA-Z0-9._-]/g, "_").slice(0, 60) || "upload";
@@ -68,6 +74,32 @@ function asNonEmptyString(value: FormDataEntryValue | null): string {
   return value.trim();
 }
 
+function parseHardwareConfigList(raw: FormDataEntryValue | null): HardwareConfig[] | null {
+  if (typeof raw !== "string" || raw.trim() === "") return null;
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return null;
+    const normalized = parsed
+      .map((item) => {
+        if (typeof item !== "object" || item == null) return null;
+        const record = item as Record<string, unknown>;
+        const model = typeof record.model === "string" ? record.model.trim() : "";
+        const firmware = typeof record.firmware === "string" ? record.firmware.trim() : "";
+        const quantity = Number(record.quantity ?? 0);
+        if (!model || !firmware || !Number.isFinite(quantity) || quantity < 1) return null;
+        return {
+          model,
+          firmware,
+          quantity: Math.floor(quantity),
+        };
+      })
+      .filter((item): item is HardwareConfig => item !== null);
+    return normalized;
+  } catch {
+    return null;
+  }
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const formData = await request.formData();
@@ -91,9 +123,33 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
+    const controllerConfigs = parseHardwareConfigList(formData.get("controllerConfigs"));
+    if (!controllerConfigs || controllerConfigs.length === 0) {
+      return NextResponse.json(
+        { error: "At least one controller with model, firmware, and quantity is required." },
+        { status: 400 },
+      );
+    }
+
+    const receiverCardConfigs = parseHardwareConfigList(formData.get("receiverCardConfigs"));
+    if (!receiverCardConfigs || receiverCardConfigs.length === 0) {
+      return NextResponse.json(
+        { error: "At least one receiver with model, firmware, and quantity is required." },
+        { status: 400 },
+      );
+    }
+
     const controllerCount = Number.parseInt(controllerCountRaw, 10);
     if (!Number.isFinite(controllerCount) || controllerCount < 1) {
       return NextResponse.json({ error: "Controller count must be at least 1." }, { status: 400 });
+    }
+
+    const computedControllerCount = controllerConfigs.reduce((sum, item) => sum + item.quantity, 0);
+    if (controllerCount !== computedControllerCount) {
+      return NextResponse.json(
+        { error: "Controller count must match selected controller quantities." },
+        { status: 400 },
+      );
     }
 
     const screenPhoto = formData.get("screenPhoto");
@@ -133,6 +189,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       screenResolution,
       controllerCount,
       screenType,
+      controllerConfigs,
+      receiverCardConfigs,
       files: savedFiles,
     };
 
