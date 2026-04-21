@@ -40,6 +40,7 @@ model User {
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
   workRecords                WorkRecord[]
   publicCustomerRequestThreadEntries PublicCustomerRequestThreadEntry[] @relation("PublicCustomerRequestThreadAuthor")
+  assignedPublicCustomerRequests     PublicCustomerRequest[]            @relation("PublicCustomerRequestAssignee")
 }
 
 enum PublicCustomerRequestKind {
@@ -57,13 +58,16 @@ model PublicCustomerRequest {
   closedAt           DateTime?
   archivedAt         DateTime?
   sourceAuditLogId   String?
+  assigneeId         String?
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
+  assignee      User?                               @relation("PublicCustomerRequestAssignee", fields: [assigneeId], references: [id], onDelete: SetNull)
   threadEntries PublicCustomerRequestThreadEntry[]
 
   @@index([archivedAt, createdAt])
   @@index([status, closedAt, archivedAt])
+  @@index([assigneeId])
 }
 
 model PublicCustomerRequestThreadEntry {

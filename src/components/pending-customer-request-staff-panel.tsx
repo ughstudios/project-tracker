@@ -10,20 +10,27 @@ export type ThreadEntryProps = {
   author: { name: string | null; email: string | null };
 };
 
+export type StaffAssigneeOption = { id: string; name: string; email: string };
+
 export function PendingCustomerRequestStaffPanel({
   submissionId,
   initialStatus,
   initialClosedAtIso,
+  initialAssigneeId,
+  assigneeOptions,
   initialThread,
 }: {
   submissionId: string;
   initialStatus: string;
   initialClosedAtIso: string | null;
+  initialAssigneeId: string | null;
+  assigneeOptions: StaffAssigneeOption[];
   initialThread: ThreadEntryProps[];
 }) {
   const router = useRouter();
   const [status, setStatus] = useState(initialStatus);
   const [closedAtIso, setClosedAtIso] = useState<string | null>(initialClosedAtIso);
+  const [assigneeId, setAssigneeId] = useState<string | null>(initialAssigneeId);
   const [comment, setComment] = useState("");
   const [busy, setBusy] = useState(false);
   const [posting, setPosting] = useState(false);
@@ -42,6 +49,7 @@ export function PendingCustomerRequestStaffPanel({
         error?: string;
         status?: string;
         closedAt?: string | null;
+        assignee?: { id: string; name: string; email: string } | null;
       };
       if (!res.ok) {
         setError(data.error ?? "Could not update status.");
@@ -49,6 +57,33 @@ export function PendingCustomerRequestStaffPanel({
       }
       setStatus(data.status ?? next);
       setClosedAtIso(data.closedAt ?? null);
+      if (data.assignee !== undefined) {
+        setAssigneeId(data.assignee?.id ?? null);
+      }
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function patchAssignee(nextId: string | null) {
+    setBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/pending-customer-requests/${submissionId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ assigneeId: nextId }),
+      });
+      const data = (await res.json().catch(() => ({}))) as {
+        error?: string;
+        assignee?: { id: string; name: string; email: string } | null;
+      };
+      if (!res.ok) {
+        setError(data.error ?? "Could not update assignee.");
+        return;
+      }
+      setAssigneeId(data.assignee?.id ?? null);
       router.refresh();
     } finally {
       setBusy(false);
@@ -106,11 +141,30 @@ export function PendingCustomerRequestStaffPanel({
     <div className="mt-6 border-t border-zinc-200 pt-5 dark:border-zinc-800">
       <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Staff workflow</h3>
       <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
-        Set status when done: <strong>Closed</strong> starts a 24-hour timer; the request then archives automatically
-        (same behavior as completed issues). You can archive immediately at any time.
+        Pick an owner for the request, set status when done: <strong>Closed</strong> starts a 24-hour timer; the request
+        then archives automatically (same behavior as completed issues). You can archive immediately at any time.
       </p>
 
       <div className="mt-3 flex flex-wrap items-end gap-3">
+        <label className="flex flex-col gap-1 text-xs font-medium text-zinc-700 dark:text-zinc-300">
+          Assignee
+          <select
+            className="input min-w-[14rem] text-sm"
+            value={assigneeId ?? ""}
+            disabled={busy}
+            onChange={(e) => {
+              const v = e.target.value;
+              void patchAssignee(v === "" ? null : v);
+            }}
+          >
+            <option value="">Unassigned</option>
+            {assigneeOptions.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="flex flex-col gap-1 text-xs font-medium text-zinc-700 dark:text-zinc-300">
           Status
           <select

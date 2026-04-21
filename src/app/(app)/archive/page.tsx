@@ -144,6 +144,7 @@ export default async function ArchivePage() {
         kind: true,
         status: true,
         archivedAt: true,
+        assignee: { select: { name: true } },
       },
     }),
   ]);
@@ -241,6 +242,12 @@ export default async function ArchivePage() {
                   <span className="font-mono text-xs">{r.submissionId.slice(0, 8)}</span>
                   <span className="mx-1 text-zinc-400">·</span>
                   {r.status}
+                  {r.assignee ? (
+                    <>
+                      <span className="mx-1 text-zinc-400">·</span>
+                      assigned to {r.assignee.name}
+                    </>
+                  ) : null}
                   <span className="mx-1 text-zinc-400">·</span>
                   archived {r.archivedAt ? new Date(r.archivedAt).toLocaleString() : ""}
                 </span>

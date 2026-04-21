@@ -28,7 +28,13 @@ export async function PATCH(
 
   const existing = await prisma.publicCustomerRequest.findUnique({
     where: { submissionId },
-    select: { submissionId: true, status: true, archivedAt: true, kind: true, closedAt: true },
+    select: {
+      submissionId: true,
+      status: true,
+      archivedAt: true,
+      kind: true,
+      closedAt: true,
+    },
   });
   if (!existing) {
     return NextResponse.json({ error: "Request not found." }, { status: 404 });
@@ -40,6 +46,7 @@ export async function PATCH(
   const body = (await request.json().catch(() => ({}))) as {
     status?: string;
     archiveNow?: boolean;
+    assigneeId?: string | null;
   };
 
   if (body.archiveNow === true) {
@@ -57,38 +64,109 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   }
 
+  type PatchResponse = {
+    ok: true;
+    status?: string;
+    closedAt?: string | null;
+    assignee?: { id: string; name: string; email: string } | null;
+  };
+  const out: PatchResponse = { ok: true };
+  let changed = false;
+
+  const data: { status?: string; closedAt?: Date | null; assigneeId?: string | null } = {};
+  let nextStatus: string | undefined;
+  let statusAuditDescription: string | undefined;
+
   if (body.status !== undefined) {
-    const next = String(body.status).trim().toUpperCase();
-    if (!ALLOWED_STATUS.has(next)) {
+    changed = true;
+    nextStatus = String(body.status).trim().toUpperCase();
+    if (!ALLOWED_STATUS.has(nextStatus)) {
       return NextResponse.json(
         { error: "Status must be PENDING, IN_PROGRESS, or CLOSED." },
         { status: 400 },
       );
     }
-    const becameClosed = next === "CLOSED" && existing.status !== "CLOSED";
-    const reopening = next !== "CLOSED" && existing.status === "CLOSED";
-    const updateData: { status: string; closedAt?: Date | null } = { status: next };
-    if (becameClosed) updateData.closedAt = new Date();
-    else if (reopening) updateData.closedAt = null;
-    await prisma.publicCustomerRequest.update({
-      where: { submissionId },
-      data: updateData,
-    });
+    const becameClosed = nextStatus === "CLOSED" && existing.status !== "CLOSED";
+    const reopening = nextStatus !== "CLOSED" && existing.status === "CLOSED";
+    data.status = nextStatus;
+    if (becameClosed) data.closedAt = new Date();
+    else if (reopening) data.closedAt = null;
+    const effectiveClosedAt =
+      nextStatus === "CLOSED"
+        ? becameClosed
+          ? data.closedAt ?? null
+          : existing.closedAt
+        : null;
+    out.status = nextStatus;
+    out.closedAt = effectiveClosedAt?.toISOString() ?? null;
+    statusAuditDescription = `Status set to ${nextStatus} for ${existing.kind} request ${submissionId.slice(0, 8)}.`;
+  }
+
+  let assigneeForResponse: { id: string; name: string; email: string } | null | undefined;
+  let assigneeAuditDescription: string | undefined;
+
+  if ("assigneeId" in body) {
+    changed = true;
+    const raw = body.assigneeId;
+    let nextAssigneeId: string | null;
+    if (raw === null || raw === undefined || raw === "") {
+      nextAssigneeId = null;
+    } else if (typeof raw === "string") {
+      const t = raw.trim();
+      nextAssigneeId = t.length ? t : null;
+    } else {
+      return NextResponse.json({ error: "Invalid assigneeId." }, { status: 400 });
+    }
+
+    if (nextAssigneeId) {
+      const user = await prisma.user.findFirst({
+        where: { id: nextAssigneeId, approvalStatus: "APPROVED" },
+        select: { id: true, name: true, email: true },
+      });
+      if (!user) {
+        return NextResponse.json(
+          { error: "Assignee must be an approved employee account." },
+          { status: 400 },
+        );
+      }
+      data.assigneeId = user.id;
+      assigneeForResponse = user;
+      assigneeAuditDescription = `Assigned ${existing.kind} request ${submissionId.slice(0, 8)} to ${user.email}.`;
+    } else {
+      data.assigneeId = null;
+      assigneeForResponse = null;
+      assigneeAuditDescription = `Cleared assignee for ${existing.kind} request ${submissionId.slice(0, 8)}.`;
+    }
+    out.assignee = assigneeForResponse;
+  }
+
+  if (!changed) {
+    return NextResponse.json({ error: "No changes supplied." }, { status: 400 });
+  }
+
+  await prisma.publicCustomerRequest.update({
+    where: { submissionId },
+    data,
+  });
+
+  if (statusAuditDescription) {
     await writeAuditLog({
       actorId: session.user.id,
       entityType: "PublicCustomerRequest",
       entityId: submissionId,
       action: "STATUS",
-      description: `Status set to ${next} for ${existing.kind} request ${submissionId.slice(0, 8)}.`,
+      description: statusAuditDescription,
     });
-    const effectiveClosedAt =
-      next === "CLOSED" ? (becameClosed ? updateData.closedAt ?? null : existing.closedAt) : null;
-    return NextResponse.json({
-      ok: true,
-      status: next,
-      closedAt: effectiveClosedAt?.toISOString() ?? null,
+  }
+  if (assigneeAuditDescription) {
+    await writeAuditLog({
+      actorId: session.user.id,
+      entityType: "PublicCustomerRequest",
+      entityId: submissionId,
+      action: "ASSIGN",
+      description: assigneeAuditDescription,
     });
   }
 
-  return NextResponse.json({ error: "No changes supplied." }, { status: 400 });
+  return NextResponse.json(out);
 }

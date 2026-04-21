@@ -10,6 +10,7 @@ import {
 import { autoArchiveClosedPublicCustomerRequests } from "@/lib/public-customer-request-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { PendingCustomerRequestStaffPanel } from "@/components/pending-customer-request-staff-panel";
+import { PendingCustomerRequestsTabs } from "@/components/pending-customer-requests-tabs";
 import { redirect } from "next/navigation";
 
 const CALIBRATION_LABELS: Record<string, string> = {
@@ -53,10 +54,14 @@ function FileList({ submissionId, files }: { submissionId: string; files: SavedF
   );
 }
 
+type AssigneeOption = { id: string; name: string; email: string };
+
 type TicketWithThread = {
   submissionId: string;
   status: string;
   closedAt: Date | null;
+  assigneeId: string | null;
+  assignee: AssigneeOption | null;
   threadEntries: Array<{
     id: string;
     content: string;
@@ -87,17 +92,25 @@ export default async function PendingCustomerRequestsPage() {
 
   await autoArchiveClosedPublicCustomerRequests();
 
-  const tickets = await prisma.publicCustomerRequest.findMany({
-    where: { archivedAt: null },
-    orderBy: { createdAt: "desc" },
-    take: 200,
-    include: {
-      threadEntries: {
-        orderBy: { createdAt: "asc" },
-        include: { author: { select: { name: true, email: true } } },
+  const [tickets, assigneeOptions] = await Promise.all([
+    prisma.publicCustomerRequest.findMany({
+      where: { archivedAt: null },
+      orderBy: { createdAt: "desc" },
+      take: 200,
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        threadEntries: {
+          orderBy: { createdAt: "asc" },
+          include: { author: { select: { name: true, email: true } } },
+        },
       },
-    },
-  });
+    }),
+    prisma.user.findMany({
+      where: { approvalStatus: "APPROVED" },
+      orderBy: { name: "asc" },
+      select: { id: true, name: true, email: true },
+    }),
+  ]);
 
   const audits = await prisma.auditLog.findMany({
     where: {
@@ -119,6 +132,10 @@ export default async function PendingCustomerRequestsPage() {
       submissionId: ticket.submissionId,
       status: ticket.status,
       closedAt: ticket.closedAt,
+      assigneeId: ticket.assigneeId,
+      assignee: ticket.assignee
+        ? { id: ticket.assignee.id, name: ticket.assignee.name, email: ticket.assignee.email }
+        : null,
       threadEntries: ticket.threadEntries,
     };
 
@@ -145,41 +162,55 @@ export default async function PendingCustomerRequestsPage() {
     }
   }
 
+  const calibrations = submissions.filter((r): r is RowCalibration => r.kind === "calibration");
+  const rmas = submissions.filter((r): r is RowRma => r.kind === "processor-rma");
+  const defaultTab = calibrations.length > 0 ? "calibration" : "processor-rma";
+
+  function staffPanelForRow(row: PendingRow) {
+    const threadProps = row.ticket.threadEntries.map((e) => ({
+      id: e.id,
+      content: e.content,
+      createdAt: e.createdAt.toISOString(),
+      author: { name: e.author.name, email: e.author.email },
+    }));
+    return (
+      <PendingCustomerRequestStaffPanel
+        submissionId={row.ticket.submissionId}
+        initialStatus={row.ticket.status}
+        initialClosedAtIso={row.ticket.closedAt?.toISOString() ?? null}
+        initialAssigneeId={row.ticket.assigneeId}
+        assigneeOptions={assigneeOptions}
+        initialThread={threadProps}
+      />
+    );
+  }
+
   return (
     <section className="space-y-4">
       <div className="panel-surface rounded-xl p-5">
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Pending Customer Requests</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Public calibration requests and per-processor RMA submissions. Use status, thread, and archive like issues.
-          Closed items auto-archive after 24 hours.
+          Public calibration requests and per-processor RMA submissions. Switch tabs to work each queue separately. Use
+          status, assignee, thread, and archive like issues. Closed items auto-archive after 24 hours.
         </p>
       </div>
 
-      <div className="space-y-3">
-        {submissions.length === 0 ? (
-          <div className="panel-surface rounded-xl p-5">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">No pending customer requests yet.</p>
-          </div>
-        ) : (
-          submissions.map((row) => {
-            const threadProps = row.ticket.threadEntries.map((e) => ({
-              id: e.id,
-              content: e.content,
-              createdAt: e.createdAt.toISOString(),
-              author: { name: e.author.name, email: e.author.email },
-            }));
-            const staffPanel = (
-              <PendingCustomerRequestStaffPanel
-                key={`${row.ticket.submissionId}-${row.ticket.status}-${row.ticket.threadEntries.length}`}
-                submissionId={row.ticket.submissionId}
-                initialStatus={row.ticket.status}
-                initialClosedAtIso={row.ticket.closedAt?.toISOString() ?? null}
-                initialThread={threadProps}
-              />
-            );
-
-            return row.kind === "calibration" ? (
-              <article key={row.ticket.submissionId} className="panel-surface rounded-xl p-5">
+      <PendingCustomerRequestsTabs
+        defaultTab={defaultTab}
+        calibrationCount={calibrations.length}
+        rmaCount={rmas.length}
+        calibrationPanel={
+          calibrations.length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">No pending calibration requests.</p>
+          ) : (
+            <div className="space-y-3">
+              {calibrations.map((row) => {
+                const staffPanel = staffPanelForRow(row);
+                return (
+              <article
+                key={`${row.ticket.submissionId}-${row.ticket.status}-${row.ticket.assigneeId ?? ""}-${row.ticket.threadEntries.length}`}
+                className="panel-surface rounded-xl p-5"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -188,6 +219,11 @@ export default async function PendingCustomerRequestsPage() {
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       Submitted {new Date(row.payload.submittedAt).toLocaleString()} (queued {row.createdAt.toLocaleString()})
                     </p>
+                    {row.ticket.assignee ? (
+                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                        Assigned to <span className="font-medium">{row.ticket.assignee.name}</span>
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">
@@ -280,8 +316,23 @@ export default async function PendingCustomerRequestsPage() {
 
                 {staffPanel}
               </article>
-            ) : (
-              <article key={row.ticket.submissionId} className="panel-surface rounded-xl p-5">
+                );
+              })}
+            </div>
+          )
+        }
+        rmaPanel={
+          rmas.length === 0 ? (
+            <p className="text-sm text-zinc-600 dark:text-zinc-400">No pending processor RMA requests.</p>
+          ) : (
+            <div className="space-y-3">
+              {rmas.map((row) => {
+                const staffPanel = staffPanelForRow(row);
+                return (
+              <article
+                key={`${row.ticket.submissionId}-${row.ticket.status}-${row.ticket.assigneeId ?? ""}-${row.ticket.threadEntries.length}`}
+                className="panel-surface rounded-xl p-5"
+              >
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -290,6 +341,11 @@ export default async function PendingCustomerRequestsPage() {
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
                       Submitted {new Date(row.payload.submittedAt).toLocaleString()} (queued {row.createdAt.toLocaleString()})
                     </p>
+                    {row.ticket.assignee ? (
+                      <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-300">
+                        Assigned to <span className="font-medium">{row.ticket.assignee.name}</span>
+                      </p>
+                    ) : null}
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-200">
@@ -419,10 +475,12 @@ export default async function PendingCustomerRequestsPage() {
 
                 {staffPanel}
               </article>
-            );
-          })
-        )}
-      </div>
+                );
+              })}
+            </div>
+          )
+        }
+      />
     </section>
   );
 }
