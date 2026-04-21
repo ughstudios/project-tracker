@@ -1,6 +1,8 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { contentTypeForUpload, writeUploadedFile } from "@/lib/file-storage";
+import type { TranslateFn } from "@/i18n/create-translator";
+import { localeFromFormData, publicFormTranslator } from "@/lib/public-form-locale";
 import { registerPublicCustomerRequestRow } from "@/lib/register-public-customer-request";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -37,15 +39,20 @@ function cleanName(fileName: string): string {
   return `${safeBase}${safeExt}`;
 }
 
-async function saveFormFile(file: File, submissionId: string, field: string): Promise<SavedFile> {
+async function saveFormFile(
+  file: File,
+  submissionId: string,
+  field: string,
+  t: TranslateFn,
+): Promise<SavedFile> {
   if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
-    throw new Error(`Unsupported file format in ${field}.`);
+    throw new Error(t("publicForms.calibration.api.unsupportedFormat", { field }));
   }
   if (file.size <= 0) {
-    throw new Error(`Empty file in ${field}.`);
+    throw new Error(t("publicForms.calibration.api.emptyFile", { field }));
   }
   if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error(`File in ${field} exceeds 25MB.`);
+    throw new Error(t("publicForms.calibration.api.fileTooLarge", { field }));
   }
 
   const safeName = cleanName(file.name);
@@ -103,73 +110,66 @@ function parseHardwareConfigList(raw: FormDataEntryValue | null): HardwareConfig
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  let translate = publicFormTranslator("en");
   try {
     const formData = await request.formData();
+    const locale = localeFromFormData(formData);
+    const t = publicFormTranslator(locale);
+    translate = t;
+
     const calibrationTypes = formData
       .getAll("calibrationTypes")
       .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
       .filter(Boolean);
 
     if (calibrationTypes.length === 0) {
-      return NextResponse.json({ error: "At least one calibration option is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.calibration.api.typesRequired") }, { status: 400 });
     }
 
     const screenResolution = asNonEmptyString(formData.get("screenResolution"));
     const screenType = asNonEmptyString(formData.get("screenType"));
 
     if (!screenResolution || !screenType) {
-      return NextResponse.json(
-        { error: "Screen resolution and screen type are required." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.calibration.api.screenRequired") }, { status: 400 });
     }
 
     const controllerConfigs = parseHardwareConfigList(formData.get("controllerConfigs"));
     if (!controllerConfigs || controllerConfigs.length === 0) {
-      return NextResponse.json(
-        { error: "At least one controller with model, firmware, and quantity is required." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.calibration.api.controllersRequired") }, { status: 400 });
     }
 
     const receiverCardConfigs = parseHardwareConfigList(formData.get("receiverCardConfigs"));
     if (!receiverCardConfigs || receiverCardConfigs.length === 0) {
-      return NextResponse.json(
-        { error: "At least one receiver with model, firmware, and quantity is required." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.calibration.api.receiversRequired") }, { status: 400 });
     }
 
     const controllerCount = controllerConfigs.reduce((sum, item) => sum + item.quantity, 0);
 
     const screenPhoto = formData.get("screenPhoto");
     if (!(screenPhoto instanceof File)) {
-      return NextResponse.json({ error: "A screen photo is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.calibration.api.screenPhotoRequired") }, { status: 400 });
     }
 
     const extraScreenPhotos = formData.getAll("screenPhotosExtra").filter((entry): entry is File => entry instanceof File);
     if (extraScreenPhotos.length !== 3) {
-      return NextResponse.json({ error: "Exactly 3 separate screen photos are required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.calibration.api.threeScreenPhotos") }, { status: 400 });
     }
 
     const environmentPhotos = formData
       .getAll("workEnvironmentPhotos")
       .filter((entry): entry is File => entry instanceof File);
     if (environmentPhotos.length === 0) {
-      return NextResponse.json(
-        { error: "At least one work-environment photo is required." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.calibration.api.environmentPhotosRequired") }, { status: 400 });
     }
 
     const submissionId = randomUUID();
     const savedFiles: SavedFile[] = [];
-    savedFiles.push(await saveFormFile(screenPhoto, submissionId, "screen-photo"));
+    savedFiles.push(await saveFormFile(screenPhoto, submissionId, "screen-photo", t));
     for (const file of extraScreenPhotos) {
-      savedFiles.push(await saveFormFile(file, submissionId, "screen-photo-extra"));
+      savedFiles.push(await saveFormFile(file, submissionId, "screen-photo-extra", t));
     }
     for (const file of environmentPhotos) {
-      savedFiles.push(await saveFormFile(file, submissionId, "work-environment"));
+      savedFiles.push(await saveFormFile(file, submissionId, "work-environment", t));
     }
 
     const payload = {
@@ -212,11 +212,12 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     return NextResponse.json({
       ok: true,
-      message: "Form submitted successfully. Thank you.",
+      message: t("publicForms.calibration.api.successMessage"),
       submissionId,
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to submit form.";
+    const message =
+      error instanceof Error ? error.message : translate("publicForms.calibration.api.submitFailed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

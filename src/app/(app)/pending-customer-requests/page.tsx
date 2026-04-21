@@ -11,17 +11,22 @@ import { autoArchiveClosedPublicCustomerRequests } from "@/lib/public-customer-r
 import { prisma } from "@/lib/prisma";
 import { PendingCustomerRequestStaffPanel } from "@/components/pending-customer-request-staff-panel";
 import { PendingCustomerRequestsTabs } from "@/components/pending-customer-requests-tabs";
+import { getServerTranslator } from "@/i18n/server";
 import { redirect } from "next/navigation";
 
-const CALIBRATION_LABELS: Record<string, string> = {
-  "single-layer": "Single layer calibration",
-  "double-layer": "Double layer calibration",
-  "low-chip-brightness": "Low chip brightness calibration",
-  "grayscale-infibit": "Grayscale refinement + infibit",
-};
-
-function calibrationLabel(id: string): string {
-  return CALIBRATION_LABELS[id] ?? id;
+function calibrationOptionTKey(id: string): string | null {
+  switch (id) {
+    case "single-layer":
+      return "publicForms.calibration.options.singleLayer";
+    case "double-layer":
+      return "publicForms.calibration.options.doubleLayer";
+    case "low-chip-brightness":
+      return "publicForms.calibration.options.lowChipBrightness";
+    case "grayscale-infibit":
+      return "publicForms.calibration.options.grayscaleInfibit";
+    default:
+      return null;
+  }
 }
 
 function statusBadgeClass(status: string): string {
@@ -89,6 +94,12 @@ type PendingRow = RowCalibration | RowRma;
 export default async function PendingCustomerRequestsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
+
+  const t = await getServerTranslator();
+  function calibrationLabel(id: string): string {
+    const key = calibrationOptionTKey(id);
+    return key ? t(key) : id;
+  }
 
   await autoArchiveClosedPublicCustomerRequests();
 

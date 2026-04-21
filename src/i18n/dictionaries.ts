@@ -1,3 +1,4 @@
+import { publicFormsForEn, publicFormsForZh } from "./public-forms-messages";
 import type { Locale, MessageTree } from "./types";
 
 const en: MessageTree = {
@@ -852,6 +853,7 @@ const en: MessageTree = {
       body: "Switch language anytime using the control at the top of this panel, or later from the bottom of the sidebar. Appearance (light / dark / system) stays in the sidebar once you finish. Open Account to change your display name, password, or sign-in email.",
     },
   },
+  publicForms: publicFormsForEn,
   errors: {
     login: {
       pendingApproval: "Your registration is pending admin approval.",
@@ -1713,6 +1715,7 @@ const zh: MessageTree = {
       body: "可随时使用本页顶部的语言切换；结束后也可在侧栏底部切换。外观（浅色 / 深色 / 跟随系统）在结束引导后仍在侧栏底部。在「账户」中可修改显示名称、密码或登录邮箱。",
     },
   },
+  publicForms: publicFormsForZh,
   errors: {
     login: {
       pendingApproval: "您的注册正在等待管理员批准。",

@@ -1,18 +1,20 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const TABS = [
-  { href: "/login", label: "Login" },
-  { href: "/forms", label: "Forms" },
+  { href: "/login", labelKey: "publicForms.accessTabs.login" as const },
+  { href: "/forms", labelKey: "publicForms.accessTabs.forms" as const },
 ] as const;
 
 export function PublicAccessTabs() {
   const pathname = usePathname();
+  const { t } = useI18n();
   return (
     <nav
-      aria-label="Public pages"
+      aria-label={t("publicForms.accessTabs.ariaLabel")}
       className="mb-4 grid w-full grid-cols-2 gap-1 rounded-lg bg-zinc-100 p-1 dark:bg-zinc-900"
     >
       {TABS.map((tab) => {
@@ -31,7 +33,7 @@ export function PublicAccessTabs() {
                 : "text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200",
             ].join(" ")}
           >
-            {tab.label}
+            {t(tab.labelKey)}
           </Link>
         );
       })}

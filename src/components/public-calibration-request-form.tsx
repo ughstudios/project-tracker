@@ -1,12 +1,13 @@
 "use client";
 
+import { useI18n } from "@/i18n/context";
 import { FormEvent, useState } from "react";
 
 const CALIBRATION_OPTIONS = [
-  { id: "single-layer", label: "Single layer calibration" },
-  { id: "double-layer", label: "Double layer calibration" },
-  { id: "low-chip-brightness", label: "Low chip brightness calibration" },
-  { id: "grayscale-infibit", label: "Grayscale refinement + infibit" },
+  { id: "single-layer", messageKey: "publicForms.calibration.options.singleLayer" as const },
+  { id: "double-layer", messageKey: "publicForms.calibration.options.doubleLayer" as const },
+  { id: "low-chip-brightness", messageKey: "publicForms.calibration.options.lowChipBrightness" as const },
+  { id: "grayscale-infibit", messageKey: "publicForms.calibration.options.grayscaleInfibit" as const },
 ] as const;
 
 type SubmitState =
@@ -70,6 +71,7 @@ function hasAnyReceiverField(item: ReceiverConfig): boolean {
 }
 
 export function PublicCalibrationRequestForm() {
+  const { t, locale } = useI18n();
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [controllers, setControllers] = useState<ControllerConfig[]>([
@@ -90,7 +92,7 @@ export function PublicCalibrationRequestForm() {
     if (selectedTypes.length === 0) {
       setSubmitState({
         status: "error",
-        message: "Select at least one calibration option.",
+        message: t("publicForms.calibration.client.selectCalibration"),
       });
       return;
     }
@@ -101,14 +103,14 @@ export function PublicCalibrationRequestForm() {
     if (controllersWithAnyInput.length === 0) {
       setSubmitState({
         status: "error",
-        message: "Add at least one controller with model, firmware, and quantity.",
+        message: t("publicForms.calibration.client.controllersEmpty"),
       });
       return;
     }
     if (receiversWithAnyInput.length === 0) {
       setSubmitState({
         status: "error",
-        message: "Add at least one receiver with model, firmware, and quantity.",
+        message: t("publicForms.calibration.client.receiversEmpty"),
       });
       return;
     }
@@ -119,7 +121,7 @@ export function PublicCalibrationRequestForm() {
     if (invalidController) {
       setSubmitState({
         status: "error",
-        message: "Every controller line must include model, firmware, and quantity.",
+        message: t("publicForms.calibration.client.controllerLineInvalid"),
       });
       return;
     }
@@ -130,18 +132,19 @@ export function PublicCalibrationRequestForm() {
     if (invalidReceiver) {
       setSubmitState({
         status: "error",
-        message: "Every receiver line must include model, firmware, and quantity.",
+        message: t("publicForms.calibration.client.receiverLineInvalid"),
       });
       return;
     }
 
     const formEl = event.currentTarget;
     const formData = new FormData(formEl);
+    formData.set("locale", locale);
     selectedTypes.forEach((type) => formData.append("calibrationTypes", type));
     formData.set("controllerConfigs", JSON.stringify(controllersWithAnyInput));
     formData.set("receiverCardConfigs", JSON.stringify(receiversWithAnyInput));
 
-    setSubmitState({ status: "submitting", message: "Submitting..." });
+    setSubmitState({ status: "submitting", message: t("publicForms.calibration.submitting") });
     const response = await fetch("/api/public/forms/calibration", {
       method: "POST",
       body: formData,
@@ -151,7 +154,7 @@ export function PublicCalibrationRequestForm() {
     if (!response.ok) {
       setSubmitState({
         status: "error",
-        message: payload.error ?? "Could not submit the form. Please try again.",
+        message: payload.error ?? t("publicForms.calibration.client.submitFailed"),
       });
       return;
     }
@@ -162,7 +165,7 @@ export function PublicCalibrationRequestForm() {
     setReceivers([{ model: "", firmware: "", quantity: 1 }]);
     setSubmitState({
       status: "success",
-      message: payload.message ?? "Your request has been submitted.",
+      message: payload.message ?? t("publicForms.calibration.client.successDefault"),
     });
   }
 
@@ -170,8 +173,8 @@ export function PublicCalibrationRequestForm() {
     <form className="space-y-6" onSubmit={onSubmit}>
       <section className="rounded-xl border border-zinc-200 bg-zinc-50/70 p-4 dark:border-zinc-800 dark:bg-zinc-900/30">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Calibration Type</h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Choose all services you need.</p>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("publicForms.calibration.typeTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("publicForms.calibration.typeLead")}</p>
         </div>
         <div className="grid gap-2 sm:grid-cols-2">
           {CALIBRATION_OPTIONS.map((option) => (
@@ -185,7 +188,7 @@ export function PublicCalibrationRequestForm() {
                 checked={selectedTypes.includes(option.id)}
                 onChange={() => toggleType(option.id)}
               />
-              <span>{option.label}</span>
+              <span>{t(option.messageKey)}</span>
             </label>
           ))}
         </div>
@@ -193,26 +196,26 @@ export function PublicCalibrationRequestForm() {
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Screen Details</h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">Basic display information for planning.</p>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("publicForms.calibration.screenTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("publicForms.calibration.screenLead")}</p>
         </div>
         <label className="flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-800 dark:text-zinc-200">Screen resolution</span>
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">{t("publicForms.calibration.screenResolution")}</span>
           <input
             name="screenResolution"
             type="text"
             required
-            placeholder="e.g. 1920 x 1080"
+            placeholder={t("publicForms.calibration.screenResolutionPh")}
             className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
         <label className="mt-4 flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-800 dark:text-zinc-200">Type of screen (spherical, curved, etc.)</span>
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">{t("publicForms.calibration.screenType")}</span>
           <input
             name="screenType"
             type="text"
             required
-            placeholder="e.g. Curved"
+            placeholder={t("publicForms.calibration.screenTypePh")}
             className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
           />
         </label>
@@ -220,12 +223,8 @@ export function PublicCalibrationRequestForm() {
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-            Controllers (model + firmware required)
-          </h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            Use one line per controller model/firmware combination.
-          </p>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("publicForms.calibration.controllersTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("publicForms.calibration.controllersLead")}</p>
         </div>
         <div className="space-y-2.5">
           {controllers.map((item, idx) => (
@@ -242,7 +241,7 @@ export function PublicCalibrationRequestForm() {
                 }
                 className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               >
-                <option value="">Select controller model</option>
+                <option value="">{t("publicForms.calibration.selectControllerModel")}</option>
                 {CONTROLLER_MODELS.map((model) => (
                   <option key={model} value={model}>
                     {model}
@@ -251,7 +250,7 @@ export function PublicCalibrationRequestForm() {
               </select>
               <input
                 type="text"
-                placeholder="Firmware"
+                placeholder={t("publicForms.calibration.firmwarePh")}
                 value={item.firmware}
                 onChange={(e) =>
                   setControllers((prev) =>
@@ -282,7 +281,7 @@ export function PublicCalibrationRequestForm() {
                 }
                 className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 lg:w-[120px] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
-                Remove
+                {t("publicForms.calibration.remove")}
               </button>
             </div>
           ))}
@@ -292,18 +291,14 @@ export function PublicCalibrationRequestForm() {
           onClick={() => setControllers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
           className="mt-3 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
-          Add controller line
+          {t("publicForms.calibration.addControllerLine")}
         </button>
       </section>
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-            Receiver cards (model + firmware required)
-          </h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            Add each receiver configuration and quantity.
-          </p>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("publicForms.calibration.receiversTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("publicForms.calibration.receiversLead")}</p>
         </div>
         <div className="space-y-2.5">
           {receivers.map((item, idx) => (
@@ -320,7 +315,7 @@ export function PublicCalibrationRequestForm() {
                 }
                 className="min-w-0 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm dark:border-zinc-700 dark:bg-zinc-900"
               >
-                <option value="">Select receiver model</option>
+                <option value="">{t("publicForms.calibration.selectReceiverModel")}</option>
                 {RECEIVER_MODELS.map((model) => (
                   <option key={model} value={model}>
                     {model}
@@ -329,7 +324,7 @@ export function PublicCalibrationRequestForm() {
               </select>
               <input
                 type="text"
-                placeholder="Firmware"
+                placeholder={t("publicForms.calibration.firmwarePh")}
                 value={item.firmware}
                 onChange={(e) =>
                   setReceivers((prev) =>
@@ -360,7 +355,7 @@ export function PublicCalibrationRequestForm() {
                 }
                 className="rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 lg:w-[120px] dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
               >
-                Remove
+                {t("publicForms.calibration.remove")}
               </button>
             </div>
           ))}
@@ -370,20 +365,18 @@ export function PublicCalibrationRequestForm() {
           onClick={() => setReceivers((prev) => [...prev, { model: "", firmware: "", quantity: 1 }])}
           className="mt-3 rounded-md border border-zinc-300 bg-white px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-100 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-200 dark:hover:bg-zinc-800"
         >
-          Add receiver line
+          {t("publicForms.calibration.addReceiverLine")}
         </button>
       </section>
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3">
-          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Required Photos</h2>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            Upload clear reference images to speed up calibration prep.
-          </p>
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("publicForms.calibration.photosTitle")}</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("publicForms.calibration.photosLead")}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">Photo of the screen</span>
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">{t("publicForms.calibration.photoScreen")}</span>
             <input
               name="screenPhoto"
               type="file"
@@ -393,7 +386,7 @@ export function PublicCalibrationRequestForm() {
             />
           </label>
           <label className="flex flex-col gap-1.5 text-sm">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">3 separate photos of the screen</span>
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">{t("publicForms.calibration.photoThreeScreens")}</span>
             <input
               name="screenPhotosExtra"
               type="file"
@@ -405,9 +398,7 @@ export function PublicCalibrationRequestForm() {
           </label>
         </div>
         <label className="mt-4 flex flex-col gap-1.5 text-sm">
-          <span className="font-medium text-zinc-800 dark:text-zinc-200">
-            Photos of work environment for doing the calibration
-          </span>
+          <span className="font-medium text-zinc-800 dark:text-zinc-200">{t("publicForms.calibration.photoWorkEnvironment")}</span>
           <input
             name="workEnvironmentPhotos"
             type="file"
@@ -425,7 +416,7 @@ export function PublicCalibrationRequestForm() {
           disabled={!canSubmit}
           className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-70 dark:bg-zinc-100 dark:text-zinc-900"
         >
-          {submitState.status === "submitting" ? "Submitting..." : "Submit Form"}
+          {submitState.status === "submitting" ? t("publicForms.calibration.submitting") : t("publicForms.calibration.submit")}
         </button>
         {submitState.status !== "idle" ? (
           <p

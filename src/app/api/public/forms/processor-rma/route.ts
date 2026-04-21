@@ -7,6 +7,7 @@ import {
   MAILING_ADDRESS_COUNTRY_OTHER,
   type MailingAddressPayload,
 } from "@/lib/mailing-address";
+import { localeFromFormData, publicFormTranslator } from "@/lib/public-form-locale";
 import { isAllowedProcessorRmaModel } from "@/lib/product-catalog";
 import { registerPublicCustomerRequestRow } from "@/lib/register-public-customer-request";
 import { prisma } from "@/lib/prisma";
@@ -116,8 +117,12 @@ function digitsOnly(value: string): string {
 }
 
 export async function POST(request: Request): Promise<NextResponse> {
+  let translate = publicFormTranslator("en");
   try {
     const formData = await request.formData();
+    const locale = localeFromFormData(formData);
+    const t = publicFormTranslator(locale);
+    translate = t;
 
     const contactName = asNonEmptyString(formData.get("contactName"));
     const companyName = asNonEmptyString(formData.get("companyName"));
@@ -140,38 +145,35 @@ export async function POST(request: Request): Promise<NextResponse> {
     const usageEnvironment = asNonEmptyString(formData.get("usageEnvironment"));
 
     if (!contactName) {
-      return NextResponse.json({ error: "Contact name is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.contactNameRequired") }, { status: 400 });
     }
     if (!companyName) {
-      return NextResponse.json({ error: "Company name is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.companyNameRequired") }, { status: 400 });
     }
     if (addressLine1.length < 3) {
-      return NextResponse.json({ error: "Street address line 1 is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.addressLine1Required") }, { status: 400 });
     }
     if (!city) {
-      return NextResponse.json({ error: "City is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.cityRequired") }, { status: 400 });
     }
     if (!stateProvince) {
-      return NextResponse.json({ error: "State / province / region is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.stateRequired") }, { status: 400 });
     }
     if (postalCode.length < 2) {
-      return NextResponse.json({ error: "ZIP or postal code is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.postalRequired") }, { status: 400 });
     }
     if (!countryCode) {
-      return NextResponse.json({ error: "Country is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.countryRequired") }, { status: 400 });
     }
 
     let countryName: string;
     if (countryCode === MAILING_ADDRESS_COUNTRY_OTHER) {
       if (countryOther.length < 2) {
-        return NextResponse.json(
-          { error: "When country is \"Other\", enter the full country name." },
-          { status: 400 },
-        );
+        return NextResponse.json({ error: t("publicForms.processorRma.api.countryOtherRequired") }, { status: 400 });
       }
       countryName = countryOther;
     } else if (!isKnownIsoCountryCode(countryCode)) {
-      return NextResponse.json({ error: "Select a valid country." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.countryInvalid") }, { status: 400 });
     } else {
       countryName = countryDisplayNameForCode(countryCode) ?? countryCode;
     }
@@ -186,49 +188,37 @@ export async function POST(request: Request): Promise<NextResponse> {
       countryName,
     };
     if (!contactEmail || !SIMPLE_EMAIL.test(contactEmail)) {
-      return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.emailInvalid") }, { status: 400 });
     }
     const phoneDigits = digitsOnly(phoneNumber);
     if (phoneDigits.length < 7) {
-      return NextResponse.json({ error: "Please enter a valid phone number (at least 7 digits)." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.phoneInvalid") }, { status: 400 });
     }
 
     if (!processorModel || !isAllowedProcessorRmaModel(processorModel)) {
-      return NextResponse.json({ error: "Select a valid processor model from the list." }, { status: 400 });
-    }
-    if (!firmware) {
-      return NextResponse.json({ error: "Firmware version is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.processorModelInvalid") }, { status: 400 });
     }
     if (!serialNumber) {
-      return NextResponse.json({ error: "Serial number is required." }, { status: 400 });
-    }
-    if (!purchaseNumber) {
-      return NextResponse.json({ error: "Purchase number is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.serialRequired") }, { status: 400 });
     }
     if (!datePurchased) {
-      return NextResponse.json({ error: "Date purchased is required." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.datePurchasedRequired") }, { status: 400 });
     }
     if (!/^\d{4}-\d{2}-\d{2}$/.test(datePurchased)) {
-      return NextResponse.json({ error: "Date purchased must be a valid date." }, { status: 400 });
+      return NextResponse.json({ error: t("publicForms.processorRma.api.datePurchasedFormat") }, { status: 400 });
     }
     if (issueDescription.length < 10) {
-      return NextResponse.json(
-        { error: "Please describe the issue in at least a few sentences (10+ characters)." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.processorRma.api.issueMinLength") }, { status: 400 });
     }
     if (usageEnvironment.length < 10) {
-      return NextResponse.json(
-        { error: "Please describe the usage environment (10+ characters)." },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: t("publicForms.processorRma.api.usageMinLength") }, { status: 400 });
     }
 
     const issuePhotoFiles = formData.getAll("issuePhotos").filter((entry): entry is File => entry instanceof File);
     const nonEmptyIssuePhotos = issuePhotoFiles.filter((f) => f.size > 0);
     if (nonEmptyIssuePhotos.length > MAX_ISSUE_PHOTOS) {
       return NextResponse.json(
-        { error: `You can attach at most ${MAX_ISSUE_PHOTOS} non-empty photos of the issue.` },
+        { error: t("publicForms.processorRma.api.maxIssuePhotos", { max: String(MAX_ISSUE_PHOTOS) }) },
         { status: 400 },
       );
     }
@@ -238,18 +228,14 @@ export async function POST(request: Request): Promise<NextResponse> {
     const attachmentWarnings: string[] = [];
     let issuePhotoSeq = 0;
     for (const file of nonEmptyIssuePhotos) {
-      const label = (file.name ?? "").trim() || "Unnamed attachment";
+      const label = (file.name ?? "").trim() || t("publicForms.processorRma.warnings.unnamed");
       const mime = resolvedIssuePhotoMimeType(file);
       if (!isAcceptedIssuePhotoMime(mime)) {
-        attachmentWarnings.push(
-          `${label}: not saved (unrecognized image type). Use JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF, or HEIC—or leave photos blank. Your RMA was still submitted.`,
-        );
+        attachmentWarnings.push(t("publicForms.processorRma.warnings.unrecognized", { label }));
         continue;
       }
       if (file.size > MAX_IMAGE_BYTES) {
-        attachmentWarnings.push(
-          `${label}: not saved (over 25 MB). Your RMA was still submitted.`,
-        );
+        attachmentWarnings.push(t("publicForms.processorRma.warnings.overSize", { label }));
         continue;
       }
       issuePhotoSeq += 1;
@@ -259,9 +245,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         );
       } catch (uploadError) {
         console.error("[processor-rma] issue photo upload failed", uploadError);
-        attachmentWarnings.push(
-          `${label}: not saved (upload error). Your RMA was still submitted.`,
-        );
+        attachmentWarnings.push(t("publicForms.processorRma.warnings.uploadError", { label }));
       }
     }
 
@@ -310,7 +294,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       contentType: "application/json",
     });
 
-    const baseMessage = "RMA request submitted. Submit again for each additional processor.";
+    const baseMessage = t("publicForms.processorRma.api.successMessage");
     return NextResponse.json({
       ok: true,
       message: baseMessage,
@@ -318,7 +302,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...(attachmentWarnings.length > 0 ? { attachmentWarnings } : {}),
     });
   } catch (error) {
-    const message = error instanceof Error ? error.message : "Failed to submit form.";
+    const message =
+      error instanceof Error ? error.message : translate("publicForms.processorRma.api.submitFailed");
     return NextResponse.json({ error: message }, { status: 500 });
   }
 }

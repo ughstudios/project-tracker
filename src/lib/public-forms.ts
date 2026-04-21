@@ -1,31 +1,24 @@
-export type PublicFormId = "calibration" | "rma";
+export type PublicFormCardId = "calibration" | "rma";
 
-export type PublicFormDefinition = {
-  id: PublicFormId;
-  title: string;
-  description: string;
+export type PublicFormCard = {
+  id: PublicFormCardId;
   href: string;
   status: "live" | "coming-soon";
 };
 
-export const PUBLIC_FORMS: readonly PublicFormDefinition[] = [
+export const PUBLIC_FORM_CARDS: readonly PublicFormCard[] = [
   {
     id: "calibration",
-    title: "Calibration Request Form",
-    description: "Share screen details, hardware configs, and reference photos for calibration scheduling.",
     href: "/forms/calibration",
     status: "live",
   },
   {
     id: "rma",
-    title: "Processor RMA (one per unit)",
-    description:
-      "Submit one form per returned processor: purchase details, issue description, optional photos, and usage environment.",
     href: "/forms/rma",
     status: "live",
   },
 ];
 
-export function getPublicFormById(id: PublicFormId): PublicFormDefinition | undefined {
-  return PUBLIC_FORMS.find((form) => form.id === id);
+export function getPublicFormCardById(id: PublicFormCardId): PublicFormCard | undefined {
+  return PUBLIC_FORM_CARDS.find((form) => form.id === id);
 }
