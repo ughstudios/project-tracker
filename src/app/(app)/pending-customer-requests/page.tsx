@@ -33,6 +33,11 @@ type CalibrationSubmissionPayload = {
 type ProcessorRmaPayload = {
   id: string;
   submittedAt: string;
+  contactName: string;
+  companyName: string;
+  address: string;
+  contactEmail: string;
+  phoneNumber: string;
   processorModel: string;
   firmware: string;
   serialNumber: string;
@@ -112,6 +117,11 @@ function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload |
     return {
       id: String(parsed.id),
       submittedAt: String(parsed.submittedAt),
+      contactName: String(parsed.contactName ?? ""),
+      companyName: String(parsed.companyName ?? ""),
+      address: String(parsed.address ?? ""),
+      contactEmail: String(parsed.contactEmail ?? ""),
+      phoneNumber: String(parsed.phoneNumber ?? ""),
       processorModel: String(parsed.processorModel ?? ""),
       firmware: String(parsed.firmware ?? ""),
       serialNumber: String(parsed.serialNumber ?? ""),
@@ -317,6 +327,42 @@ export default async function PendingCustomerRequestsPage() {
                       Pending
                     </span>
                   </div>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Contact
+                  </p>
+                  <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                    <li>Name: {row.payload.contactName || "-"}</li>
+                    <li>Company: {row.payload.companyName || "-"}</li>
+                    <li>
+                      Email:{" "}
+                      {row.payload.contactEmail ? (
+                        <a className="link-accent underline" href={`mailto:${row.payload.contactEmail}`}>
+                          {row.payload.contactEmail}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </li>
+                    <li>
+                      Phone:{" "}
+                      {row.payload.phoneNumber ? (
+                        <a className="link-accent underline" href={`tel:${row.payload.phoneNumber.replace(/\s/g, "")}`}>
+                          {row.payload.phoneNumber}
+                        </a>
+                      ) : (
+                        "-"
+                      )}
+                    </li>
+                  </ul>
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                    Address
+                  </p>
+                  <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
+                    {row.payload.address || "-"}
+                  </p>
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">

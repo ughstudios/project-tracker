@@ -76,6 +76,73 @@ export function PublicProcessorRmaForm() {
 
       <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="mb-3">
+          <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Contact</h2>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
+            We use this for RMA updates and return shipping where applicable.
+          </p>
+        </div>
+        <div className="grid gap-3 md:grid-cols-2">
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Contact name</span>
+            <input
+              name="contactName"
+              type="text"
+              required
+              autoComplete="name"
+              placeholder="Full name"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Company name</span>
+            <input
+              name="companyName"
+              type="text"
+              required
+              autoComplete="organization"
+              placeholder="Legal or trading name"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Address</span>
+            <textarea
+              name="address"
+              required
+              rows={3}
+              minLength={5}
+              autoComplete="street-address"
+              placeholder="Street, city, region, postal code, country"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Email</span>
+            <input
+              name="contactEmail"
+              type="email"
+              required
+              autoComplete="email"
+              placeholder="you@company.com"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+          <label className="flex flex-col gap-1.5 text-sm">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Phone number</span>
+            <input
+              name="phoneNumber"
+              type="tel"
+              required
+              autoComplete="tel"
+              placeholder="Include country code if outside your region"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
+        </div>
+      </section>
+
+      <section className="rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
+        <div className="mb-3">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Processor</h2>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
             Same controller models as in Projects (U / X100 Pro / Z / VX / DS / S series).

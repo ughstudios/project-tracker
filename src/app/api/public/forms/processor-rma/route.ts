@@ -71,9 +71,21 @@ function asNonEmptyString(value: FormDataEntryValue | null): string {
   return value.trim();
 }
 
+const SIMPLE_EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+function digitsOnly(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const formData = await request.formData();
+
+    const contactName = asNonEmptyString(formData.get("contactName"));
+    const companyName = asNonEmptyString(formData.get("companyName"));
+    const address = asNonEmptyString(formData.get("address"));
+    const contactEmail = asNonEmptyString(formData.get("contactEmail")).toLowerCase();
+    const phoneNumber = asNonEmptyString(formData.get("phoneNumber"));
 
     const processorModel = asNonEmptyString(formData.get("processorModel"));
     const firmware = asNonEmptyString(formData.get("firmware"));
@@ -82,6 +94,23 @@ export async function POST(request: Request): Promise<NextResponse> {
     const datePurchased = asNonEmptyString(formData.get("datePurchased"));
     const issueDescription = asNonEmptyString(formData.get("issueDescription"));
     const usageEnvironment = asNonEmptyString(formData.get("usageEnvironment"));
+
+    if (!contactName) {
+      return NextResponse.json({ error: "Contact name is required." }, { status: 400 });
+    }
+    if (!companyName) {
+      return NextResponse.json({ error: "Company name is required." }, { status: 400 });
+    }
+    if (address.length < 5) {
+      return NextResponse.json({ error: "Please enter a complete mailing address." }, { status: 400 });
+    }
+    if (!contactEmail || !SIMPLE_EMAIL.test(contactEmail)) {
+      return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
+    }
+    const phoneDigits = digitsOnly(phoneNumber);
+    if (phoneDigits.length < 7) {
+      return NextResponse.json({ error: "Please enter a valid phone number (at least 7 digits)." }, { status: 400 });
+    }
 
     if (!processorModel || !isAllowedProcessorRmaModel(processorModel)) {
       return NextResponse.json({ error: "Select a valid processor model from the list." }, { status: 400 });
@@ -131,6 +160,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const payload = {
       id: submissionId,
       submittedAt: new Date().toISOString(),
+      contactName,
+      companyName,
+      address,
+      contactEmail,
+      phoneNumber,
       processorModel,
       firmware,
       serialNumber,
