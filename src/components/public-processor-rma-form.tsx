@@ -109,6 +109,17 @@ export function PublicProcessorRmaForm() {
               className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
             />
           </label>
+          <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
+            <span className="font-medium text-zinc-800 dark:text-zinc-200">Serial number</span>
+            <input
+              name="serialNumber"
+              type="text"
+              required
+              autoComplete="off"
+              placeholder="Printed on the unit label"
+              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+            />
+          </label>
         </div>
       </section>
 

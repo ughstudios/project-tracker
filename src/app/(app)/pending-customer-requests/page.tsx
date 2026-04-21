@@ -35,6 +35,7 @@ type ProcessorRmaPayload = {
   submittedAt: string;
   processorModel: string;
   firmware: string;
+  serialNumber: string;
   purchaseNumber: string;
   datePurchased: string;
   issueDescription: string;
@@ -113,6 +114,7 @@ function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload |
       submittedAt: String(parsed.submittedAt),
       processorModel: String(parsed.processorModel ?? ""),
       firmware: String(parsed.firmware ?? ""),
+      serialNumber: String(parsed.serialNumber ?? ""),
       purchaseNumber: String(parsed.purchaseNumber ?? ""),
       datePurchased: String(parsed.datePurchased ?? ""),
       issueDescription: String(parsed.issueDescription ?? ""),
@@ -325,6 +327,7 @@ export default async function PendingCustomerRequestsPage() {
                     <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
                       <li>Model: {row.payload.processorModel || "-"}</li>
                       <li>Firmware: {row.payload.firmware || "-"}</li>
+                      <li>Serial: {row.payload.serialNumber || "-"}</li>
                     </ul>
                   </div>
                   <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">

@@ -77,6 +77,7 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const processorModel = asNonEmptyString(formData.get("processorModel"));
     const firmware = asNonEmptyString(formData.get("firmware"));
+    const serialNumber = asNonEmptyString(formData.get("serialNumber"));
     const purchaseNumber = asNonEmptyString(formData.get("purchaseNumber"));
     const datePurchased = asNonEmptyString(formData.get("datePurchased"));
     const issueDescription = asNonEmptyString(formData.get("issueDescription"));
@@ -87,6 +88,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     if (!firmware) {
       return NextResponse.json({ error: "Firmware version is required." }, { status: 400 });
+    }
+    if (!serialNumber) {
+      return NextResponse.json({ error: "Serial number is required." }, { status: 400 });
     }
     if (!purchaseNumber) {
       return NextResponse.json({ error: "Purchase number is required." }, { status: 400 });
@@ -129,6 +133,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       submittedAt: new Date().toISOString(),
       processorModel,
       firmware,
+      serialNumber,
       purchaseNumber,
       datePurchased,
       issueDescription,
