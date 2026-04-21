@@ -39,6 +39,45 @@ model User {
   projectNotes               ProjectNote[]       @relation("ProjectNoteAuthor")
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
   workRecords                WorkRecord[]
+  publicCustomerRequestThreadEntries PublicCustomerRequestThreadEntry[] @relation("PublicCustomerRequestThreadAuthor")
+}
+
+enum PublicCustomerRequestKind {
+  CALIBRATION
+  PROCESSOR_RMA
+}
+
+/// Staff workflow for public calibration / processor RMA submissions (submissionId matches AuditLog.entityId).
+model PublicCustomerRequest {
+  submissionId     String   @id
+  kind               PublicCustomerRequestKind
+  /// PENDING | IN_PROGRESS | CLOSED
+  status             String   @default("PENDING")
+  /// Set when status becomes CLOSED; used for 24h auto-archive (same pattern as issues doneAt).
+  closedAt           DateTime?
+  archivedAt         DateTime?
+  sourceAuditLogId   String?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  threadEntries PublicCustomerRequestThreadEntry[]
+
+  @@index([archivedAt, createdAt])
+  @@index([status, closedAt, archivedAt])
+}
+
+model PublicCustomerRequestThreadEntry {
+  id        String   @id @default(cuid())
+  content   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submissionId String
+  request      PublicCustomerRequest @relation(fields: [submissionId], references: [submissionId], onDelete: Cascade)
+  authorId     String
+  author       User                  @relation("PublicCustomerRequestThreadAuthor", fields: [authorId], references: [id], onDelete: Restrict)
+
+  @@index([submissionId, createdAt])
 }
 
 model WorkRecord {

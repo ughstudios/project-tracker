@@ -1,60 +1,16 @@
 import { auth } from "@/auth";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
-import type { MailingAddressPayload } from "@/lib/mailing-address";
+import {
+  parseCalibrationSubmission,
+  parseProcessorRmaSubmission,
+  type CalibrationSubmissionPayload,
+  type ProcessorRmaPayload,
+  type SavedFile,
+} from "@/lib/pending-customer-request-payload";
+import { autoArchiveClosedPublicCustomerRequests } from "@/lib/public-customer-request-auto-archive";
 import { prisma } from "@/lib/prisma";
+import { PendingCustomerRequestStaffPanel } from "@/components/pending-customer-request-staff-panel";
 import { redirect } from "next/navigation";
-
-type SavedFile = {
-  field: string;
-  originalName: string;
-  storedName: string;
-  mimeType: string;
-  size: number;
-  storagePath: string;
-};
-
-type HardwareConfig = {
-  model: string;
-  firmware: string;
-  quantity: number;
-};
-
-type CalibrationSubmissionPayload = {
-  id: string;
-  submittedAt: string;
-  calibrationTypes: string[];
-  screenResolution: string;
-  controllerCount: number;
-  screenType: string;
-  controllerConfigs: HardwareConfig[];
-  receiverCardConfigs: HardwareConfig[];
-  files: SavedFile[];
-};
-
-type ProcessorRmaPayload = {
-  id: string;
-  submittedAt: string;
-  contactName: string;
-  companyName: string;
-  mailingAddress?: MailingAddressPayload;
-  /** Legacy single-line / block address before structured fields. */
-  address?: string;
-  contactEmail: string;
-  phoneNumber: string;
-  processorModel: string;
-  firmware: string;
-  serialNumber: string;
-  purchaseNumber: string;
-  datePurchased: string;
-  issueDescription: string;
-  usageEnvironment: string;
-  files: SavedFile[];
-  attachmentWarnings?: string[];
-};
-
-type PendingRow =
-  | { kind: "calibration"; auditId: string; createdAt: Date; payload: CalibrationSubmissionPayload }
-  | { kind: "processor-rma"; auditId: string; createdAt: Date; payload: ProcessorRmaPayload };
 
 const CALIBRATION_LABELS: Record<string, string> = {
   "single-layer": "Single layer calibration",
@@ -63,122 +19,18 @@ const CALIBRATION_LABELS: Record<string, string> = {
   "grayscale-infibit": "Grayscale refinement + infibit",
 };
 
-function parseCalibrationSubmission(description: string): CalibrationSubmissionPayload | null {
-  try {
-    const parsed = JSON.parse(description) as Partial<CalibrationSubmissionPayload>;
-    if (!parsed || typeof parsed !== "object") return null;
-    if (!parsed.id || !parsed.submittedAt) return null;
-    return {
-      id: String(parsed.id),
-      submittedAt: String(parsed.submittedAt),
-      calibrationTypes: Array.isArray(parsed.calibrationTypes)
-        ? parsed.calibrationTypes.map((x) => String(x))
-        : [],
-      screenResolution: String(parsed.screenResolution ?? ""),
-      controllerCount: Number(parsed.controllerCount ?? 0),
-      screenType: String(parsed.screenType ?? ""),
-      controllerConfigs: Array.isArray(parsed.controllerConfigs)
-        ? parsed.controllerConfigs
-            .map((item) => ({
-              model: String(item?.model ?? ""),
-              firmware: String(item?.firmware ?? ""),
-              quantity: Number(item?.quantity ?? 0),
-            }))
-            .filter((item) => item.model && item.firmware && item.quantity > 0)
-        : [],
-      receiverCardConfigs: Array.isArray(parsed.receiverCardConfigs)
-        ? parsed.receiverCardConfigs
-            .map((item) => ({
-              model: String(item?.model ?? ""),
-              firmware: String(item?.firmware ?? ""),
-              quantity: Number(item?.quantity ?? 0),
-            }))
-            .filter((item) => item.model && item.firmware && item.quantity > 0)
-        : [],
-      files: Array.isArray(parsed.files)
-        ? parsed.files
-            .map((file) => ({
-              field: String(file?.field ?? ""),
-              originalName: String(file?.originalName ?? ""),
-              storedName: String(file?.storedName ?? ""),
-              mimeType: String(file?.mimeType ?? ""),
-              size: Number(file?.size ?? 0),
-              storagePath: String(file?.storagePath ?? ""),
-            }))
-            .filter((file) => file.storagePath && file.originalName)
-        : [],
-    };
-  } catch {
-    return null;
-  }
-}
-
-function parseMailingAddressFromSubmission(raw: unknown): MailingAddressPayload | undefined {
-  if (!raw || typeof raw !== "object") return undefined;
-  const o = raw as Record<string, unknown>;
-  const line1 = typeof o.line1 === "string" ? o.line1.trim() : "";
-  const city = typeof o.city === "string" ? o.city.trim() : "";
-  const stateProvince = typeof o.stateProvince === "string" ? o.stateProvince.trim() : "";
-  const postalCode = typeof o.postalCode === "string" ? o.postalCode.trim() : "";
-  const countryCode = typeof o.countryCode === "string" ? o.countryCode.trim() : "";
-  const countryName = typeof o.countryName === "string" ? o.countryName.trim() : "";
-  if (!line1 || !city || !stateProvince || !postalCode || !countryCode || !countryName) return undefined;
-  const line2Raw = typeof o.line2 === "string" ? o.line2.trim() : "";
-  return {
-    line1,
-    ...(line2Raw ? { line2: line2Raw } : {}),
-    city,
-    stateProvince,
-    postalCode,
-    countryCode,
-    countryName,
-  };
-}
-
-function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload | null {
-  try {
-    const parsed = JSON.parse(description) as Partial<ProcessorRmaPayload>;
-    if (!parsed || typeof parsed !== "object") return null;
-    if (!parsed.id || !parsed.submittedAt) return null;
-    return {
-      id: String(parsed.id),
-      submittedAt: String(parsed.submittedAt),
-      contactName: String(parsed.contactName ?? ""),
-      companyName: String(parsed.companyName ?? ""),
-      mailingAddress: parseMailingAddressFromSubmission(parsed.mailingAddress),
-      address: typeof parsed.address === "string" ? parsed.address : undefined,
-      contactEmail: String(parsed.contactEmail ?? ""),
-      phoneNumber: String(parsed.phoneNumber ?? ""),
-      processorModel: String(parsed.processorModel ?? ""),
-      firmware: String(parsed.firmware ?? ""),
-      serialNumber: String(parsed.serialNumber ?? ""),
-      purchaseNumber: String(parsed.purchaseNumber ?? ""),
-      datePurchased: String(parsed.datePurchased ?? ""),
-      issueDescription: String(parsed.issueDescription ?? ""),
-      usageEnvironment: String(parsed.usageEnvironment ?? ""),
-      files: Array.isArray(parsed.files)
-        ? parsed.files
-            .map((file) => ({
-              field: String(file?.field ?? ""),
-              originalName: String(file?.originalName ?? ""),
-              storedName: String(file?.storedName ?? ""),
-              mimeType: String(file?.mimeType ?? ""),
-              size: Number(file?.size ?? 0),
-              storagePath: String(file?.storagePath ?? ""),
-            }))
-            .filter((file) => file.storagePath && file.originalName)
-        : [],
-      attachmentWarnings: Array.isArray(parsed.attachmentWarnings)
-        ? parsed.attachmentWarnings.map((w) => String(w)).filter(Boolean)
-        : undefined,
-    };
-  } catch {
-    return null;
-  }
-}
-
 function calibrationLabel(id: string): string {
   return CALIBRATION_LABELS[id] ?? id;
+}
+
+function statusBadgeClass(status: string): string {
+  if (status === "CLOSED") {
+    return "bg-emerald-100 text-emerald-900 dark:bg-emerald-900/40 dark:text-emerald-200";
+  }
+  if (status === "IN_PROGRESS") {
+    return "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-200";
+  }
+  return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
 }
 
 function FileList({ submissionId, files }: { submissionId: string; files: SavedFile[] }) {
@@ -201,33 +53,95 @@ function FileList({ submissionId, files }: { submissionId: string; files: SavedF
   );
 }
 
+type TicketWithThread = {
+  submissionId: string;
+  status: string;
+  closedAt: Date | null;
+  threadEntries: Array<{
+    id: string;
+    content: string;
+    createdAt: Date;
+    author: { name: string | null; email: string | null };
+  }>;
+};
+
+type RowCalibration = {
+  kind: "calibration";
+  ticket: TicketWithThread;
+  createdAt: Date;
+  payload: CalibrationSubmissionPayload;
+};
+
+type RowRma = {
+  kind: "processor-rma";
+  ticket: TicketWithThread;
+  createdAt: Date;
+  payload: ProcessorRmaPayload;
+};
+
+type PendingRow = RowCalibration | RowRma;
+
 export default async function PendingCustomerRequestsPage() {
   const session = await auth();
   if (!session?.user) redirect("/login");
 
-  const logs = await prisma.auditLog.findMany({
-    where: {
-      action: "CREATE",
-      entityType: { in: ["PublicCalibrationRequest", "PublicProcessorRmaRequest"] },
-    },
+  await autoArchiveClosedPublicCustomerRequests();
+
+  const tickets = await prisma.publicCustomerRequest.findMany({
+    where: { archivedAt: null },
     orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      createdAt: true,
-      description: true,
-      entityType: true,
-    },
     take: 200,
+    include: {
+      threadEntries: {
+        orderBy: { createdAt: "asc" },
+        include: { author: { select: { name: true, email: true } } },
+      },
+    },
   });
 
+  const audits = await prisma.auditLog.findMany({
+    where: {
+      action: "CREATE",
+      entityId: { in: tickets.map((t) => t.submissionId) },
+      entityType: { in: ["PublicCalibrationRequest", "PublicProcessorRmaRequest"] },
+    },
+  });
+  const auditByEntityId = new Map(audits.map((a) => [a.entityId, a]));
+
   const submissions: PendingRow[] = [];
-  for (const log of logs) {
-    if (log.entityType === "PublicCalibrationRequest") {
-      const payload = parseCalibrationSubmission(log.description);
-      if (payload) submissions.push({ kind: "calibration", auditId: log.id, createdAt: log.createdAt, payload });
-    } else if (log.entityType === "PublicProcessorRmaRequest") {
-      const payload = parseProcessorRmaSubmission(log.description);
-      if (payload) submissions.push({ kind: "processor-rma", auditId: log.id, createdAt: log.createdAt, payload });
+  for (const ticket of tickets) {
+    const audit = auditByEntityId.get(ticket.submissionId);
+    if (!audit) continue;
+    if (ticket.kind === "CALIBRATION" && audit.entityType !== "PublicCalibrationRequest") continue;
+    if (ticket.kind === "PROCESSOR_RMA" && audit.entityType !== "PublicProcessorRmaRequest") continue;
+
+    const ticketView: TicketWithThread = {
+      submissionId: ticket.submissionId,
+      status: ticket.status,
+      closedAt: ticket.closedAt,
+      threadEntries: ticket.threadEntries,
+    };
+
+    if (ticket.kind === "CALIBRATION") {
+      const payload = parseCalibrationSubmission(audit.description);
+      if (payload) {
+        submissions.push({
+          kind: "calibration",
+          ticket: ticketView,
+          createdAt: audit.createdAt,
+          payload,
+        });
+      }
+    } else {
+      const payload = parseProcessorRmaSubmission(audit.description);
+      if (payload) {
+        submissions.push({
+          kind: "processor-rma",
+          ticket: ticketView,
+          createdAt: audit.createdAt,
+          payload,
+        });
+      }
     }
   }
 
@@ -236,7 +150,8 @@ export default async function PendingCustomerRequestsPage() {
       <div className="panel-surface rounded-xl p-5">
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Pending Customer Requests</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Public calibration requests and per-processor RMA submissions waiting for review.
+          Public calibration requests and per-processor RMA submissions. Use status, thread, and archive like issues.
+          Closed items auto-archive after 24 hours.
         </p>
       </div>
 
@@ -246,9 +161,25 @@ export default async function PendingCustomerRequestsPage() {
             <p className="text-sm text-zinc-600 dark:text-zinc-400">No pending customer requests yet.</p>
           </div>
         ) : (
-          submissions.map((row) =>
-            row.kind === "calibration" ? (
-              <article key={row.auditId} className="panel-surface rounded-xl p-5">
+          submissions.map((row) => {
+            const threadProps = row.ticket.threadEntries.map((e) => ({
+              id: e.id,
+              content: e.content,
+              createdAt: e.createdAt.toISOString(),
+              author: { name: e.author.name, email: e.author.email },
+            }));
+            const staffPanel = (
+              <PendingCustomerRequestStaffPanel
+                key={`${row.ticket.submissionId}-${row.ticket.status}-${row.ticket.threadEntries.length}`}
+                submissionId={row.ticket.submissionId}
+                initialStatus={row.ticket.status}
+                initialClosedAtIso={row.ticket.closedAt?.toISOString() ?? null}
+                initialThread={threadProps}
+              />
+            );
+
+            return row.kind === "calibration" ? (
+              <article key={row.ticket.submissionId} className="panel-surface rounded-xl p-5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -262,8 +193,17 @@ export default async function PendingCustomerRequestsPage() {
                     <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">
                       Calibration
                     </span>
-                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                      Pending
+                    <span
+                      className={[
+                        "rounded-full px-2.5 py-1 text-xs font-semibold",
+                        statusBadgeClass(row.ticket.status),
+                      ].join(" ")}
+                    >
+                      {row.ticket.status === "IN_PROGRESS"
+                        ? "In progress"
+                        : row.ticket.status === "CLOSED"
+                          ? "Closed"
+                          : "Pending"}
                     </span>
                   </div>
                 </div>
@@ -337,9 +277,11 @@ export default async function PendingCustomerRequestsPage() {
                   </p>
                   <FileList submissionId={row.payload.id} files={row.payload.files} />
                 </div>
+
+                {staffPanel}
               </article>
             ) : (
-              <article key={row.auditId} className="panel-surface rounded-xl p-5">
+              <article key={row.ticket.submissionId} className="panel-surface rounded-xl p-5">
                 <div className="flex flex-wrap items-start justify-between gap-2">
                   <div>
                     <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
@@ -353,8 +295,17 @@ export default async function PendingCustomerRequestsPage() {
                     <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-200">
                       Processor RMA
                     </span>
-                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                      Pending
+                    <span
+                      className={[
+                        "rounded-full px-2.5 py-1 text-xs font-semibold",
+                        statusBadgeClass(row.ticket.status),
+                      ].join(" ")}
+                    >
+                      {row.ticket.status === "IN_PROGRESS"
+                        ? "In progress"
+                        : row.ticket.status === "CLOSED"
+                          ? "Closed"
+                          : "Pending"}
                     </span>
                   </div>
                 </div>
@@ -465,9 +416,11 @@ export default async function PendingCustomerRequestsPage() {
                     </ul>
                   </div>
                 ) : null}
+
+                {staffPanel}
               </article>
-            ),
-          )
+            );
+          })
         )}
       </div>
     </section>

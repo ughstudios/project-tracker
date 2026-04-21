@@ -3,6 +3,7 @@ import { ArchiveIssuesSection } from "@/components/archive-issues-section";
 import { getServerTranslator } from "@/i18n/server";
 import { writeAuditLog } from "@/lib/audit";
 import { autoArchiveExpiredDoneIssues } from "@/lib/issue-auto-archive";
+import { autoArchiveClosedPublicCustomerRequests } from "@/lib/public-customer-request-auto-archive";
 import { prisma } from "@/lib/prisma";
 import { isPrivilegedAdmin } from "@/lib/roles";
 import { revalidatePath } from "next/cache";
@@ -94,8 +95,9 @@ export default async function ArchivePage() {
   const t = await getServerTranslator();
 
   await autoArchiveExpiredDoneIssues();
+  await autoArchiveClosedPublicCustomerRequests();
 
-  const [customers, projects, issues] = await Promise.all([
+  const [customers, projects, issues, archivedFormRequests] = await Promise.all([
     prisma.customer.findMany({
       where: { archivedAt: { not: null } },
       orderBy: { archivedAt: "desc" },
@@ -131,6 +133,17 @@ export default async function ArchivePage() {
         archivedAt: true,
         project: { select: { name: true } },
         customer: { select: { name: true } },
+      },
+    }),
+    prisma.publicCustomerRequest.findMany({
+      where: { archivedAt: { not: null } },
+      orderBy: { archivedAt: "desc" },
+      take: 100,
+      select: {
+        submissionId: true,
+        kind: true,
+        status: true,
+        archivedAt: true,
       },
     }),
   ]);
@@ -199,6 +212,44 @@ export default async function ArchivePage() {
                     </button>
                   </form>
                 ) : null}
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
+
+      <section className="panel-surface rounded-xl p-4">
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Pending form requests (archived)</h2>
+        <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">
+          Public calibration and processor RMA submissions that were archived manually or automatically 24 hours after
+          being marked closed.
+        </p>
+        {archivedFormRequests.length === 0 ? (
+          <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">None yet.</p>
+        ) : (
+          <ul className="mt-2 space-y-2 text-sm">
+            {archivedFormRequests.map((r) => (
+              <li
+                key={r.submissionId}
+                className="flex flex-wrap items-baseline justify-between gap-2 border-b border-zinc-100 pb-2 last:border-0 dark:border-zinc-800"
+              >
+                <span className="text-zinc-800 dark:text-zinc-200">
+                  <span className="font-medium">
+                    {r.kind === "CALIBRATION" ? "Calibration" : "Processor RMA"}
+                  </span>
+                  <span className="mx-1 text-zinc-400">·</span>
+                  <span className="font-mono text-xs">{r.submissionId.slice(0, 8)}</span>
+                  <span className="mx-1 text-zinc-400">·</span>
+                  {r.status}
+                  <span className="mx-1 text-zinc-400">·</span>
+                  archived {r.archivedAt ? new Date(r.archivedAt).toLocaleString() : ""}
+                </span>
+                <Link
+                  href="/pending-customer-requests"
+                  className="shrink-0 text-xs text-sky-700 underline decoration-sky-400 underline-offset-2 dark:text-sky-300"
+                >
+                  Active queue
+                </Link>
               </li>
             ))}
           </ul>

@@ -67,6 +67,16 @@ export const TABS_LOGS: readonly EmployeeNavTabId[] = ["logs"];
 
 export const TABS_INVENTORY: readonly EmployeeNavTabId[] = ["inventory"];
 
+/** Public calibration / processor RMA queue (Pending Requests). */
+export const TABS_PENDING_CUSTOMER_REQUESTS: readonly EmployeeNavTabId[] = [
+  "issues",
+  "reports",
+  "customers",
+  "dashboard",
+  "kanban",
+  "archive",
+];
+
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }

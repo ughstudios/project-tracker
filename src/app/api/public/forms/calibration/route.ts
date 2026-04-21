@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { contentTypeForUpload, writeUploadedFile } from "@/lib/file-storage";
+import { registerPublicCustomerRequestRow } from "@/lib/register-public-customer-request";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -183,19 +184,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       files: savedFiles,
     };
 
-    // Persist a queue record for internal "pending customer requests" pages.
-    await prisma.auditLog
-      .create({
-        data: {
-          entityType: "PublicCalibrationRequest",
-          entityId: submissionId,
-          action: "CREATE",
-          description: JSON.stringify(payload),
-        },
-      })
-      .catch((error) => {
-        console.error("[public-forms] failed to create queue audit log", error);
-      });
+    const audit = await prisma.auditLog.create({
+      data: {
+        entityType: "PublicCalibrationRequest",
+        entityId: submissionId,
+        action: "CREATE",
+        description: JSON.stringify(payload),
+      },
+    });
+    await registerPublicCustomerRequestRow({
+      submissionId,
+      kind: "CALIBRATION",
+      sourceAuditLogId: audit.id,
+    }).catch((error) => {
+      console.error("[public-forms] failed to register PublicCustomerRequest row", error);
+    });
 
     const localDir = path.join(process.cwd(), "data", "public-form-submissions", submissionId);
     await writeUploadedFile({

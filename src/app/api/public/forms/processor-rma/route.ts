@@ -8,6 +8,7 @@ import {
   type MailingAddressPayload,
 } from "@/lib/mailing-address";
 import { isAllowedProcessorRmaModel } from "@/lib/product-catalog";
+import { registerPublicCustomerRequestRow } from "@/lib/register-public-customer-request";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -283,18 +284,21 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...(attachmentWarnings.length > 0 ? { attachmentWarnings } : {}),
     };
 
-    await prisma.auditLog
-      .create({
-        data: {
-          entityType: "PublicProcessorRmaRequest",
-          entityId: submissionId,
-          action: "CREATE",
-          description: JSON.stringify(payload),
-        },
-      })
-      .catch((error) => {
-        console.error("[public-forms] failed to create processor RMA audit log", error);
-      });
+    const audit = await prisma.auditLog.create({
+      data: {
+        entityType: "PublicProcessorRmaRequest",
+        entityId: submissionId,
+        action: "CREATE",
+        description: JSON.stringify(payload),
+      },
+    });
+    await registerPublicCustomerRequestRow({
+      submissionId,
+      kind: "PROCESSOR_RMA",
+      sourceAuditLogId: audit.id,
+    }).catch((error) => {
+      console.error("[public-forms] failed to register PublicCustomerRequest row", error);
+    });
 
     const localDir = path.join(process.cwd(), "data", "public-form-submissions", submissionId);
     await writeUploadedFile({
