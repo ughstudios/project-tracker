@@ -13,6 +13,7 @@ import { NextResponse } from "next/server";
 
 const MAX_IMAGE_BYTES = 25 * 1024 * 1024;
 const MAX_ISSUE_PHOTOS = 12;
+/** Issue photos are optional; unknown types are skipped (with a warning) instead of failing the form. */
 const ACCEPTED_IMAGE_TYPES = new Set([
   "image/jpeg",
   "image/png",
@@ -20,6 +21,10 @@ const ACCEPTED_IMAGE_TYPES = new Set([
   "image/gif",
   "image/heic",
   "image/heif",
+  "image/bmp",
+  "image/tiff",
+  "image/x-tiff",
+  "image/avif",
 ]);
 
 type SavedFile = {
@@ -38,17 +43,43 @@ function cleanName(fileName: string): string {
   return `${safeBase}${safeExt}`;
 }
 
-async function saveFormFile(file: File, submissionId: string, field: string): Promise<SavedFile> {
-  if (!ACCEPTED_IMAGE_TYPES.has(file.type)) {
-    throw new Error(`Unsupported file format in ${field}.`);
-  }
-  if (file.size <= 0) {
-    throw new Error(`Empty file in ${field}.`);
-  }
-  if (file.size > MAX_IMAGE_BYTES) {
-    throw new Error(`Each photo must be 25MB or smaller.`);
-  }
+const EXT_TO_IMAGE_MIME: Record<string, string> = {
+  ".jpg": "image/jpeg",
+  ".jpeg": "image/jpeg",
+  ".jpe": "image/jpeg",
+  ".png": "image/png",
+  ".webp": "image/webp",
+  ".gif": "image/gif",
+  ".heic": "image/heic",
+  ".heif": "image/heif",
+  ".bmp": "image/bmp",
+  ".tif": "image/tiff",
+  ".tiff": "image/tiff",
+  ".avif": "image/avif",
+};
 
+/** Browser / OS MIME quirks + extension fallback when type is empty or generic. */
+function resolvedIssuePhotoMimeType(file: File): string {
+  const rawFull = (file.type ?? "").trim().toLowerCase();
+  const raw = rawFull.split(";")[0]?.trim() ?? "";
+  if (raw === "image/jpg" || raw === "image/pjpeg") return "image/jpeg";
+  if (raw === "image/x-png") return "image/png";
+  if (raw && raw !== "application/octet-stream" && raw !== "binary/octet-stream") return raw;
+  const ext = path.extname(file.name || "").toLowerCase();
+  return EXT_TO_IMAGE_MIME[ext] ?? raw;
+}
+
+function isAcceptedIssuePhotoMime(mime: string): boolean {
+  return Boolean(mime && ACCEPTED_IMAGE_TYPES.has(mime));
+}
+
+/** Writes one issue photo after MIME and size checks (caller validates). */
+async function writeIssuePhotoFile(
+  file: File,
+  submissionId: string,
+  field: string,
+  mime: string,
+): Promise<SavedFile> {
   const safeName = cleanName(file.name);
   const storedName = `${field}-${randomUUID()}-${safeName}`;
   const bytes = Buffer.from(await file.arrayBuffer());
@@ -59,14 +90,14 @@ async function saveFormFile(file: File, submissionId: string, field: string): Pr
     localDir,
     publicUrlDir: `/uploads/public-form-submissions/${submissionId}`,
     fileName: storedName,
-    contentType: file.type || contentTypeForUpload(file),
+    contentType: mime || contentTypeForUpload(file),
   });
 
   return {
     field,
     originalName: file.name,
     storedName,
-    mimeType: file.type,
+    mimeType: mime,
     size: file.size,
     storagePath: write.fileUrl,
   };
@@ -192,18 +223,45 @@ export async function POST(request: Request): Promise<NextResponse> {
       );
     }
 
-    const issuePhotos = formData.getAll("issuePhotos").filter((entry): entry is File => entry instanceof File);
-    if (issuePhotos.length > MAX_ISSUE_PHOTOS) {
+    const issuePhotoFiles = formData.getAll("issuePhotos").filter((entry): entry is File => entry instanceof File);
+    const nonEmptyIssuePhotos = issuePhotoFiles.filter((f) => f.size > 0);
+    if (nonEmptyIssuePhotos.length > MAX_ISSUE_PHOTOS) {
       return NextResponse.json(
-        { error: `You can attach at most ${MAX_ISSUE_PHOTOS} photos of the issue.` },
+        { error: `You can attach at most ${MAX_ISSUE_PHOTOS} non-empty photos of the issue.` },
         { status: 400 },
       );
     }
 
     const submissionId = randomUUID();
     const savedFiles: SavedFile[] = [];
-    for (let i = 0; i < issuePhotos.length; i += 1) {
-      savedFiles.push(await saveFormFile(issuePhotos[i]!, submissionId, `issue-photo-${i + 1}`));
+    const attachmentWarnings: string[] = [];
+    let issuePhotoSeq = 0;
+    for (const file of nonEmptyIssuePhotos) {
+      const label = (file.name ?? "").trim() || "Unnamed attachment";
+      const mime = resolvedIssuePhotoMimeType(file);
+      if (!isAcceptedIssuePhotoMime(mime)) {
+        attachmentWarnings.push(
+          `${label}: not saved (unrecognized image type). Use JPEG, PNG, WebP, GIF, BMP, TIFF, AVIF, or HEIC—or leave photos blank. Your RMA was still submitted.`,
+        );
+        continue;
+      }
+      if (file.size > MAX_IMAGE_BYTES) {
+        attachmentWarnings.push(
+          `${label}: not saved (over 25 MB). Your RMA was still submitted.`,
+        );
+        continue;
+      }
+      issuePhotoSeq += 1;
+      try {
+        savedFiles.push(
+          await writeIssuePhotoFile(file, submissionId, `issue-photo-${issuePhotoSeq}`, mime),
+        );
+      } catch (uploadError) {
+        console.error("[processor-rma] issue photo upload failed", uploadError);
+        attachmentWarnings.push(
+          `${label}: not saved (upload error). Your RMA was still submitted.`,
+        );
+      }
     }
 
     const payload = {
@@ -222,6 +280,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       issueDescription,
       usageEnvironment,
       files: savedFiles,
+      ...(attachmentWarnings.length > 0 ? { attachmentWarnings } : {}),
     };
 
     await prisma.auditLog
@@ -247,10 +306,12 @@ export async function POST(request: Request): Promise<NextResponse> {
       contentType: "application/json",
     });
 
+    const baseMessage = "RMA request submitted. Submit again for each additional processor.";
     return NextResponse.json({
       ok: true,
-      message: "RMA request submitted. Submit again for each additional processor.",
+      message: baseMessage,
       submissionId,
+      ...(attachmentWarnings.length > 0 ? { attachmentWarnings } : {}),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "Failed to submit form.";

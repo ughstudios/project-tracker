@@ -49,6 +49,7 @@ type ProcessorRmaPayload = {
   issueDescription: string;
   usageEnvironment: string;
   files: SavedFile[];
+  attachmentWarnings?: string[];
 };
 
 type PendingRow =
@@ -167,6 +168,9 @@ function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload |
             }))
             .filter((file) => file.storagePath && file.originalName)
         : [],
+      attachmentWarnings: Array.isArray(parsed.attachmentWarnings)
+        ? parsed.attachmentWarnings.map((w) => String(w)).filter(Boolean)
+        : undefined,
     };
   } catch {
     return null;
@@ -448,6 +452,19 @@ export default async function PendingCustomerRequestsPage() {
                   </p>
                   <FileList submissionId={row.payload.id} files={row.payload.files} />
                 </div>
+
+                {row.payload.attachmentWarnings && row.payload.attachmentWarnings.length > 0 ? (
+                  <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50/80 p-3 text-sm text-amber-950 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-100">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-amber-800 dark:text-amber-200">
+                      Attachment notes (submitted without these files)
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 whitespace-pre-line">
+                      {row.payload.attachmentWarnings.map((w, i) => (
+                        <li key={`${row.payload.id}:warn:${i}`}>{w}</li>
+                      ))}
+                    </ul>
+                  </div>
+                ) : null}
               </article>
             ),
           )

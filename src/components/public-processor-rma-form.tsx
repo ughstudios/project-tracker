@@ -62,7 +62,11 @@ export function PublicProcessorRmaForm() {
       method: "POST",
       body: formData,
     });
-    const payload = (await response.json().catch(() => ({}))) as { error?: string; message?: string };
+    const payload = (await response.json().catch(() => ({}))) as {
+      error?: string;
+      message?: string;
+      attachmentWarnings?: string[];
+    };
 
     if (!response.ok) {
       setSubmitState({
@@ -76,9 +80,13 @@ export function PublicProcessorRmaForm() {
     setProcessorModel("");
     setFirmware("");
     setCountryCode("");
+    let successMessage = payload.message ?? "Your RMA request has been submitted.";
+    if (payload.attachmentWarnings?.length) {
+      successMessage += `\n\n${payload.attachmentWarnings.join("\n")}`;
+    }
     setSubmitState({
       status: "success",
-      message: payload.message ?? "Your RMA request has been submitted.",
+      message: successMessage,
     });
   }
 
@@ -347,7 +355,8 @@ export function PublicProcessorRmaForm() {
         <div className="mb-3">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Photos of the issue (optional)</h2>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">
-            JPEG, PNG, WebP, GIF, or HEIC. Up to 12 files, 25MB each.
+            Optional: JPEG, PNG, WebP, GIF, HEIC, BMP, TIFF, or AVIF—up to 12 files, 25MB each. Unsupported files are
+            skipped; your RMA still goes through.
           </p>
         </div>
         <input name="issuePhotos" type="file" accept="image/*" multiple className={FILE_INPUT_CLASS} />
@@ -364,7 +373,7 @@ export function PublicProcessorRmaForm() {
         {submitState.status !== "idle" ? (
           <p
             className={[
-              "text-sm",
+              "max-w-3xl text-sm whitespace-pre-line",
               submitState.status === "success" ? "text-emerald-600 dark:text-emerald-400" : "",
               submitState.status === "error" ? "text-red-600 dark:text-red-400" : "",
             ].join(" ")}
