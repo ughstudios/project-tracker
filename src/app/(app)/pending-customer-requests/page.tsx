@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { attachmentBlobHref } from "@/lib/attachment-blob-href";
+import type { MailingAddressPayload } from "@/lib/mailing-address";
 import { prisma } from "@/lib/prisma";
 import { redirect } from "next/navigation";
 
@@ -35,7 +36,9 @@ type ProcessorRmaPayload = {
   submittedAt: string;
   contactName: string;
   companyName: string;
-  address: string;
+  mailingAddress?: MailingAddressPayload;
+  /** Legacy single-line / block address before structured fields. */
+  address?: string;
   contactEmail: string;
   phoneNumber: string;
   processorModel: string;
@@ -109,6 +112,28 @@ function parseCalibrationSubmission(description: string): CalibrationSubmissionP
   }
 }
 
+function parseMailingAddressFromSubmission(raw: unknown): MailingAddressPayload | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const o = raw as Record<string, unknown>;
+  const line1 = typeof o.line1 === "string" ? o.line1.trim() : "";
+  const city = typeof o.city === "string" ? o.city.trim() : "";
+  const stateProvince = typeof o.stateProvince === "string" ? o.stateProvince.trim() : "";
+  const postalCode = typeof o.postalCode === "string" ? o.postalCode.trim() : "";
+  const countryCode = typeof o.countryCode === "string" ? o.countryCode.trim() : "";
+  const countryName = typeof o.countryName === "string" ? o.countryName.trim() : "";
+  if (!line1 || !city || !stateProvince || !postalCode || !countryCode || !countryName) return undefined;
+  const line2Raw = typeof o.line2 === "string" ? o.line2.trim() : "";
+  return {
+    line1,
+    ...(line2Raw ? { line2: line2Raw } : {}),
+    city,
+    stateProvince,
+    postalCode,
+    countryCode,
+    countryName,
+  };
+}
+
 function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload | null {
   try {
     const parsed = JSON.parse(description) as Partial<ProcessorRmaPayload>;
@@ -119,7 +144,8 @@ function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload |
       submittedAt: String(parsed.submittedAt),
       contactName: String(parsed.contactName ?? ""),
       companyName: String(parsed.companyName ?? ""),
-      address: String(parsed.address ?? ""),
+      mailingAddress: parseMailingAddressFromSubmission(parsed.mailingAddress),
+      address: typeof parsed.address === "string" ? parsed.address : undefined,
       contactEmail: String(parsed.contactEmail ?? ""),
       phoneNumber: String(parsed.phoneNumber ?? ""),
       processorModel: String(parsed.processorModel ?? ""),
@@ -358,11 +384,22 @@ export default async function PendingCustomerRequestsPage() {
                     </li>
                   </ul>
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Address
+                    Mailing address
                   </p>
-                  <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
-                    {row.payload.address || "-"}
-                  </p>
+                  {row.payload.mailingAddress ? (
+                    <address className="mt-1 not-italic whitespace-pre-line text-sm text-zinc-700 dark:text-zinc-200">
+                      {row.payload.mailingAddress.line1}
+                      {row.payload.mailingAddress.line2 ? `\n${row.payload.mailingAddress.line2}` : ""}
+                      {`\n${row.payload.mailingAddress.city}, ${row.payload.mailingAddress.stateProvince} ${row.payload.mailingAddress.postalCode}`}
+                      {`\n${row.payload.mailingAddress.countryName}`}
+                    </address>
+                  ) : row.payload.address ? (
+                    <p className="mt-1 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
+                      {row.payload.address}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">-</p>
+                  )}
                 </div>
 
                 <div className="mt-4 grid gap-4 md:grid-cols-2">

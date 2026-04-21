@@ -1,6 +1,12 @@
 import { randomUUID } from "node:crypto";
 import path from "node:path";
 import { contentTypeForUpload, writeUploadedFile } from "@/lib/file-storage";
+import {
+  countryDisplayNameForCode,
+  isKnownIsoCountryCode,
+  MAILING_ADDRESS_COUNTRY_OTHER,
+  type MailingAddressPayload,
+} from "@/lib/mailing-address";
 import { isAllowedProcessorRmaModel } from "@/lib/product-catalog";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
@@ -83,7 +89,13 @@ export async function POST(request: Request): Promise<NextResponse> {
 
     const contactName = asNonEmptyString(formData.get("contactName"));
     const companyName = asNonEmptyString(formData.get("companyName"));
-    const address = asNonEmptyString(formData.get("address"));
+    const addressLine1 = asNonEmptyString(formData.get("addressLine1"));
+    const addressLine2 = asNonEmptyString(formData.get("addressLine2"));
+    const city = asNonEmptyString(formData.get("city"));
+    const stateProvince = asNonEmptyString(formData.get("stateProvince"));
+    const postalCode = asNonEmptyString(formData.get("postalCode"));
+    const countryCode = asNonEmptyString(formData.get("countryCode"));
+    const countryOther = asNonEmptyString(formData.get("countryOther"));
     const contactEmail = asNonEmptyString(formData.get("contactEmail")).toLowerCase();
     const phoneNumber = asNonEmptyString(formData.get("phoneNumber"));
 
@@ -101,9 +113,46 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (!companyName) {
       return NextResponse.json({ error: "Company name is required." }, { status: 400 });
     }
-    if (address.length < 5) {
-      return NextResponse.json({ error: "Please enter a complete mailing address." }, { status: 400 });
+    if (addressLine1.length < 3) {
+      return NextResponse.json({ error: "Street address line 1 is required." }, { status: 400 });
     }
+    if (!city) {
+      return NextResponse.json({ error: "City is required." }, { status: 400 });
+    }
+    if (!stateProvince) {
+      return NextResponse.json({ error: "State / province / region is required." }, { status: 400 });
+    }
+    if (postalCode.length < 2) {
+      return NextResponse.json({ error: "ZIP or postal code is required." }, { status: 400 });
+    }
+    if (!countryCode) {
+      return NextResponse.json({ error: "Country is required." }, { status: 400 });
+    }
+
+    let countryName: string;
+    if (countryCode === MAILING_ADDRESS_COUNTRY_OTHER) {
+      if (countryOther.length < 2) {
+        return NextResponse.json(
+          { error: "When country is \"Other\", enter the full country name." },
+          { status: 400 },
+        );
+      }
+      countryName = countryOther;
+    } else if (!isKnownIsoCountryCode(countryCode)) {
+      return NextResponse.json({ error: "Select a valid country." }, { status: 400 });
+    } else {
+      countryName = countryDisplayNameForCode(countryCode) ?? countryCode;
+    }
+
+    const mailingAddress: MailingAddressPayload = {
+      line1: addressLine1,
+      ...(addressLine2 ? { line2: addressLine2 } : {}),
+      city,
+      stateProvince,
+      postalCode,
+      countryCode: countryCode === MAILING_ADDRESS_COUNTRY_OTHER ? MAILING_ADDRESS_COUNTRY_OTHER : countryCode,
+      countryName,
+    };
     if (!contactEmail || !SIMPLE_EMAIL.test(contactEmail)) {
       return NextResponse.json({ error: "A valid email address is required." }, { status: 400 });
     }
@@ -162,7 +211,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       submittedAt: new Date().toISOString(),
       contactName,
       companyName,
-      address,
+      mailingAddress,
       contactEmail,
       phoneNumber,
       processorModel,

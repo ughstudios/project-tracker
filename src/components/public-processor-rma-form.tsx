@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  MAILING_ADDRESS_COUNTRY_OTHER,
+  mailingAddressCountryOptions,
+} from "@/lib/mailing-address";
 import { listProcessorModelsForProjects } from "@/lib/product-catalog";
 import { FormEvent, useMemo, useState } from "react";
 
@@ -18,6 +22,7 @@ export function PublicProcessorRmaForm() {
   const [submitState, setSubmitState] = useState<SubmitState>({ status: "idle" });
   const [processorModel, setProcessorModel] = useState("");
   const [firmware, setFirmware] = useState("");
+  const [countryCode, setCountryCode] = useState("");
 
   const sortedModels = useMemo(() => [...PROCESSOR_MODELS].sort((a, b) => a.localeCompare(b)), []);
 
@@ -34,9 +39,21 @@ export function PublicProcessorRmaForm() {
       setSubmitState({ status: "error", message: "Enter the firmware version on the unit." });
       return;
     }
+    if (!countryCode) {
+      setSubmitState({ status: "error", message: "Select a country." });
+      return;
+    }
 
     const formEl = event.currentTarget;
     const formData = new FormData(formEl);
+    if (countryCode === MAILING_ADDRESS_COUNTRY_OTHER) {
+      const otherRaw = formData.get("countryOther");
+      const other = typeof otherRaw === "string" ? otherRaw.trim() : "";
+      if (other.length < 2) {
+        setSubmitState({ status: "error", message: "Enter the country name when \"Other\" is selected." });
+        return;
+      }
+    }
     formData.set("processorModel", processorModel.trim());
     formData.set("firmware", firmware.trim());
 
@@ -58,6 +75,7 @@ export function PublicProcessorRmaForm() {
     formEl.reset();
     setProcessorModel("");
     setFirmware("");
+    setCountryCode("");
     setSubmitState({
       status: "success",
       message: payload.message ?? "Your RMA request has been submitted.",
@@ -104,18 +122,98 @@ export function PublicProcessorRmaForm() {
               className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
             />
           </label>
-          <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
-            <span className="font-medium text-zinc-800 dark:text-zinc-200">Address</span>
-            <textarea
-              name="address"
-              required
-              rows={3}
-              minLength={5}
-              autoComplete="street-address"
-              placeholder="Street, city, region, postal code, country"
-              className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
-            />
-          </label>
+          <div className="md:col-span-2 space-y-3 rounded-lg border border-zinc-200 bg-zinc-50/50 p-3 dark:border-zinc-800 dark:bg-zinc-900/20">
+            <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              Mailing address
+            </p>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">Street address line 1</span>
+              <input
+                name="addressLine1"
+                type="text"
+                required
+                autoComplete="address-line1"
+                placeholder="Building number and street"
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5 text-sm">
+              <span className="font-medium text-zinc-800 dark:text-zinc-200">
+                Street address line 2 <span className="font-normal text-zinc-500">(optional)</span>
+              </span>
+              <input
+                name="addressLine2"
+                type="text"
+                autoComplete="address-line2"
+                placeholder="Suite, unit, floor, etc."
+                className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+              />
+            </label>
+            <div className="grid gap-3 sm:grid-cols-2">
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">City</span>
+                <input
+                  name="city"
+                  type="text"
+                  required
+                  autoComplete="address-level2"
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">State / Province / Region</span>
+                <input
+                  name="stateProvince"
+                  type="text"
+                  required
+                  autoComplete="address-level1"
+                  placeholder="Use N/A if not applicable"
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">ZIP / Postal code</span>
+                <input
+                  name="postalCode"
+                  type="text"
+                  required
+                  autoComplete="postal-code"
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </label>
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">Country</span>
+                <select
+                  name="countryCode"
+                  required
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  autoComplete="country"
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                >
+                  <option value="">Select country</option>
+                  {mailingAddressCountryOptions.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
+            </div>
+            {countryCode === MAILING_ADDRESS_COUNTRY_OTHER ? (
+              <label className="flex flex-col gap-1.5 text-sm">
+                <span className="font-medium text-zinc-800 dark:text-zinc-200">Country name</span>
+                <input
+                  id="rma-country-other"
+                  name="countryOther"
+                  type="text"
+                  required
+                  placeholder="Full country name"
+                  className="rounded-md border border-zinc-300 bg-white px-3 py-2 dark:border-zinc-700 dark:bg-zinc-900"
+                />
+              </label>
+            ) : null}
+          </div>
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="font-medium text-zinc-800 dark:text-zinc-200">Email</span>
             <input
