@@ -18,7 +18,7 @@ type HardwareConfig = {
   quantity: number;
 };
 
-type SubmissionPayload = {
+type CalibrationSubmissionPayload = {
   id: string;
   submittedAt: string;
   calibrationTypes: string[];
@@ -30,6 +30,22 @@ type SubmissionPayload = {
   files: SavedFile[];
 };
 
+type ProcessorRmaPayload = {
+  id: string;
+  submittedAt: string;
+  processorModel: string;
+  firmware: string;
+  purchaseNumber: string;
+  datePurchased: string;
+  issueDescription: string;
+  usageEnvironment: string;
+  files: SavedFile[];
+};
+
+type PendingRow =
+  | { kind: "calibration"; auditId: string; createdAt: Date; payload: CalibrationSubmissionPayload }
+  | { kind: "processor-rma"; auditId: string; createdAt: Date; payload: ProcessorRmaPayload };
+
 const CALIBRATION_LABELS: Record<string, string> = {
   "single-layer": "Single layer calibration",
   "double-layer": "Double layer calibration",
@@ -37,9 +53,9 @@ const CALIBRATION_LABELS: Record<string, string> = {
   "grayscale-infibit": "Grayscale refinement + infibit",
 };
 
-function parseSubmission(description: string): SubmissionPayload | null {
+function parseCalibrationSubmission(description: string): CalibrationSubmissionPayload | null {
   try {
-    const parsed = JSON.parse(description) as Partial<SubmissionPayload>;
+    const parsed = JSON.parse(description) as Partial<CalibrationSubmissionPayload>;
     if (!parsed || typeof parsed !== "object") return null;
     if (!parsed.id || !parsed.submittedAt) return null;
     return {
@@ -87,8 +103,60 @@ function parseSubmission(description: string): SubmissionPayload | null {
   }
 }
 
+function parseProcessorRmaSubmission(description: string): ProcessorRmaPayload | null {
+  try {
+    const parsed = JSON.parse(description) as Partial<ProcessorRmaPayload>;
+    if (!parsed || typeof parsed !== "object") return null;
+    if (!parsed.id || !parsed.submittedAt) return null;
+    return {
+      id: String(parsed.id),
+      submittedAt: String(parsed.submittedAt),
+      processorModel: String(parsed.processorModel ?? ""),
+      firmware: String(parsed.firmware ?? ""),
+      purchaseNumber: String(parsed.purchaseNumber ?? ""),
+      datePurchased: String(parsed.datePurchased ?? ""),
+      issueDescription: String(parsed.issueDescription ?? ""),
+      usageEnvironment: String(parsed.usageEnvironment ?? ""),
+      files: Array.isArray(parsed.files)
+        ? parsed.files
+            .map((file) => ({
+              field: String(file?.field ?? ""),
+              originalName: String(file?.originalName ?? ""),
+              storedName: String(file?.storedName ?? ""),
+              mimeType: String(file?.mimeType ?? ""),
+              size: Number(file?.size ?? 0),
+              storagePath: String(file?.storagePath ?? ""),
+            }))
+            .filter((file) => file.storagePath && file.originalName)
+        : [],
+    };
+  } catch {
+    return null;
+  }
+}
+
 function calibrationLabel(id: string): string {
   return CALIBRATION_LABELS[id] ?? id;
+}
+
+function FileList({ submissionId, files }: { submissionId: string; files: SavedFile[] }) {
+  if (files.length === 0) {
+    return <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">No files in request.</p>;
+  }
+  return (
+    <ul className="mt-2 space-y-1 text-sm">
+      {files.map((file, idx) => (
+        <li key={`${submissionId}:file:${idx}`}>
+          <a className="link-accent underline" href={attachmentBlobHref(file.storagePath)} target="_blank" rel="noreferrer">
+            {file.originalName}
+          </a>
+          <span className="ml-2 text-zinc-500 dark:text-zinc-400">
+            ({file.field}, {Math.round((file.size ?? 0) / 1024)} KB)
+          </span>
+        </li>
+      ))}
+    </ul>
+  );
 }
 
 export default async function PendingCustomerRequestsPage() {
@@ -97,32 +165,36 @@ export default async function PendingCustomerRequestsPage() {
 
   const logs = await prisma.auditLog.findMany({
     where: {
-      entityType: "PublicCalibrationRequest",
       action: "CREATE",
+      entityType: { in: ["PublicCalibrationRequest", "PublicProcessorRmaRequest"] },
     },
     orderBy: { createdAt: "desc" },
     select: {
       id: true,
       createdAt: true,
       description: true,
+      entityType: true,
     },
     take: 200,
   });
 
-  const submissions = logs
-    .map((log) => ({
-      auditId: log.id,
-      createdAt: log.createdAt,
-      payload: parseSubmission(log.description),
-    }))
-    .filter((row): row is { auditId: string; createdAt: Date; payload: SubmissionPayload } => row.payload !== null);
+  const submissions: PendingRow[] = [];
+  for (const log of logs) {
+    if (log.entityType === "PublicCalibrationRequest") {
+      const payload = parseCalibrationSubmission(log.description);
+      if (payload) submissions.push({ kind: "calibration", auditId: log.id, createdAt: log.createdAt, payload });
+    } else if (log.entityType === "PublicProcessorRmaRequest") {
+      const payload = parseProcessorRmaSubmission(log.description);
+      if (payload) submissions.push({ kind: "processor-rma", auditId: log.id, createdAt: log.createdAt, payload });
+    }
+  }
 
   return (
     <section className="space-y-4">
       <div className="panel-surface rounded-xl p-5">
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Pending Customer Requests</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Customer calibration forms waiting for sales review.
+          Public calibration requests and per-processor RMA submissions waiting for review.
         </p>
       </div>
 
@@ -132,111 +204,167 @@ export default async function PendingCustomerRequestsPage() {
             <p className="text-sm text-zinc-600 dark:text-zinc-400">No pending customer requests yet.</p>
           </div>
         ) : (
-          submissions.map(({ auditId, createdAt, payload }) => (
-            <article key={auditId} className="panel-surface rounded-xl p-5">
-              <div className="flex flex-wrap items-start justify-between gap-2">
-                <div>
-                  <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
-                    Request {payload.id.slice(0, 8)}
-                  </h2>
-                  <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                    Submitted {new Date(payload.submittedAt).toLocaleString()} (queued {createdAt.toLocaleString()})
-                  </p>
+          submissions.map((row) =>
+            row.kind === "calibration" ? (
+              <article key={row.auditId} className="panel-surface rounded-xl p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                      Calibration · {row.payload.id.slice(0, 8)}
+                    </h2>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Submitted {new Date(row.payload.submittedAt).toLocaleString()} (queued {row.createdAt.toLocaleString()})
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-violet-100 px-2.5 py-1 text-xs font-semibold text-violet-800 dark:bg-violet-900/40 dark:text-violet-200">
+                      Calibration
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                      Pending
+                    </span>
+                  </div>
                 </div>
-                <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
-                  Pending
-                </span>
-              </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Screen details
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      <li>Resolution: {row.payload.screenResolution || "-"}</li>
+                      <li>Screen type: {row.payload.screenType || "-"}</li>
+                    </ul>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Calibration requested
+                    </p>
+                    <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-200">
+                      {row.payload.calibrationTypes.length === 0 ? (
+                        <li>-</li>
+                      ) : (
+                        row.payload.calibrationTypes.map((type) => (
+                          <li key={`${row.payload.id}:${type}`}>{calibrationLabel(type)}</li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Controller configs
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      {row.payload.controllerConfigs.length === 0 ? (
+                        <li>-</li>
+                      ) : (
+                        row.payload.controllerConfigs.map((item, idx) => (
+                          <li key={`${row.payload.id}:controller:${idx}`}>
+                            {item.model} | FW {item.firmware} | Qty {item.quantity}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Receiver configs
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      {row.payload.receiverCardConfigs.length === 0 ? (
+                        <li>-</li>
+                      ) : (
+                        row.payload.receiverCardConfigs.map((item, idx) => (
+                          <li key={`${row.payload.id}:receiver:${idx}`}>
+                            {item.model} | FW {item.firmware} | Qty {item.quantity}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Screen details
+                    Uploaded photos ({row.payload.files.length})
                   </p>
-                  <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    <li>Resolution: {payload.screenResolution || "-"}</li>
-                    <li>Screen type: {payload.screenType || "-"}</li>
-                  </ul>
+                  <FileList submissionId={row.payload.id} files={row.payload.files} />
+                </div>
+              </article>
+            ) : (
+              <article key={row.auditId} className="panel-surface rounded-xl p-5">
+                <div className="flex flex-wrap items-start justify-between gap-2">
+                  <div>
+                    <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">
+                      Processor RMA · {row.payload.id.slice(0, 8)}
+                    </h2>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400">
+                      Submitted {new Date(row.payload.submittedAt).toLocaleString()} (queued {row.createdAt.toLocaleString()})
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <span className="rounded-full bg-sky-100 px-2.5 py-1 text-xs font-semibold text-sky-900 dark:bg-sky-900/40 dark:text-sky-200">
+                      Processor RMA
+                    </span>
+                    <span className="rounded-full bg-amber-100 px-2.5 py-1 text-xs font-semibold text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                      Pending
+                    </span>
+                  </div>
                 </div>
 
-                <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="mt-4 grid gap-4 md:grid-cols-2">
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Product
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      <li>Model: {row.payload.processorModel || "-"}</li>
+                      <li>Firmware: {row.payload.firmware || "-"}</li>
+                    </ul>
+                  </div>
+                  <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+                      Purchase
+                    </p>
+                    <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
+                      <li>Purchase number: {row.payload.purchaseNumber || "-"}</li>
+                      <li>Date purchased: {row.payload.datePurchased || "-"}</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Calibration requested
+                    Issue
                   </p>
-                  <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-zinc-700 dark:text-zinc-200">
-                    {payload.calibrationTypes.length === 0 ? (
-                      <li>-</li>
-                    ) : (
-                      payload.calibrationTypes.map((type) => <li key={`${payload.id}:${type}`}>{calibrationLabel(type)}</li>)
-                    )}
-                  </ul>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
+                    {row.payload.issueDescription || "-"}
+                  </p>
                 </div>
-              </div>
 
-              <div className="mt-4 grid gap-4 md:grid-cols-2">
-                <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Controller configs
+                    Usage environment
                   </p>
-                  <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {payload.controllerConfigs.length === 0 ? (
-                      <li>-</li>
-                    ) : (
-                      payload.controllerConfigs.map((item, idx) => (
-                        <li key={`${payload.id}:controller:${idx}`}>
-                          {item.model} | FW {item.firmware} | Qty {item.quantity}
-                        </li>
-                      ))
-                    )}
-                  </ul>
+                  <p className="mt-2 whitespace-pre-wrap text-sm text-zinc-700 dark:text-zinc-200">
+                    {row.payload.usageEnvironment || "-"}
+                  </p>
                 </div>
 
-                <div className="rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
+                <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
                   <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    Receiver configs
+                    Photos ({row.payload.files.length})
                   </p>
-                  <ul className="mt-2 space-y-1 text-sm text-zinc-700 dark:text-zinc-200">
-                    {payload.receiverCardConfigs.length === 0 ? (
-                      <li>-</li>
-                    ) : (
-                      payload.receiverCardConfigs.map((item, idx) => (
-                        <li key={`${payload.id}:receiver:${idx}`}>
-                          {item.model} | FW {item.firmware} | Qty {item.quantity}
-                        </li>
-                      ))
-                    )}
-                  </ul>
+                  <FileList submissionId={row.payload.id} files={row.payload.files} />
                 </div>
-              </div>
-
-              <div className="mt-4 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800">
-                <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                  Uploaded photos ({payload.files.length})
-                </p>
-                {payload.files.length === 0 ? (
-                  <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">No files in request.</p>
-                ) : (
-                  <ul className="mt-2 space-y-1 text-sm">
-                    {payload.files.map((file, idx) => (
-                      <li key={`${payload.id}:file:${idx}`}>
-                        <a
-                          className="link-accent underline"
-                          href={attachmentBlobHref(file.storagePath)}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          {file.originalName}
-                        </a>
-                        <span className="ml-2 text-zinc-500 dark:text-zinc-400">
-                          ({file.field}, {Math.round((file.size ?? 0) / 1024)} KB)
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            </article>
-          ))
+              </article>
+            ),
+          )
         )}
       </div>
     </section>

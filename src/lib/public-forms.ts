@@ -18,10 +18,11 @@ export const PUBLIC_FORMS: readonly PublicFormDefinition[] = [
   },
   {
     id: "rma",
-    title: "RMA Request Form",
-    description: "Collect issue details, serials, and shipment info for returns and replacements.",
+    title: "Processor RMA (one per unit)",
+    description:
+      "Submit one form per returned processor: purchase details, issue description, optional photos, and usage environment.",
     href: "/forms/rma",
-    status: "coming-soon",
+    status: "live",
   },
 ];
 
