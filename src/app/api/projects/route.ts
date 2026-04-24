@@ -18,6 +18,7 @@ export async function GET() {
     orderBy: { name: "asc" },
     include: {
       customer: true,
+      manager: { select: { id: true, name: true, email: true } },
       processorConfigs: {
         orderBy: { createdAt: "asc" },
       },
@@ -61,12 +62,14 @@ export async function POST(request: Request) {
   const body = (await request.json()) as {
     name?: string;
     customerId?: string;
+    managerId?: string | null;
     processorConfigs?: Array<{ model?: string; firmware?: string; quantity?: number }>;
     receiverCardConfigs?: Array<{ model?: string; version?: string; quantity?: number }>;
     otherProductConfigs?: Array<{ category?: string; model?: string; quantity?: number }>;
   };
   const name = body.name?.trim() ?? "";
   const customerId = body.customerId?.trim() ?? "";
+  const managerId = body.managerId?.trim() || null;
 
   if (!name || !customerId) {
     return NextResponse.json(
@@ -81,6 +84,16 @@ export async function POST(request: Request) {
   });
   if (!customer || customer.archivedAt) {
     return NextResponse.json({ error: "Selected customer not found." }, { status: 404 });
+  }
+
+  if (managerId) {
+    const manager = await prisma.user.findFirst({
+      where: { id: managerId, approvalStatus: "APPROVED" },
+      select: { id: true },
+    });
+    if (!manager) {
+      return NextResponse.json({ error: "Selected manager not found." }, { status: 404 });
+    }
   }
 
   const processorConfigs = (body.processorConfigs ?? [])
@@ -125,6 +138,7 @@ export async function POST(request: Request) {
     update: {
       product,
       customerId,
+      managerId,
       archivedAt: null,
       processorConfigs: {
         deleteMany: {},
@@ -143,6 +157,7 @@ export async function POST(request: Request) {
       name,
       product,
       customerId,
+      managerId,
       processorConfigs: {
         create: processorConfigs,
       },
@@ -155,6 +170,7 @@ export async function POST(request: Request) {
     },
     include: {
       customer: true,
+      manager: { select: { id: true, name: true, email: true } },
       processorConfigs: true,
       receiverCardConfigs: true,
       otherProductConfigs: true,

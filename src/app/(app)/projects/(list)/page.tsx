@@ -8,6 +8,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 
 type Customer = { id: string; name: string };
+type Employee = { id: string; name: string; email: string };
 type ProcessorConfig = { model: string; firmware: string; quantity: number };
 type ReceiverCardConfig = { model: string; version: string; quantity: number };
 type OtherProductConfig = { category: string; model: string; quantity: number };
@@ -16,6 +17,7 @@ type Project = {
   name: string;
   product: string;
   customer: Customer;
+  manager?: Employee | null;
   processorConfigs?: ProcessorConfig[];
   receiverCardConfigs?: ReceiverCardConfig[];
   otherProductConfigs?: OtherProductConfig[];
@@ -70,6 +72,7 @@ function ProjectsPageContent() {
 
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [employees, setEmployees] = useState<Employee[]>([]);
   const [productGroups, setProductGroups] = useState<
     Array<{ group: string; items: string[] }>
   >([]);
@@ -88,14 +91,16 @@ function ProjectsPageContent() {
     { category: "", model: "", quantity: 1 },
   ]);
   const [archivingProjectId, setArchivingProjectId] = useState<string | null>(null);
+  const [assigningManagerProjectId, setAssigningManagerProjectId] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const load = async () => {
     setLoading(true);
-    const [cRes, pRes, prodRes] = await Promise.all([
+    const [cRes, pRes, prodRes, employeesRes] = await Promise.all([
       fetch("/api/customers", fetchFresh),
       fetch("/api/projects", fetchFresh),
       fetch("/api/products", fetchFresh),
+      fetch("/api/projects/managers", fetchFresh),
     ]);
     if (cRes.ok) setCustomers(await cRes.json());
     if (pRes.ok) setProjects(await pRes.json());
@@ -105,6 +110,7 @@ function ProjectsPageContent() {
       };
       setProductGroups(data.groups ?? []);
     }
+    if (employeesRes.ok) setEmployees(await employeesRes.json());
     setLoading(false);
   };
 
@@ -133,7 +139,10 @@ function ProjectsPageContent() {
     const q = query.trim().toLowerCase();
     if (!q) return list;
     return list.filter((p) =>
-      [p.name, p.product, p.customer?.name ?? ""].join(" ").toLowerCase().includes(q),
+      [p.name, p.product, p.customer?.name ?? "", p.manager?.name ?? ""]
+        .join(" ")
+        .toLowerCase()
+        .includes(q),
     );
   }, [projects, query, customerFilterId]);
 
@@ -189,6 +198,25 @@ function ProjectsPageContent() {
     }
     bumpProjectsListVersion();
     await load();
+  };
+
+  const assignManager = async (projectId: string, managerId: string) => {
+    setAssigningManagerProjectId(projectId);
+    const res = await fetch(`/api/projects/${projectId}`, {
+      method: "PATCH",
+      ...fetchFresh,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ managerId: managerId || null }),
+    });
+    setAssigningManagerProjectId(null);
+    if (!res.ok) {
+      const data = (await res.json().catch(() => ({}))) as { error?: string };
+      alert(data.error ?? t("projects.couldNotAssignManager"));
+      return;
+    }
+    const updated = (await res.json()) as Project;
+    setProjects((prev) => prev.map((project) => (project.id === projectId ? updated : project)));
+    bumpProjectsListVersion();
   };
 
   const processorGroups = new Set([
@@ -572,20 +600,22 @@ function ProjectsPageContent() {
             <p className="text-sm text-zinc-600 dark:text-zinc-400">{t("projects.noneFound")}</p>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-zinc-200 dark:border-white/[0.08]">
-              <table className="w-full min-w-[880px] table-fixed border-collapse text-sm">
+              <table className="w-full min-w-[980px] table-fixed border-collapse text-sm">
                 <colgroup>
-                  <col className="w-[22%]" />
+                  <col className="w-[18%]" />
                   <col className="w-[12%]" />
+                  <col className="w-[14%]" />
                   <col className="w-[14%]" />
                   <col className="w-[30%]" />
                   <col className="w-[7%]" />
-                  <col className="w-[15%]" />
+                  <col className="w-[5%]" />
                 </colgroup>
                 <thead>
                   <tr className="border-b border-zinc-200 bg-zinc-50 text-left text-xs uppercase tracking-wide text-zinc-600 dark:border-white/[0.08] dark:bg-white/[0.04] dark:text-zinc-300">
                     <th className="px-3 py-2.5 font-medium">{t("projects.colProject")}</th>
                     <th className="px-3 py-2.5 font-medium">{t("projects.colProduct")}</th>
                     <th className="px-3 py-2.5 font-medium">{t("projects.colCustomer")}</th>
+                    <th className="px-3 py-2.5 font-medium">{t("projects.colManager")}</th>
                     <th className="px-3 py-2.5 font-medium">{t("projects.colHardware")}</th>
                     <th className="px-3 py-2.5 text-right font-medium">{t("projects.colIssues")}</th>
                     <th className="px-3 py-2.5 font-medium">{t("common.actions")}</th>
@@ -611,6 +641,21 @@ function ProjectsPageContent() {
                       <span className="line-clamp-2 break-words" title={p.customer?.name ?? undefined}>
                         {p.customer?.name ?? "-"}
                       </span>
+                    </td>
+                    <td className="px-3 py-2.5 text-zinc-700 dark:text-zinc-300">
+                      <select
+                        className="input w-full text-xs"
+                        value={p.manager?.id ?? ""}
+                        disabled={assigningManagerProjectId === p.id}
+                        onChange={(e) => void assignManager(p.id, e.target.value)}
+                      >
+                        <option value="">{t("projects.unassignedManager")}</option>
+                        {employees.map((employee) => (
+                          <option key={employee.id} value={employee.id}>
+                            {employee.name}
+                          </option>
+                        ))}
+                      </select>
                     </td>
                     <td className="px-3 py-2.5 text-zinc-800 dark:text-zinc-200">
                       <div className="space-y-1 text-xs">

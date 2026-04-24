@@ -37,6 +37,7 @@ model User {
   uploadedIssueAttachments   IssueAttachment[]   @relation("IssueAttachmentUploader")
   uploadedIssueThreadAttachments IssueThreadAttachment[] @relation("IssueThreadAttachmentUploader")
   projectNotes               ProjectNote[]       @relation("ProjectNoteAuthor")
+  managedProjects            Project[]           @relation("ProjectManager")
   auditLogs                  AuditLog[]          @relation("AuditLogActor")
   workRecords                WorkRecord[]
   publicCustomerRequestThreadEntries PublicCustomerRequestThreadEntry[] @relation("PublicCustomerRequestThreadAuthor")
@@ -138,6 +139,8 @@ model Project {
 
   customerId String
   customer   Customer @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  managerId  String?
+  manager    User?    @relation("ProjectManager", fields: [managerId], references: [id], onDelete: SetNull)
 
   issues              Issue[]
   processorConfigs    ProjectProcessorConfig[]
@@ -145,6 +148,8 @@ model Project {
   otherProductConfigs ProjectOtherProductConfig[]
   attachments         ProjectAttachment[]
   notes               ProjectNote[]
+
+  @@index([managerId])
 }
 
 model ProjectProcessorConfig {

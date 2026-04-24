@@ -42,6 +42,7 @@ export async function GET(
     where: { id },
     include: {
       customer: true,
+      manager: { select: { id: true, name: true, email: true } },
       processorConfigs: { orderBy: { createdAt: "asc" } },
       receiverCardConfigs: { orderBy: { createdAt: "asc" } },
       otherProductConfigs: { orderBy: { createdAt: "asc" } },
@@ -81,6 +82,7 @@ export async function PATCH(
   const { id } = await params;
   const body = (await request.json()) as {
     archive?: boolean;
+    managerId?: string | null;
     name?: string;
     customerId?: string;
     processorConfigs?: ProcessorIn[];
@@ -107,8 +109,47 @@ export async function PATCH(
     return NextResponse.json({ ok: true });
   }
 
+  if (Object.prototype.hasOwnProperty.call(body, "managerId") && !body.name && !body.customerId) {
+    const managerId = body.managerId?.trim() || null;
+    if (managerId) {
+      const manager = await prisma.user.findFirst({
+        where: { id: managerId, approvalStatus: "APPROVED" },
+        select: { id: true },
+      });
+      if (!manager) {
+        return NextResponse.json({ error: "Selected manager not found." }, { status: 404 });
+      }
+    }
+
+    const project = await prisma.project.update({
+      where: { id },
+      data: { managerId },
+      include: {
+        customer: true,
+        manager: { select: { id: true, name: true, email: true } },
+        processorConfigs: true,
+        receiverCardConfigs: true,
+        otherProductConfigs: true,
+        attachments: true,
+        notes: { include: { author: { select: { id: true, name: true, email: true } } } },
+        issues: { select: { id: true, title: true, status: true } },
+      },
+    });
+
+    await writeAuditLog({
+      actorId: session.user.id,
+      entityType: "Project",
+      entityId: project.id,
+      action: "UPDATE",
+      description: `Project "${project.name}" manager updated.`,
+    });
+
+    return NextResponse.json(project);
+  }
+
   const name = body.name?.trim() ?? "";
   const customerId = body.customerId?.trim() ?? "";
+  const managerId = body.managerId?.trim() || null;
   if (!name || !customerId) {
     return NextResponse.json(
       { error: "Project name and customer are required." },
@@ -142,11 +183,22 @@ export async function PATCH(
 
   const product = buildProductLabel(processorConfigs, receiverCardConfigs, otherProductConfigs);
 
+  if (managerId) {
+    const manager = await prisma.user.findFirst({
+      where: { id: managerId, approvalStatus: "APPROVED" },
+      select: { id: true },
+    });
+    if (!manager) {
+      return NextResponse.json({ error: "Selected manager not found." }, { status: 404 });
+    }
+  }
+
   const project = await prisma.project.update({
     where: { id },
     data: {
       name,
       customerId,
+      managerId,
       product,
       processorConfigs: { deleteMany: {}, create: processorConfigs },
       receiverCardConfigs: { deleteMany: {}, create: receiverCardConfigs },
@@ -154,6 +206,7 @@ export async function PATCH(
     },
     include: {
       customer: true,
+      manager: { select: { id: true, name: true, email: true } },
       processorConfigs: true,
       receiverCardConfigs: true,
       otherProductConfigs: true,
@@ -175,4 +228,3 @@ export async function PATCH(
 
   return NextResponse.json(project);
 }
-
