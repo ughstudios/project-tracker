@@ -502,6 +502,9 @@ const en: MessageTree = {
       "edid-check": "EDID check",
       "receiver-cards": "Receiver cards",
     },
+    disabledTabs: {
+      "edid-check": "EDID check is temporarily disabled.",
+    },
     disclaimerTitle: "Assumptions",
     disclaimerBody:
       "Figures below assume a simple uncompressed bit stream: bandwidth ≈ pixels × frame rate × bits per pixel. They ignore Ethernet framing, packetization, scan/PWM mapping on receiver cards, and controller-specific packing — use them as planning estimates, not a guarantee from silicon.",
@@ -1429,6 +1432,9 @@ const zh: MessageTree = {
       "display-io": "HDMI / DisplayPort",
       "edid-check": "EDID 校验",
       "receiver-cards": "接收卡规划",
+    },
+    disabledTabs: {
+      "edid-check": "EDID 校验暂未启用。",
     },
     disclaimerTitle: "假设与说明",
     disclaimerBody:

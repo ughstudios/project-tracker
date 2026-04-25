@@ -8,8 +8,14 @@ import { useI18n } from "@/i18n/context";
 import { TOOLS_PAGE_TAB_IDS, type ToolsPageTabId } from "@/lib/tools-page-tabs";
 import { useId, useState } from "react";
 
+const DISABLED_TOOL_TAB_IDS = new Set<ToolsPageTabId>(["edid-check"]);
+
 function tabLabelKey(id: ToolsPageTabId): string {
   return `tools.tabs.${id}`;
+}
+
+function disabledTabTooltipKey(id: ToolsPageTabId): string {
+  return `tools.disabledTabs.${id}`;
 }
 
 function renderToolPanel(id: ToolsPageTabId) {
@@ -47,27 +53,49 @@ export function ToolsPageTabs() {
       >
         {TOOLS_PAGE_TAB_IDS.map((id) => {
           const selected = active === id;
+          const disabled = DISABLED_TOOL_TAB_IDS.has(id);
           const panelId = `${baseId}-panel-${id}`;
           const tabId = `${baseId}-tab-${id}`;
           return (
-            <button
+            <span
               key={id}
-              id={tabId}
-              type="button"
-              role="tab"
-              aria-selected={selected}
-              aria-controls={panelId}
-              tabIndex={selected ? 0 : -1}
-              onClick={() => setActive(id)}
-              className={[
-                "min-h-10 flex-1 rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors sm:flex-none sm:px-4",
-                selected
-                  ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900"
-                  : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
-              ].join(" ")}
+              className="group relative flex-1 sm:flex-none"
+              title={disabled ? t(disabledTabTooltipKey(id)) : undefined}
             >
-              {t(tabLabelKey(id))}
-            </button>
+              <button
+                id={tabId}
+                type="button"
+                role="tab"
+                aria-selected={selected}
+                aria-controls={panelId}
+                aria-describedby={disabled ? `${tabId}-tooltip` : undefined}
+                aria-disabled={disabled || undefined}
+                disabled={disabled}
+                tabIndex={selected && !disabled ? 0 : -1}
+                onClick={() => {
+                  if (!disabled) setActive(id);
+                }}
+                className={[
+                  "min-h-10 w-full rounded-lg px-3 py-2 text-center text-sm font-medium transition-colors sm:w-auto sm:px-4",
+                  disabled
+                    ? "cursor-not-allowed border border-amber-300/70 bg-amber-50 text-amber-700 opacity-80 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-300"
+                    : selected
+                      ? "bg-zinc-900 text-white shadow-sm dark:bg-zinc-100 dark:text-zinc-900"
+                      : "text-zinc-600 hover:bg-zinc-100 dark:text-zinc-400 dark:hover:bg-zinc-800",
+                ].join(" ")}
+              >
+                {t(tabLabelKey(id))}
+              </button>
+              {disabled ? (
+                <span
+                  id={`${tabId}-tooltip`}
+                  role="tooltip"
+                  className="pointer-events-none absolute left-1/2 top-full z-20 mt-2 hidden w-max max-w-56 -translate-x-1/2 rounded-md bg-zinc-900 px-2 py-1 text-xs font-medium text-white shadow-lg group-hover:block dark:bg-zinc-100 dark:text-zinc-900"
+                >
+                  {t(disabledTabTooltipKey(id))}
+                </span>
+              ) : null}
+            </span>
           );
         })}
       </div>
