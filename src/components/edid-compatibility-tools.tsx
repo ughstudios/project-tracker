@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/i18n/context";
+import { DISPLAY_INTERFACE_MAX_GBPS, type DisplayInterfaceId } from "@/lib/display-interface-specs";
 import {
   bestEdidModeMatch,
   hdmiTmdsCharacterClockMHz,
@@ -12,6 +13,9 @@ import {
 } from "@/lib/edid";
 import { RGB_BPC_PRESETS, totalBppRgbPacked, type RgbBitsPerChannel } from "@/lib/led-bandwidth";
 import { useMemo, useState } from "react";
+
+const HDMI_IDS: DisplayInterfaceId[] = ["hdmi-1-4", "hdmi-2-0", "hdmi-2-1"];
+const DP_IDS: DisplayInterfaceId[] = ["dp-1-2", "dp-1-4", "dp-2-0"];
 
 function parsePositiveInt(raw: string, fallback: number): number {
   const n = Number.parseInt(raw.replaceAll(/\s+/g, ""), 10);
@@ -94,12 +98,15 @@ export function EdidCompatibilityTools() {
   const [wStr, setWStr] = useState("3840");
   const [hStr, setHStr] = useState("2160");
   const [hzStr, setHzStr] = useState("60");
+  const [iface, setIface] = useState<DisplayInterfaceId>("hdmi-2-0");
   const [rgbBpc, setRgbBpc] = useState<RgbBitsPerChannel>(8);
 
   const width = parsePositiveInt(wStr, 0);
   const height = parsePositiveInt(hStr, 0);
   const hz = parsePositiveFloat(hzStr, 60);
   const bpp = totalBppRgbPacked(rgbBpc);
+  const maxGbps = DISPLAY_INTERFACE_MAX_GBPS[iface];
+  const isHdmiSelected = iface.startsWith("hdmi");
   const matchedMode = parsed ? bestEdidModeMatch(parsed.modes, width, height, hz) : undefined;
   const modeRows = useMemo(() => [...(parsed?.modes ?? [])].sort(modeSort).slice(0, 20), [parsed]);
 
@@ -108,6 +115,7 @@ export function EdidCompatibilityTools() {
   const tmdsLineGbps = matchedMode ? hdmiTmdsLineGbps(matchedMode, rgbBpc) : 0;
   const maxTmdsClockMHz = parsed?.hdmi.maxTmdsClockMHz;
   const maxLinkGbps = parsed?.hdmi.maxLinkGbps;
+  const interfaceState = !matchedMode ? "unknown" : payloadGbps <= maxGbps ? "ok" : "bad";
   const tmdsClockState = !matchedMode || !maxTmdsClockMHz ? "unknown" : tmdsClockMHz <= maxTmdsClockMHz ? "ok" : "bad";
   const linkState = !matchedMode || !maxLinkGbps ? "unknown" : tmdsLineGbps <= maxLinkGbps ? "ok" : "bad";
 
@@ -152,6 +160,28 @@ export function EdidCompatibilityTools() {
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.edid.targetTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.edid.targetHelp")}</p>
         <div className="mt-4 grid max-w-2xl gap-3 sm:grid-cols-2">
+          <label className="block text-sm sm:col-span-2">
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.displayIo.labelInterface")}</span>
+            <select className="input w-full" value={iface} onChange={(e) => setIface(e.target.value as DisplayInterfaceId)}>
+              <optgroup label={t("tools.displayIo.groupHdmi")}>
+                {HDMI_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {t(`tools.displayIo.ifaces.${id}`)}
+                  </option>
+                ))}
+              </optgroup>
+              <optgroup label={t("tools.displayIo.groupDp")}>
+                {DP_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    {t(`tools.displayIo.ifaces.${id}`)}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <span className="mt-1 block text-xs text-zinc-500 dark:text-zinc-400">
+              {t("tools.edid.interfaceCeilingHint", { gbps: nf2.format(maxGbps) })}
+            </span>
+          </label>
           <label className="block text-sm">
             <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.labelWidth")}</span>
             <input className="input w-full" inputMode="numeric" value={wStr} onChange={(e) => setWStr(e.target.value)} />
@@ -190,14 +220,23 @@ export function EdidCompatibilityTools() {
               <span className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusClass(matchedMode ? "ok" : "bad")].join(" ")}>
                 {matchedMode ? t("tools.edid.matchOk") : t("tools.edid.matchNo")}
               </span>
+              <span className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusClass(interfaceState)].join(" ")}>
+                {matchedMode
+                  ? t("tools.edid.interfaceCompare", { need: nf2.format(payloadGbps), max: nf2.format(maxGbps) })
+                  : t("tools.edid.interfaceUnknown")}
+              </span>
+              {isHdmiSelected ? (
               <span className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusClass(tmdsClockState)].join(" ")}>
                 {maxTmdsClockMHz
                   ? t("tools.edid.tmdsCompare", { need: nf1.format(tmdsClockMHz), max: nf0.format(maxTmdsClockMHz) })
                   : t("tools.edid.tmdsUnknown")}
               </span>
+              ) : null}
+              {isHdmiSelected ? (
               <span className={["inline-flex rounded-full px-2.5 py-1 text-xs font-semibold", statusClass(linkState)].join(" ")}>
                 {maxLinkGbps ? t("tools.edid.linkCompare", { need: nf2.format(tmdsLineGbps), max: nf2.format(maxLinkGbps) }) : t("tools.edid.linkUnknown")}
               </span>
+              ) : null}
             </div>
 
             <dl className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -237,10 +276,12 @@ export function EdidCompatibilityTools() {
                     source: matchedMode.sourceLabel,
                   })}
                 </p>
-                <dl className="mt-3 grid gap-3 sm:grid-cols-3">
+                <dl className={["mt-3 grid gap-3", isHdmiSelected ? "sm:grid-cols-3" : "sm:grid-cols-2"].join(" ")}>
                   <Metric label={t("tools.edid.pixelClock")} value={`${nf2.format(matchedMode.pixelClockMHz)} MHz`} note={t("tools.edid.pixelClockNote")} />
                   <Metric label={t("tools.edid.payloadBandwidth")} value={`${nf2.format(payloadGbps)} Gbit/s`} note={t("tools.edid.payloadBandwidthNote")} />
-                  <Metric label={t("tools.edid.tmdsBandwidth")} value={`${nf2.format(tmdsLineGbps)} Gbit/s`} note={t("tools.edid.tmdsBandwidthNote")} />
+                  {isHdmiSelected ? (
+                    <Metric label={t("tools.edid.tmdsBandwidth")} value={`${nf2.format(tmdsLineGbps)} Gbit/s`} note={t("tools.edid.tmdsBandwidthNote")} />
+                  ) : null}
                 </dl>
                 <ModeTimingDetails mode={matchedMode} />
               </div>
