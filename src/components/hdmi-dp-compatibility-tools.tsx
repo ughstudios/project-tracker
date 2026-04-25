@@ -95,6 +95,11 @@ export function HdmiDpCompatibilityTools() {
         </ul>
       </section>
 
+      <section className="rounded-xl border-2 border-amber-300 bg-amber-50 p-4 dark:border-amber-700 dark:bg-amber-950/30">
+        <h2 className="text-base font-semibold text-amber-950 dark:text-amber-100">{t("tools.displayIo.edidCalloutTitle")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-amber-900 dark:text-amber-200">{t("tools.displayIo.edidCalloutBody")}</p>
+      </section>
+
       <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.displayIo.formTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.displayIo.formSubtitle")}</p>

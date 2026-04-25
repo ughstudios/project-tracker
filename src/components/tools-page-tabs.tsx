@@ -1,6 +1,7 @@
 "use client";
 
 import { HdmiDpCompatibilityTools } from "@/components/hdmi-dp-compatibility-tools";
+import { EdidCompatibilityTools } from "@/components/edid-compatibility-tools";
 import { LedBandwidthTools } from "@/components/led-bandwidth-tools";
 import { ReceiverCardPlannerTools } from "@/components/receiver-card-planner-tools";
 import { useI18n } from "@/i18n/context";
@@ -17,6 +18,8 @@ function renderToolPanel(id: ToolsPageTabId) {
       return <LedBandwidthTools />;
     case "display-io":
       return <HdmiDpCompatibilityTools />;
+    case "edid-check":
+      return <EdidCompatibilityTools />;
     case "receiver-cards":
       return <ReceiverCardPlannerTools />;
     default:
