@@ -2,7 +2,6 @@
 
 import { UserMultiSelect } from "@/components/user-multi-select";
 import { UploadProgressBar } from "@/components/upload-progress-bar";
-import { useIssueTranslationSync } from "@/hooks/use-issue-translation-sync";
 import { useI18n } from "@/i18n/context";
 import { uploadFilesViaBlobClient } from "@/lib/blob-client-upload";
 import { PROJECTS_LIST_VERSION_KEY } from "@/lib/project-list-sync";
@@ -116,8 +115,6 @@ function IssuesPageContent() {
     if (customersRes.ok) setCustomers((await customersRes.json()) as CustomerSummary[]);
     setListLoading(false);
   }, []);
-
-  useIssueTranslationSync(issues, setIssues, locale, !listLoading, loadLists);
 
   useEffect(() => {
     if (formFiles.length === 0) setFormAttachmentUploadNote("");
