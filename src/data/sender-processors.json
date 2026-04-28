@@ -51,7 +51,7 @@
     {
       "name": "Z8t",
       "series": "Z Series",
-      "overview": "Z8t (Specification V2.1): 5G Ethernet output to receiving cards; swappable boards, max 23.59M pixels (16,384 px width). Example: XFIPHX4V103 with 4×5G Neutrik ports per board, up to 2 output boards. Video 8/10/12-bit, 23.98–240 Hz; HDR10/HLG.",
+      "overview": "Z8t (Specification V2.1): Modular chassis — up to 2 swappable input boards (choices include 2×HDMI 2.0, 2×DP 1.2, 2×12G-SDI, 3-in-1 HDMI 2.1+DP 1.4+12G-SDI, or ST2110) and up to 2 swappable output boards of the same type. Inputs up to 2×4K@60 per board, 23.98–240 Hz, 8/10/12-bit. Outputs to LED: either 5G Neutrik Ethernet (XFIPHX4V103: 4×5 Gb/s per board) or 10G optical fiber (XFIPHX4V102 2×fiber, XFIPHX4V107 4×fiber with primary/backup). Max load 23.59M pixels (16,384 px width). HDR10/HLG.",
       "max_width": 16384,
       "max_height": 8192,
       "max_frame_rate_hz": 240,
@@ -61,7 +61,13 @@
           "mode": "5g",
           "ports": 8,
           "capacity_pixels": 23590000,
-          "label": "5G Ethernet output boards (e.g. XFIPHX4V103: 4×5G/board, up to 2 boards)"
+          "label": "XFIPHX4V103: 4×5G Neutrik RJ45 per board (≤2 boards of same type)"
+        },
+        {
+          "mode": "10g",
+          "ports": 8,
+          "capacity_pixels": 23590000,
+          "label": "XFIPHX4V102 (2×10G fiber) or XFIPHX4V107 (4×10G fiber, 2+2 backup) per board (≤2 boards)"
         }
       ],
       "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
