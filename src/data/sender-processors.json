@@ -86,19 +86,6 @@
       "features": ["redundancy", "low_latency"]
     },
     {
-      "name": "VX12F",
-      "series": "VX Series",
-      "overview": "All-in-one video controller with 12 1G Ethernet-class outputs and 7.86 million pixels total load.",
-      "max_width": 16384,
-      "max_height": 8192,
-      "max_frame_rate_hz": 60,
-      "max_color_depth_bpc": 8,
-      "outputs": [
-        { "mode": "1g", "ports": 12, "capacity_pixels": 7860000, "label": "12 x 1G Ethernet ports" }
-      ],
-      "features": ["redundancy"]
-    },
-    {
       "name": "VX10",
       "series": "VX Series",
       "overview": "All-in-one video controller with 10 1G Ethernet output ports.",

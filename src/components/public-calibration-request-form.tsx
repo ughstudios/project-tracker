@@ -32,7 +32,6 @@ const CONTROLLER_MODELS = [
   "Z4 Pro",
   "Z3",
   "VX20",
-  "VX12F",
   "VX10",
   "VX6",
   "DS40",

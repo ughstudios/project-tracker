@@ -17,7 +17,7 @@ export const PRODUCT_GROUPS: Array<{ group: string; items: string[] }> = [
   },
   {
     group: "VX Series",
-    items: ["VX20", "VX12F", "VX10", "VX6"],
+    items: ["VX20", "VX10", "VX6"],
   },
   {
     group: "DS Series",
