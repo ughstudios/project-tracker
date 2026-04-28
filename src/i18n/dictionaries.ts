@@ -698,7 +698,7 @@ const en: MessageTree = {
       sourceNote: "Processor data comes from the extracted sender specs; receiver-card data comes from parsed receiver-card specifications.",
       formTitle: "Project specifications",
       formSubtitle:
-        "Enter screen and cabinet details, pick one processor and one receiving card, list your input connectors, and set the link set and feature requirements.",
+        "Enter screen and cabinet details, pick one processor and one receiving card, list modular input connectors if applicable, and set the receiver link set.",
       inputSourcesTitle: "Video inputs (planning)",
       inputSourcesLeadModular:
         "For modular controllers (e.g. U Max, Z8t), add connector types and counts to sketch input-board staffing. This does not run signal math yet.",
@@ -775,6 +775,8 @@ const en: MessageTree = {
       bandwidthLine: "{gbps} Gbit/s active RGB payload, planned around {mode}.",
       verifyCards: "Confirm scan type, cabinet wiring, calibration mode, and receiver-card version against the real cabinet design.",
       verifyReview: "Review {misses} unmet feature/capability checks, then confirm cabinet mapping and product availability.",
+      verifyWhenNotExact:
+        "Resolve the amber warnings above and confirm cabinet mapping, wiring, and datasheet limits before quoting.",
       tableProcessor: "Processor",
       tableOutput: "Processor output",
       tableFit: "Fit",
@@ -1710,7 +1712,7 @@ const zh: MessageTree = {
       sourceNote: "处理器数据来自已提取的发送端规格；接收卡数据来自已解析的接收卡规格。",
       formTitle: "项目规格",
       formSubtitle:
-        "填写屏体与箱体参数；各选一个处理器与接收卡；列出输入接口类型与数量；再设置链路组与功能要求。",
+        "填写屏体与箱体参数；各选一个处理器与接收卡；若为插卡式可列出输入接口；再设置接收链路组。",
       inputSourcesTitle: "视频输入（规划）",
       inputSourcesLeadModular:
         "适用于插卡式处理器（如 U Max、Z8t）：按连接器类型与数量填写，便于对照输入板配置（不参与带宽运算）。",
@@ -1749,6 +1751,7 @@ const zh: MessageTree = {
       },
       pairingOk: "在当前填写参数下，处理器与接收卡的公开规格均满足信号约束（最终以 BOM 与现场走线为准）。",
       noCardsForLinkSet: "当前链路组下没有可选接收卡，请切换 1G/5G 或扩充接收卡目录。",
+      verifyWhenNotExact: "先根据上方提示逐项处理，并核对箱体映射、走线与规格书后再报价。",
       labelOutputPreference: "接收链路组",
       outputSet1g: "1G 组",
       outputSet5g: "5G 组",

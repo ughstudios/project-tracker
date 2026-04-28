@@ -18,13 +18,11 @@ import {
   portsNeededForMbps,
   processorHasAllowedOutputMode,
   processorHasSwappableBoards,
-  processorMeetsRequirement,
   processorSupportsTarget,
   recommendProcessorInputBoard,
   recommendProcessorOutputBoard,
   requiredPortsForProcessorOutput,
   receiverCardInPlannerCatalog,
-  receiverMeetsRequirement,
   receiverSupportsTarget,
   totalInputConnectors,
   usableMbpsForPortSpeed,
@@ -32,18 +30,14 @@ import {
   type PlannerInputLine,
   type ProcessorOutputMode,
   type ProjectOutputPreference,
-  type ProjectRequirement,
   type ReceiverCardCatalogItem,
   type ReceiverPortSpeed,
 } from "@/lib/project-planner";
 import type { ReactNode } from "react";
 import { useEffect, useMemo, useState } from "react";
 
-const REQUIREMENTS: ProjectRequirement[] = ["hdr", "lowLatency", "redundancy", "monitoring"];
-
 const PLANNER_FALLBACK_TEXT: Record<string, string> = {
-  "tools.projectPlanner.exactReason": "This pairing clears the signal, output, feature, and receiver-card capacity checks entered above.",
-  "tools.projectPlanner.reviewReason": "This pairing is close, but at least one capability or feature requirement should be checked before quoting it.",
+  "tools.projectPlanner.exactReason": "This pairing clears the signal, resolution, and receiver-card checks entered above.",
   "tools.projectPlanner.guideWhy": "Why it works",
   "tools.projectPlanner.guideInstall": "Install count",
   "tools.projectPlanner.guideSignal": "Signal plan",
@@ -52,7 +46,8 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.cardsInstallLine": "Plan {cards} receiver cards: {perCabinet} per cabinet, with {minimum} as the pixel-only minimum.",
   "tools.projectPlanner.bandwidthLine": "{gbps} Gbit/s active RGB payload, planned around {mode}.",
   "tools.projectPlanner.verifyCards": "Confirm scan type, cabinet wiring, calibration mode, and receiver-card version against the real cabinet design.",
-  "tools.projectPlanner.verifyReview": "Review {misses} unmet feature/capability checks, then confirm cabinet mapping and product availability.",
+  "tools.projectPlanner.verifyWhenNotExact":
+    "Resolve the warnings above and confirm cabinet mapping, wiring, and datasheet limits before quoting.",
 };
 
 function parsePositiveInt(raw: string, fallback: number): number {
@@ -182,7 +177,6 @@ export function ProjectPlannerTools() {
   const [cabinetWpStr, setCabinetWpStr] = useState("480");
   const [cabinetHpStr, setCabinetHpStr] = useState("270");
   const [outputPreference, setOutputPreference] = useState<ProjectOutputPreference>("1g");
-  const [requirements, setRequirements] = useState<ProjectRequirement[]>(["hdr", "lowLatency"]);
 
   const [processorName, setProcessorName] = useState(() => SENDER_PROCESSOR_CATALOG[0]?.name ?? "");
   const [cardName, setCardName] = useState("");
@@ -233,20 +227,16 @@ export function ProjectPlannerTools() {
     const perCabinet = cardsPerCabinet(cabinetPixels.pixels, card.maxCapacityPixels);
     const pixelMinimum = cardsNeededByPixels(totalPixels, card.maxCapacityPixels);
     const installedCards = cabinetGrid.total > 0 && perCabinet > 0 ? cabinetGrid.total * perCabinet : pixelMinimum;
-    const receiverRequirementHits = requirements.filter((requirement) => receiverMeetsRequirement(card, requirement)).length;
     const receiverExact =
       card.maxCapacityPixels > 0 &&
       support.depthOk &&
       support.frameOk &&
-      receiverRequirementHits === requirements.length &&
       outputPreference === receiverSpeed;
 
     const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, allowedModes);
     const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
     const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
-    const processorRequirementHits = requirements.filter((requirement) => processorMeetsRequirement(processor, requirement)).length;
-    const exact = receiverExact && processorSupport.exact && processorRequirementHits === requirements.length;
-    const requirementMisses = requirements.length * 2 - receiverRequirementHits - processorRequirementHits;
+    const exact = receiverExact && processorSupport.exact;
     const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps);
     const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts);
 
@@ -264,9 +254,6 @@ export function ProjectPlannerTools() {
       pixelMinimum,
       installedCards,
       exact,
-      requirementMisses,
-      receiverRequirementHits,
-      processorRequirementHits,
     };
   }, [
     selectedProcessor,
@@ -280,14 +267,13 @@ export function ProjectPlannerTools() {
     cabinetGrid.total,
     totalPixels,
     requiredMbps,
-    requirements,
   ]);
 
   const issueLines = useMemo(() => {
     const lines: string[] = [];
     if (!selectedProcessor || !selectedCard || !activeRow) return lines;
 
-    const { processor, processorOutput, processorSupport, support, card } = activeRow;
+    const { processor, processorOutput, processorSupport, support } = activeRow;
     const allowedModes = outputModesForPreference(outputPreference);
 
     if (!processorHasAllowedOutputMode(processor, allowedModes)) {
@@ -304,25 +290,8 @@ export function ProjectPlannerTools() {
     if (!support.depthOk) lines.push(t("tools.projectPlanner.issue.receiverDepth"));
     if (!support.frameOk) lines.push(t("tools.projectPlanner.issue.receiverFps"));
 
-    for (const req of requirements) {
-      if (!receiverMeetsRequirement(card, req)) {
-        lines.push(
-          t("tools.projectPlanner.issue.requirementReceiver", {
-            name: t(`tools.projectPlanner.requirement.${req}`),
-          }),
-        );
-      }
-      if (!processorMeetsRequirement(processor, req)) {
-        lines.push(
-          t("tools.projectPlanner.issue.requirementProcessor", {
-            name: t(`tools.projectPlanner.requirement.${req}`),
-          }),
-        );
-      }
-    }
-
     return lines;
-  }, [selectedProcessor, selectedCard, activeRow, outputPreference, requirements, t]);
+  }, [selectedProcessor, selectedCard, activeRow, outputPreference, t]);
 
   const pairingOk =
     activeRow &&
@@ -354,12 +323,6 @@ export function ProjectPlannerTools() {
       fallback = fallback.replaceAll(`{${key}}`, value);
     }
     return fallback;
-  }
-
-  function toggleRequirement(requirement: ProjectRequirement) {
-    setRequirements((current) =>
-      current.includes(requirement) ? current.filter((item) => item !== requirement) : [...current, requirement],
-    );
   }
 
   function setInputLine(index: number, patch: Partial<PlannerInputLine>) {
@@ -531,21 +494,6 @@ export function ProjectPlannerTools() {
           )}
         </div>
 
-        <fieldset className="mt-4">
-          <legend className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.requirements")}</legend>
-          <div className="mt-2 flex flex-wrap gap-2">
-            {REQUIREMENTS.map((requirement) => (
-              <label
-                key={requirement}
-                className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
-              >
-                <input type="checkbox" checked={requirements.includes(requirement)} onChange={() => toggleRequirement(requirement)} />
-                {t(`tools.projectPlanner.requirement.${requirement}`)}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-
         <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
           <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.cabinetPixels")}</p>
           <p className="mt-1 tabular-nums text-zinc-600 dark:text-zinc-400">
@@ -711,7 +659,7 @@ export function ProjectPlannerTools() {
             <LessonLine label={plannerText("tools.projectPlanner.guideVerify")}>
               {activeRow.exact
                 ? plannerText("tools.projectPlanner.verifyCards")
-                : plannerText("tools.projectPlanner.verifyReview", { misses: nf0.format(activeRow.requirementMisses) })}
+                : plannerText("tools.projectPlanner.verifyWhenNotExact")}
             </LessonLine>
           </dl>
         ) : null}
