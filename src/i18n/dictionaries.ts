@@ -693,7 +693,7 @@ const en: MessageTree = {
       cardsBreakdown: "{perCabinet}/cabinet · {minimum} pixel min",
       title: "Project planner",
       subtitle:
-        "Plans a processor and receiver-card package from the extracted Colorlight sender and receiver specifications.",
+        "Ballpark how many output ports and receiver cards you need, and which controller + card pairings are worth a closer look before you quote.",
       sourceNote: "Processor data comes from the extracted sender specs; receiver-card data comes from parsed receiver-card specifications.",
       formTitle: "Project specifications",
       formSubtitle:
@@ -1663,7 +1663,7 @@ const zh: MessageTree = {
       capacityPixels: "{pixels} 像素",
       cardsBreakdown: "{perCabinet}/箱 · 理论下限 {minimum}",
       title: "项目规划",
-      subtitle: "根据已提取的 Colorlight 发送端与接收卡规格，规划处理器和接收卡组合。",
+      subtitle: "粗算网口与接收卡需求，并对比值得进一步核对的处理器 + 接收卡组合，方便报价前评估。",
       sourceNote: "处理器数据来自已提取的发送端规格；接收卡数据来自已解析的接收卡规格。",
       formTitle: "项目规格",
       formSubtitle: "填写屏体分辨率、单箱像素宽×高、信号、1G/5G 链路与功能要求。",

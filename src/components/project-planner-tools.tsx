@@ -278,12 +278,6 @@ export function ProjectPlannerTools() {
       <section className="panel-surface rounded-xl p-4">
         <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.title")}</h2>
         <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.subtitle")}</p>
-        <ul className="mt-2 list-inside list-disc text-sm text-zinc-600 dark:text-zinc-400">
-          <li>{t("tools.projectPlanner.sourceNote")}</li>
-          <li>{t("tools.projectPlanner.disclaimerBulletPorts")}</li>
-          <li>{t("tools.projectPlanner.disclaimerBulletCards")}</li>
-          <li>{t("tools.projectPlanner.disclaimerBulletVx")}</li>
-        </ul>
       </section>
 
       <section className="panel-surface rounded-xl p-4">

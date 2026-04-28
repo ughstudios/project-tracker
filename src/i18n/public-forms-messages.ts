@@ -29,7 +29,7 @@ export const publicFormsForEn: MessageTree = {
     projectPlanner: {
       title: "Project Planner Form",
       description:
-        "Estimate processors, receiver cards, cabinet counts, and output ports before you start a project.",
+        "Rough estimate for output ports, receiver cards, and controller pairings from your layout inputs.",
     },
   },
   pages: {
@@ -45,8 +45,7 @@ export const publicFormsForEn: MessageTree = {
     },
     projectPlanner: {
       title: "Project Planner Form",
-      subtitle:
-        "Share this public calculator to estimate processor and receiver-card needs. Enter your real single-cabinet pixel size (not mm ÷ pitch).",
+      subtitle: "Enter your screen and cabinet details to get a ballpark for ports, cards, and which controllers to consider.",
       back: "Back to Forms",
     },
   },
@@ -222,7 +221,7 @@ export const publicFormsForZh: MessageTree = {
     },
     projectPlanner: {
       title: "项目规划表",
-      description: "在项目开始前估算处理器、接收卡、箱体数量和输出端口。",
+      description: "根据布局输入粗算输出网口、接收卡需求及处理器搭配方向。",
     },
   },
   pages: {
@@ -238,7 +237,7 @@ export const publicFormsForZh: MessageTree = {
     },
     projectPlanner: {
       title: "项目规划表",
-      subtitle: "可将此计算器分享给客户或合作伙伴。单箱请填实际像素宽×高，勿用 mm÷点间距推算。",
+      subtitle: "填写屏幕与箱体参数，粗算网口与接收卡需求，并看看哪些处理器值得进一步核对。",
       back: "返回表单列表",
     },
   },
