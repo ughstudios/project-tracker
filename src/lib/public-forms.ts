@@ -1,4 +1,5 @@
-export type PublicFormCardId = "calibration" | "rma";
+/** Use camelCase ids so `publicForms.cards.<id>` matches the message tree (hyphens break dot-path lookup). */
+export type PublicFormCardId = "calibration" | "rma" | "projectPlanner";
 
 export type PublicFormCard = {
   id: PublicFormCardId;
@@ -15,6 +16,11 @@ export const PUBLIC_FORM_CARDS: readonly PublicFormCard[] = [
   {
     id: "rma",
     href: "/forms/rma",
+    status: "live",
+  },
+  {
+    id: "projectPlanner",
+    href: "/forms/project-planner",
     status: "live",
   },
 ];

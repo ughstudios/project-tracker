@@ -26,6 +26,11 @@ export const publicFormsForEn: MessageTree = {
       description:
         "Submit one form per returned processor: purchase details, issue description, optional photos, and usage environment.",
     },
+    projectPlanner: {
+      title: "Project Planner Form",
+      description:
+        "Estimate processors, receiver cards, cabinet counts, and output ports before you start a project.",
+    },
   },
   pages: {
     calibration: {
@@ -36,6 +41,12 @@ export const publicFormsForEn: MessageTree = {
     rma: {
       title: "Processor RMA",
       subtitle: "One submission per processor. Use the same model list as in your project records.",
+      back: "Back to Forms",
+    },
+    projectPlanner: {
+      title: "Project Planner Form",
+      subtitle:
+        "Share this public calculator with customers or partners to estimate processor and receiver-card requirements.",
       back: "Back to Forms",
     },
   },
@@ -209,6 +220,10 @@ export const publicFormsForZh: MessageTree = {
       description:
         "每台退回的处理器单独提交：购买信息、故障描述、可选照片与使用环境。",
     },
+    projectPlanner: {
+      title: "项目规划表",
+      description: "在项目开始前估算处理器、接收卡、箱体数量和输出端口。",
+    },
   },
   pages: {
     calibration: {
@@ -219,6 +234,11 @@ export const publicFormsForZh: MessageTree = {
     rma: {
       title: "处理器 RMA",
       subtitle: "每台处理器单独提交一次。型号列表与项目建档一致。",
+      back: "返回表单列表",
+    },
+    projectPlanner: {
+      title: "项目规划表",
+      subtitle: "可将此公开计算器分享给客户或合作伙伴，用于估算处理器和接收卡需求。",
       back: "返回表单列表",
     },
   },

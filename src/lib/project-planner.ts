@@ -9,7 +9,7 @@ import {
 
 export type ReceiverPortSpeed = "1g" | "5g" | "unknown";
 export type ProcessorOutputMode = "1g" | "5g" | "10g";
-export type ProjectOutputPreference = "auto" | "1g" | "5g";
+export type ProjectOutputPreference = "1g" | "5g";
 export type ProjectRequirement = "hdr" | "lowLatency" | "redundancy" | "monitoring";
 
 type RawReceiverCard = {
@@ -395,14 +395,8 @@ export function processorMeetsRequirement(processor: SenderProcessorCatalogItem,
   }
 }
 
-export function outputModesForPreference(
-  preference: ProjectOutputPreference,
-  receiverPortSpeed: ReceiverPortSpeed,
-): ProcessorOutputMode[] {
-  if (preference === "1g") return ["1g"];
-  if (preference === "5g") return ["5g"];
-  if (receiverPortSpeed === "5g") return ["5g", "1g", "10g"];
-  return ["1g", "5g", "10g"];
+export function outputModesForPreference(preference: ProjectOutputPreference): ProcessorOutputMode[] {
+  return preference === "1g" ? ["1g"] : ["5g"];
 }
 
 export function pickProcessorOutput(
