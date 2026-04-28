@@ -5,6 +5,7 @@ import type { TranslateFn } from "@/i18n/create-translator";
 import { RGB_BPC_PRESETS, totalBppRgbPacked, type RgbBitsPerChannel } from "@/lib/led-bandwidth";
 import {
   RECEIVER_CARD_CATALOG,
+  receiverCardInPlannerCatalog,
   SENDER_PROCESSOR_CATALOG,
   cabinetPixelSize,
   cabinetsNeeded,
@@ -189,7 +190,8 @@ export function ProjectPlannerTools() {
   const cabinetPixels = cabinetPixelSize(cabinetWmm, cabinetHmm, pitchMm);
   const cabinetGrid = cabinetsNeeded(screenW, screenH, cabinetPixels.width, cabinetPixels.height);
 
-  const projectRows = RECEIVER_CARD_CATALOG.flatMap((card) => {
+  const plannerCards = RECEIVER_CARD_CATALOG.filter((card) => receiverCardInPlannerCatalog(card, outputPreference));
+  const projectRows = plannerCards.flatMap((card) => {
     const receiverSpeed = planningPortSpeed(card);
     const allowedModes = outputModesForPreference(outputPreference);
     const outputMode = allowedModes.includes(receiverSpeed) ? receiverSpeed : allowedModes[0] ?? receiverSpeed;
