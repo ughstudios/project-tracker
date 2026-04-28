@@ -13,8 +13,8 @@
       "max_color_depth_bpc": 10,
       "outputs": [
         { "mode": "1g", "ports": 400, "capacity_pixels": 262000000, "label": "1G Ethernet output boards" },
-        { "mode": "5g", "ports": 100, "capacity_pixels": 472000000, "label": "5G Ethernet output boards" },
-        { "mode": "10g", "ports": 20, "capacity_pixels": 520000000, "label": "10G fiber output boards" }
+        { "mode": "5g", "ports": 160, "capacity_pixels": 472000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 80, "capacity_pixels": 520000000, "label": "10G fiber output boards" }
       ],
       "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
     },
@@ -28,8 +28,8 @@
       "max_color_depth_bpc": 10,
       "outputs": [
         { "mode": "1g", "ports": 100, "capacity_pixels": 65000000, "label": "1G Ethernet output boards" },
-        { "mode": "5g", "ports": 50, "capacity_pixels": 236000000, "label": "5G Ethernet output boards" },
-        { "mode": "10g", "ports": 10, "capacity_pixels": 260000000, "label": "10G fiber output boards" }
+        { "mode": "5g", "ports": 80, "capacity_pixels": 236000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 40, "capacity_pixels": 260000000, "label": "10G fiber output boards" }
       ],
       "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
     },
@@ -43,8 +43,8 @@
       "max_color_depth_bpc": 10,
       "outputs": [
         { "mode": "1g", "ports": 100, "capacity_pixels": 65000000, "label": "1G Ethernet output boards" },
-        { "mode": "5g", "ports": 25, "capacity_pixels": 118000000, "label": "5G Ethernet output boards" },
-        { "mode": "10g", "ports": 5, "capacity_pixels": 130000000, "label": "10G fiber output boards" }
+        { "mode": "5g", "ports": 40, "capacity_pixels": 118000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 20, "capacity_pixels": 130000000, "label": "10G fiber output boards" }
       ],
       "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
     },

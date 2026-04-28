@@ -706,6 +706,8 @@ const en: MessageTree = {
       port10g: "10G fiber",
       resultTitle: "Suggested package",
       bestProcessor: "Processor",
+      inputBoard: "Input board",
+      outputBoard: "Output board",
       bestReceiver: "Receiver card",
       processorOutput: "{mode} · {ports} ports · {capacity} pixels",
       noProcessorOutput: "No matching processor output",

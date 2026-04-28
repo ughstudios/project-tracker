@@ -98,6 +98,17 @@ export type ProcessorOutput = {
   label: string;
 };
 
+export type ProcessorBoardSuggestion = {
+  name: string;
+  model: string;
+  quantity: number;
+  portsPerBoard?: number;
+  capacityPixelsPerBoard?: number;
+  maxBoards: number;
+  note: string;
+  withinLimit: boolean;
+};
+
 export type SenderProcessorCatalogItem = {
   name: string;
   series: string;
@@ -118,6 +129,43 @@ export type CabinetPixelSize = {
 
 const rawCards = (receiverCardsData as ReceiverCardsJson).cards;
 const rawProcessors = (senderProcessorsData as SenderProcessorsJson).processors;
+
+const U_SERIES_BOARD_LIMITS: Record<string, { maxInputBoards: number; maxOutputBoards: number }> = {
+  "U15 Max": { maxInputBoards: 30, maxOutputBoards: 20 },
+  "U9 Max": { maxInputBoards: 18, maxOutputBoards: 10 },
+  "U6 Max": { maxInputBoards: 10, maxOutputBoards: 5 },
+};
+
+const U_SERIES_INPUT_BOARD = {
+  name: "U_2xHDMI 2.0+2xDP 1.2 input board",
+  model: "U_IN_2HDMI20_2DP12",
+  inputsPerBoard: 2,
+  sourcePixelRatePerInput: 4096 * 2160 * 60,
+};
+
+const U_SERIES_OUTPUT_BOARDS: Record<
+  ProcessorOutputMode,
+  { name: string; model: string; portsPerBoard: number; capacityPixelsPerBoard: number }
+> = {
+  "1g": {
+    name: "U_20x1G Ethernet output board",
+    model: "U_OUT_20x1G_RJ45",
+    portsPerBoard: 20,
+    capacityPixelsPerBoard: 13000000,
+  },
+  "5g": {
+    name: "U_8x5G Ethernet output board",
+    model: "U_OUT_8x5G_RJ45",
+    portsPerBoard: 8,
+    capacityPixelsPerBoard: 23600000,
+  },
+  "10g": {
+    name: "U_4x10G fiber output board",
+    model: "U_OUT_4x10G_FIBER",
+    portsPerBoard: 4,
+    capacityPixelsPerBoard: 26000000,
+  },
+};
 
 function cleanText(raw: string | null | undefined): string {
   return raw?.replaceAll(/\s+/g, " ").trim() ?? "";
@@ -266,6 +314,12 @@ export function usableMbpsForPortSpeed(speed: Exclude<ReceiverPortSpeed, "unknow
   return speed === "5g" ? DEFAULT_USABLE_MBPS_5G : DEFAULT_USABLE_MBPS_1G;
 }
 
+export function usableMbpsForProcessorOutputMode(mode: ProcessorOutputMode): number {
+  if (mode === "5g") return DEFAULT_USABLE_MBPS_5G;
+  if (mode === "10g") return DEFAULT_USABLE_MBPS_1G * 10;
+  return DEFAULT_USABLE_MBPS_1G;
+}
+
 export function portsNeededForMbps(requiredMbps: number, usableMbps: number): number {
   if (requiredMbps <= 0 || usableMbps <= 0) return 0;
   return Math.ceil(requiredMbps / usableMbps);
@@ -354,12 +408,15 @@ export function outputModesForPreference(
 export function pickProcessorOutput(
   processor: SenderProcessorCatalogItem,
   totalPixels: number,
-  requiredPorts: number,
+  requiredMbps: number,
   allowedModes: ProcessorOutputMode[],
 ): ProcessorOutput | null {
   const usableOutputs = processor.outputs
     .filter((output) => allowedModes.includes(output.mode))
-    .filter((output) => output.capacityPixels >= totalPixels && output.ports >= requiredPorts)
+    .filter((output) => {
+      const requiredPorts = portsNeededForMbps(requiredMbps, usableMbpsForProcessorOutputMode(output.mode));
+      return output.capacityPixels >= totalPixels && output.ports >= requiredPorts;
+    })
     .sort((a, b) => {
       const modeCompare = allowedModes.indexOf(a.mode) - allowedModes.indexOf(b.mode);
       if (modeCompare !== 0) return modeCompare;
@@ -369,6 +426,63 @@ export function pickProcessorOutput(
     });
 
   return usableOutputs[0] ?? null;
+}
+
+export function requiredPortsForProcessorOutput(output: ProcessorOutput | null, requiredMbps: number): number {
+  if (!output) return 0;
+  return portsNeededForMbps(requiredMbps, usableMbpsForProcessorOutputMode(output.mode));
+}
+
+export function recommendProcessorInputBoard(
+  processor: SenderProcessorCatalogItem,
+  width: number,
+  height: number,
+  fps: number,
+): ProcessorBoardSuggestion | null {
+  const limits = U_SERIES_BOARD_LIMITS[processor.name];
+  if (!limits) return null;
+
+  const sourcePixelRate = Math.max(0, width) * Math.max(0, height) * Math.max(0, fps);
+  const sourceInputs = sourcePixelRate > 0 ? Math.ceil(sourcePixelRate / U_SERIES_INPUT_BOARD.sourcePixelRatePerInput) : 0;
+  const quantity = Math.max(1, Math.ceil(sourceInputs / U_SERIES_INPUT_BOARD.inputsPerBoard));
+
+  return {
+    name: U_SERIES_INPUT_BOARD.name,
+    model: U_SERIES_INPUT_BOARD.model,
+    quantity,
+    portsPerBoard: U_SERIES_INPUT_BOARD.inputsPerBoard,
+    maxBoards: limits.maxInputBoards,
+    note: `${sourceInputs} 4K60-equivalent source input${sourceInputs === 1 ? "" : "s"}`,
+    withinLimit: quantity <= limits.maxInputBoards,
+  };
+}
+
+export function recommendProcessorOutputBoard(
+  processor: SenderProcessorCatalogItem,
+  output: ProcessorOutput | null,
+  totalPixels: number,
+  requiredPorts: number,
+): ProcessorBoardSuggestion | null {
+  const limits = U_SERIES_BOARD_LIMITS[processor.name];
+  if (!limits || !output) return null;
+
+  const board = U_SERIES_OUTPUT_BOARDS[output.mode];
+  const quantityByPorts = requiredPorts > 0 ? Math.ceil(requiredPorts / board.portsPerBoard) : 0;
+  const quantityByPixels = totalPixels > 0 ? Math.ceil(totalPixels / board.capacityPixelsPerBoard) : 0;
+  const quantity = Math.max(1, quantityByPorts, quantityByPixels);
+  const maxBoardsByPublishedPorts = Math.floor(output.ports / board.portsPerBoard);
+  const maxBoards = Math.min(limits.maxOutputBoards, maxBoardsByPublishedPorts || limits.maxOutputBoards);
+
+  return {
+    name: board.name,
+    model: board.model,
+    quantity,
+    portsPerBoard: board.portsPerBoard,
+    capacityPixelsPerBoard: board.capacityPixelsPerBoard,
+    maxBoards,
+    note: `${quantityByPorts} by ports, ${quantityByPixels} by pixels`,
+    withinLimit: quantity <= maxBoards,
+  };
 }
 
 export function processorSupportsTarget(
