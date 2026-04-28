@@ -245,8 +245,8 @@ export function ProjectPlannerTools() {
     if (a.requiredPorts !== b.requiredPorts) return a.requiredPorts - b.requiredPorts;
     const capA = a.processorOutput?.capacityPixels ?? 0;
     const capB = b.processorOutput?.capacityPixels ?? 0;
-    if (capA !== capB) return capB - capA;
-    const procCmp = b.processor.name.localeCompare(a.processor.name, undefined, { numeric: true });
+    if (capA !== capB) return capA - capB;
+    const procCmp = a.processor.name.localeCompare(b.processor.name, undefined, { numeric: true });
     if (procCmp !== 0) return procCmp;
     return a.card.name.localeCompare(b.card.name, undefined, { numeric: true });
   });
