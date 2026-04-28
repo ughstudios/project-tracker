@@ -712,7 +712,8 @@ const en: MessageTree = {
       processorOutput: "{mode} · {ports} ports · {capacity} pixels",
       noProcessorOutput: "No matching processor output",
       recommendationsTitle: "How to choose the package",
-      recommendationsSubtitle: "Start with the first option. Each card explains the decision, the required hardware, and what still needs field verification.",
+      recommendationsSubtitle:
+        "Every viable processor and receiver pairing is listed below (best matches first). Compare configurations and verify fit for your project.",
       noExactRecommendations: "No package satisfies every requirement exactly; these cards show the closest review candidates and what to check.",
       recommendedChoice: "Recommended starting point",
       optionLabel: "Option {rank}",
@@ -1674,7 +1675,8 @@ const zh: MessageTree = {
       processorOutput: "{mode} · {ports} 个网口 · {capacity} 像素",
       noProcessorOutput: "无匹配处理器输出",
       recommendationsTitle: "处理器 + 接收卡推荐",
-      recommendationsSubtitle: "优先显示满足信号、输出、功能与带载要求的组合。",
+      recommendationsSubtitle:
+        "下列为所有可行的处理器与接收卡组合（优先显示更匹配的配置）。请逐项对照并确认是否适合本项目。",
       noExactRecommendations: "没有完全满足所有要求的组合；下表显示最接近的复核候选。",
       tableProcessor: "处理器",
       tableOutput: "处理器输出",

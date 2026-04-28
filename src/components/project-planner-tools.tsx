@@ -237,19 +237,19 @@ export function ProjectPlannerTools() {
   });
 
   const viableRows = projectRows.filter((row) => row.processorOutput && row.card.maxCapacityPixels > 0);
-  const recommendationRows = (viableRows.length > 0 ? viableRows : projectRows)
-    .sort((a, b) => {
-      if (a.exact !== b.exact) return a.exact ? -1 : 1;
-      if (a.processorSupport.exact !== b.processorSupport.exact) return a.processorSupport.exact ? -1 : 1;
-      if (a.requirementMisses !== b.requirementMisses) return a.requirementMisses - b.requirementMisses;
-      if (a.installedCards !== b.installedCards) return a.installedCards - b.installedCards;
-      if (a.requiredPorts !== b.requiredPorts) return a.requiredPorts - b.requiredPorts;
-      if ((a.processorOutput?.capacityPixels ?? 0) !== (b.processorOutput?.capacityPixels ?? 0)) {
-        return (a.processorOutput?.capacityPixels ?? Number.MAX_SAFE_INTEGER) - (b.processorOutput?.capacityPixels ?? Number.MAX_SAFE_INTEGER);
-      }
-      return `${a.processor.name} ${a.card.name}`.localeCompare(`${b.processor.name} ${b.card.name}`, undefined, { numeric: true });
-    })
-    .slice(0, 10);
+  const recommendationRows = (viableRows.length > 0 ? viableRows : projectRows).sort((a, b) => {
+    if (a.exact !== b.exact) return a.exact ? -1 : 1;
+    if (a.processorSupport.exact !== b.processorSupport.exact) return a.processorSupport.exact ? -1 : 1;
+    if (a.requirementMisses !== b.requirementMisses) return a.requirementMisses - b.requirementMisses;
+    if (a.installedCards !== b.installedCards) return a.installedCards - b.installedCards;
+    if (a.requiredPorts !== b.requiredPorts) return a.requiredPorts - b.requiredPorts;
+    const capA = a.processorOutput?.capacityPixels ?? 0;
+    const capB = b.processorOutput?.capacityPixels ?? 0;
+    if (capA !== capB) return capB - capA;
+    const procCmp = b.processor.name.localeCompare(a.processor.name, undefined, { numeric: true });
+    if (procCmp !== 0) return procCmp;
+    return a.card.name.localeCompare(b.card.name, undefined, { numeric: true });
+  });
 
   const best = recommendationRows[0];
   const hasExactRecommendations = recommendationRows.some((row) => row.exact);
@@ -500,10 +500,10 @@ export function ProjectPlannerTools() {
           {hasExactRecommendations ? t("tools.projectPlanner.recommendationsSubtitle") : t("tools.projectPlanner.noExactRecommendations")}
         </p>
 
-        <div className="mt-4 grid gap-3">
-          {recommendationRows.slice(0, 4).map((row, index) => (
+        <div className="mt-4 max-h-[min(85vh,1400px)] space-y-3 overflow-y-auto pr-1">
+          {recommendationRows.map((row, index) => (
             <article
-              key={`${row.processor.name}-${row.card.name}-${row.processorOutput?.mode ?? "none"}`}
+              key={`${index}-${row.processor.name}-${row.card.name}-${row.processorOutput?.mode ?? "none"}`}
               className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950"
             >
               <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
