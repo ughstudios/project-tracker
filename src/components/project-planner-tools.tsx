@@ -4,8 +4,8 @@ import { useI18n } from "@/i18n/context";
 import type { TranslateFn } from "@/i18n/create-translator";
 import { RGB_BPC_PRESETS, totalBppRgbPacked, type RgbBitsPerChannel } from "@/lib/led-bandwidth";
 import {
+  PLANNER_INPUT_INTERFACE_IDS,
   RECEIVER_CARD_CATALOG,
-  receiverCardInPlannerCatalog,
   SENDER_PROCESSOR_CATALOG,
   cabinetPixelsFromResolution,
   cabinetsNeeded,
@@ -16,14 +16,19 @@ import {
   pickProcessorOutput,
   plannerPairingMeetsSignalLimits,
   portsNeededForMbps,
+  processorHasAllowedOutputMode,
   processorMeetsRequirement,
   processorSupportsTarget,
   recommendProcessorInputBoard,
   recommendProcessorOutputBoard,
   requiredPortsForProcessorOutput,
+  receiverCardInPlannerCatalog,
   receiverMeetsRequirement,
   receiverSupportsTarget,
+  totalInputConnectors,
   usableMbpsForPortSpeed,
+  type PlannerInputInterfaceId,
+  type PlannerInputLine,
   type ProcessorOutputMode,
   type ProjectOutputPreference,
   type ProjectRequirement,
@@ -31,13 +36,11 @@ import {
   type ReceiverPortSpeed,
 } from "@/lib/project-planner";
 import type { ReactNode } from "react";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const REQUIREMENTS: ProjectRequirement[] = ["hdr", "lowLatency", "redundancy", "monitoring"];
 
 const PLANNER_FALLBACK_TEXT: Record<string, string> = {
-  "tools.projectPlanner.recommendedChoice": "Recommended starting point",
-  "tools.projectPlanner.optionLabel": "Option {rank}",
   "tools.projectPlanner.exactReason": "This pairing clears the signal, output, feature, and receiver-card capacity checks entered above.",
   "tools.projectPlanner.reviewReason": "This pairing is close, but at least one capability or feature requirement should be checked before quoting it.",
   "tools.projectPlanner.guideWhy": "Why it works",
@@ -152,6 +155,10 @@ function LessonLine({
   );
 }
 
+function inputLineKey(line: PlannerInputLine, index: number): string {
+  return `${line.interfaceId}-${index}`;
+}
+
 export function ProjectPlannerTools() {
   const { t, locale } = useI18n();
   const nf0 = useMemo(
@@ -176,6 +183,10 @@ export function ProjectPlannerTools() {
   const [outputPreference, setOutputPreference] = useState<ProjectOutputPreference>("1g");
   const [requirements, setRequirements] = useState<ProjectRequirement[]>(["hdr", "lowLatency"]);
 
+  const [processorName, setProcessorName] = useState(() => SENDER_PROCESSOR_CATALOG[0]?.name ?? "");
+  const [cardName, setCardName] = useState("");
+  const [inputLines, setInputLines] = useState<PlannerInputLine[]>([{ interfaceId: "hdmi20", count: 1 }]);
+
   const screenW = parsePositiveInt(screenWStr, 0);
   const screenH = parsePositiveInt(screenHStr, 0);
   const fps = parsePositiveFloat(fpsStr, 0);
@@ -189,8 +200,28 @@ export function ProjectPlannerTools() {
   const cabinetPixels = cabinetPixelsFromResolution(cabinetWpx, cabinetHpx);
   const cabinetGrid = cabinetsNeeded(screenW, screenH, cabinetPixels.width, cabinetPixels.height);
 
-  const plannerCards = RECEIVER_CARD_CATALOG.filter((card) => receiverCardInPlannerCatalog(card, outputPreference));
-  const projectRows = plannerCards.flatMap((card) => {
+  const plannerCards = useMemo(
+    () => RECEIVER_CARD_CATALOG.filter((card) => receiverCardInPlannerCatalog(card, outputPreference)),
+    [outputPreference],
+  );
+
+  useEffect(() => {
+    if (plannerCards.length === 0) return;
+    const valid = plannerCards.some((c) => c.name === cardName);
+    if (!valid) setCardName(plannerCards[0].name);
+  }, [outputPreference, plannerCards, cardName]);
+
+  const selectedProcessor = useMemo(
+    () => SENDER_PROCESSOR_CATALOG.find((p) => p.name === processorName) ?? null,
+    [processorName],
+  );
+  const selectedCard = useMemo(() => plannerCards.find((c) => c.name === cardName) ?? null, [plannerCards, cardName]);
+
+  const activeRow = useMemo(() => {
+    if (!selectedProcessor || !selectedCard) return null;
+
+    const card = selectedCard;
+    const processor = selectedProcessor;
     const receiverSpeed = planningPortSpeed(card);
     const allowedModes = outputModesForPreference(outputPreference);
     const outputMode = allowedModes.includes(receiverSpeed) ? receiverSpeed : allowedModes[0] ?? receiverSpeed;
@@ -206,59 +237,105 @@ export function ProjectPlannerTools() {
       receiverRequirementHits === requirements.length &&
       outputPreference === receiverSpeed;
 
-    return SENDER_PROCESSOR_CATALOG.map((processor) => {
-      const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, allowedModes);
-      const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
-      const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
-      const processorRequirementHits = requirements.filter((requirement) => processorMeetsRequirement(processor, requirement)).length;
-      const exact = receiverExact && processorSupport.exact && processorRequirementHits === requirements.length;
-      const requirementMisses = requirements.length * 2 - receiverRequirementHits - processorRequirementHits;
-      const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps);
-      const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts);
+    const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, allowedModes);
+    const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
+    const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
+    const processorRequirementHits = requirements.filter((requirement) => processorMeetsRequirement(processor, requirement)).length;
+    const exact = receiverExact && processorSupport.exact && processorRequirementHits === requirements.length;
+    const requirementMisses = requirements.length * 2 - receiverRequirementHits - processorRequirementHits;
+    const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps);
+    const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts);
 
-      return {
-        card,
-        processor,
-        processorOutput,
-        inputBoard,
-        outputBoard,
-        support,
-        processorSupport,
-        outputMode,
-        requiredPorts,
-        perCabinet,
-        pixelMinimum,
-        installedCards,
-        exact,
-        requirementMisses,
-      };
-    });
-  });
+    return {
+      card,
+      processor,
+      processorOutput,
+      inputBoard,
+      outputBoard,
+      support,
+      processorSupport,
+      outputMode,
+      requiredPorts,
+      perCabinet,
+      pixelMinimum,
+      installedCards,
+      exact,
+      requirementMisses,
+      receiverRequirementHits,
+      processorRequirementHits,
+    };
+  }, [
+    selectedProcessor,
+    selectedCard,
+    outputPreference,
+    screenW,
+    screenH,
+    fps,
+    rgbBpc,
+    cabinetPixels.pixels,
+    cabinetGrid.total,
+    totalPixels,
+    requiredMbps,
+    requirements,
+  ]);
 
-  const viableRows = projectRows.filter((row) =>
+  const issueLines = useMemo(() => {
+    const lines: string[] = [];
+    if (!selectedProcessor || !selectedCard || !activeRow) return lines;
+
+    const { processor, processorOutput, processorSupport, support, card } = activeRow;
+    const allowedModes = outputModesForPreference(outputPreference);
+
+    if (!processorHasAllowedOutputMode(processor, allowedModes)) {
+      lines.push(t("tools.projectPlanner.issue.linkSet"));
+    } else if (!processorOutput) {
+      lines.push(t("tools.projectPlanner.issue.outputShortfall"));
+    }
+
+    if (!processorSupport.widthOk) lines.push(t("tools.projectPlanner.issue.processorWidth"));
+    if (!processorSupport.heightOk) lines.push(t("tools.projectPlanner.issue.processorHeight"));
+    if (!processorSupport.frameOk) lines.push(t("tools.projectPlanner.issue.processorFps"));
+    if (!processorSupport.depthOk) lines.push(t("tools.projectPlanner.issue.processorDepth"));
+
+    if (!support.depthOk) lines.push(t("tools.projectPlanner.issue.receiverDepth"));
+    if (!support.frameOk) lines.push(t("tools.projectPlanner.issue.receiverFps"));
+
+    for (const req of requirements) {
+      if (!receiverMeetsRequirement(card, req)) {
+        lines.push(
+          t("tools.projectPlanner.issue.requirementReceiver", {
+            name: t(`tools.projectPlanner.requirement.${req}`),
+          }),
+        );
+      }
+      if (!processorMeetsRequirement(processor, req)) {
+        lines.push(
+          t("tools.projectPlanner.issue.requirementProcessor", {
+            name: t(`tools.projectPlanner.requirement.${req}`),
+          }),
+        );
+      }
+    }
+
+    return lines;
+  }, [selectedProcessor, selectedCard, activeRow, outputPreference, requirements, t]);
+
+  const pairingOk =
+    activeRow &&
+    selectedCard &&
     plannerPairingMeetsSignalLimits({
-      processorOutput: row.processorOutput,
-      card: row.card,
-      support: row.support,
-      processorSupport: row.processorSupport,
-    }),
-  );
-  const recommendationRows = viableRows.sort((a, b) => {
-    if (a.exact !== b.exact) return a.exact ? -1 : 1;
-    if (a.processorSupport.exact !== b.processorSupport.exact) return a.processorSupport.exact ? -1 : 1;
-    if (a.requirementMisses !== b.requirementMisses) return a.requirementMisses - b.requirementMisses;
-    if (a.installedCards !== b.installedCards) return a.installedCards - b.installedCards;
-    if (a.requiredPorts !== b.requiredPorts) return a.requiredPorts - b.requiredPorts;
-    const capA = a.processorOutput?.capacityPixels ?? 0;
-    const capB = b.processorOutput?.capacityPixels ?? 0;
-    if (capA !== capB) return capA - capB;
-    const procCmp = a.processor.name.localeCompare(b.processor.name, undefined, { numeric: true });
-    if (procCmp !== 0) return procCmp;
-    return a.card.name.localeCompare(b.card.name, undefined, { numeric: true });
-  });
+      processorOutput: activeRow.processorOutput,
+      card: selectedCard,
+      support: activeRow.support,
+      processorSupport: activeRow.processorSupport,
+    });
 
-  const best = recommendationRows[0];
-  const hasExactRecommendations = recommendationRows.some((row) => row.exact);
+  const inputConnectorTotal = totalInputConnectors(inputLines);
+  const inputSummaryText = inputLines
+    .filter((l) => l.count > 0)
+    .map((l) => `${nf0.format(l.count)}× ${t(`tools.projectPlanner.inputIf.${l.interfaceId}`)}`)
+    .join("; ");
+
   const translatedInputBoard = t("tools.projectPlanner.inputBoard");
   const translatedOutputBoard = t("tools.projectPlanner.outputBoard");
   const inputBoardLabel = translatedInputBoard === "tools.projectPlanner.inputBoard" ? "Input board" : translatedInputBoard;
@@ -279,6 +356,18 @@ export function ProjectPlannerTools() {
     setRequirements((current) =>
       current.includes(requirement) ? current.filter((item) => item !== requirement) : [...current, requirement],
     );
+  }
+
+  function setInputLine(index: number, patch: Partial<PlannerInputLine>) {
+    setInputLines((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+
+  function addInputLine() {
+    setInputLines((rows) => [...rows, { interfaceId: "hdmi20", count: 1 }]);
+  }
+
+  function removeInputLine(index: number) {
+    setInputLines((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== index)));
   }
 
   return (
@@ -353,6 +442,85 @@ export function ProjectPlannerTools() {
           </fieldset>
         </div>
 
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelProcessor")}</span>
+            <select className="input w-full" value={processorName} onChange={(e) => setProcessorName(e.target.value)}>
+              {SENDER_PROCESSOR_CATALOG.map((p) => (
+                <option key={p.name} value={p.name}>
+                  {p.name} ({p.series})
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block text-sm">
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelReceiverCard")}</span>
+            <select className="input w-full" value={cardName} onChange={(e) => setCardName(e.target.value)} disabled={plannerCards.length === 0}>
+              {plannerCards.map((c) => (
+                <option key={c.name} value={c.name}>
+                  {c.name} · {c.series}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+
+        <div className="mt-6">
+          <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>
+          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.inputSourcesLead")}</p>
+          <div className="mt-3 space-y-2">
+            {inputLines.map((line, index) => (
+              <div key={inputLineKey(line, index)} className="flex flex-wrap items-end gap-2">
+                <label className="min-w-[200px] flex-1 text-sm">
+                  <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputType")}</span>
+                  <select
+                    className="input w-full"
+                    value={line.interfaceId}
+                    onChange={(e) => setInputLine(index, { interfaceId: e.target.value as PlannerInputInterfaceId })}
+                  >
+                    {PLANNER_INPUT_INTERFACE_IDS.map((id) => (
+                      <option key={id} value={id}>
+                        {t(`tools.projectPlanner.inputIf.${id}`)}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="w-28 text-sm">
+                  <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputCount")}</span>
+                  <input
+                    className="input w-full"
+                    inputMode="numeric"
+                    min={1}
+                    value={line.count}
+                    onChange={(e) => setInputLine(index, { count: Math.max(1, parsePositiveInt(e.target.value, 1)) })}
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                  onClick={() => removeInputLine(index)}
+                  disabled={inputLines.length <= 1}
+                >
+                  {t("tools.projectPlanner.inputRemove")}
+                </button>
+              </div>
+            ))}
+          </div>
+          <button
+            type="button"
+            className="mt-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-900"
+            onClick={addInputLine}
+          >
+            {t("tools.projectPlanner.inputAdd")}
+          </button>
+          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+            {t("tools.projectPlanner.inputSummary", {
+              total: nf0.format(inputConnectorTotal),
+              list: inputSummaryText || t("tools.projectPlanner.inputSummaryEmpty"),
+            })}
+          </p>
+        </div>
+
         <fieldset className="mt-4">
           <legend className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.requirements")}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
@@ -361,11 +529,7 @@ export function ProjectPlannerTools() {
                 key={requirement}
                 className="inline-flex items-center gap-2 rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 dark:border-zinc-700 dark:bg-zinc-950 dark:text-zinc-300"
               >
-                <input
-                  type="checkbox"
-                  checked={requirements.includes(requirement)}
-                  onChange={() => toggleRequirement(requirement)}
-                />
+                <input type="checkbox" checked={requirements.includes(requirement)} onChange={() => toggleRequirement(requirement)} />
                 {t(`tools.projectPlanner.requirement.${requirement}`)}
               </label>
             ))}
@@ -417,185 +581,131 @@ export function ProjectPlannerTools() {
           />
         </dl>
 
-        {!best ? (
-          <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">{t("tools.projectPlanner.noViablePairings")}</p>
+        {plannerCards.length === 0 ? (
+          <p className="mt-4 text-sm text-amber-800 dark:text-amber-200">{t("tools.projectPlanner.noCardsForLinkSet")}</p>
         ) : null}
 
-        {best ? (
+        {issueLines.length > 0 ? (
+          <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 p-3 dark:border-amber-900/60 dark:bg-amber-950/40">
+            <p className="text-sm font-medium text-amber-900 dark:text-amber-100">{t("tools.projectPlanner.issueTitle")}</p>
+            <ul className="mt-2 list-inside list-disc text-sm text-amber-900 dark:text-amber-100">
+              {issueLines.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        {issueLines.length === 0 && pairingOk && activeRow ? (
+          <p className="mt-4 text-sm text-emerald-800 dark:text-emerald-200">{t("tools.projectPlanner.pairingOk")}</p>
+        ) : null}
+
+        {activeRow ? (
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.bestProcessor")}</p>
-              <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{best.processor.name}</h3>
-              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{best.processor.overview}</p>
-              {best.inputBoard || best.outputBoard ? (
+              <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{activeRow.processor.name}</h3>
+              <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{activeRow.processor.overview}</p>
+              {activeRow.inputBoard || activeRow.outputBoard ? (
                 <div className="mt-3 space-y-1">
-                  {best.inputBoard ? (
+                  {activeRow.inputBoard ? (
                     <BoardLine
                       label={inputBoardLabel}
-                      name={best.inputBoard.name}
-                      model={best.inputBoard.model}
-                      quantity={best.inputBoard.quantity}
-                      maxBoards={best.inputBoard.maxBoards}
-                      withinLimit={best.inputBoard.withinLimit}
+                      name={activeRow.inputBoard.name}
+                      model={activeRow.inputBoard.model}
+                      quantity={activeRow.inputBoard.quantity}
+                      maxBoards={activeRow.inputBoard.maxBoards}
+                      withinLimit={activeRow.inputBoard.withinLimit}
                     />
                   ) : null}
-                  {best.outputBoard ? (
+                  {activeRow.outputBoard ? (
                     <BoardLine
                       label={outputBoardLabel}
-                      name={best.outputBoard.name}
-                      model={best.outputBoard.model}
-                      quantity={best.outputBoard.quantity}
-                      maxBoards={best.outputBoard.maxBoards}
-                      withinLimit={best.outputBoard.withinLimit}
+                      name={activeRow.outputBoard.name}
+                      model={activeRow.outputBoard.model}
+                      quantity={activeRow.outputBoard.quantity}
+                      maxBoards={activeRow.outputBoard.maxBoards}
+                      withinLimit={activeRow.outputBoard.withinLimit}
                     />
                   ) : null}
                 </div>
               ) : null}
               <div className="mt-3 flex flex-wrap gap-1">
-                <CapabilityChip state={best.processorSupport.exact ? "ok" : "bad"}>
-                  {best.processorOutput
+                <CapabilityChip state={activeRow.processorSupport.exact ? "ok" : "bad"}>
+                  {activeRow.processorOutput
                     ? t("tools.projectPlanner.processorOutput", {
-                        mode: modeLabel(t, best.processorOutput.mode),
-                        ports: nf0.format(best.processorOutput.ports),
-                        capacity: nf0.format(best.processorOutput.capacityPixels),
+                        mode: modeLabel(t, activeRow.processorOutput.mode),
+                        ports: nf0.format(activeRow.processorOutput.ports),
+                        capacity: nf0.format(activeRow.processorOutput.capacityPixels),
                       })
                     : t("tools.projectPlanner.noProcessorOutput")}
                 </CapabilityChip>
-                <CapabilityChip state={best.processor.maxFrameRateHz === null || best.processor.maxFrameRateHz >= fps ? "ok" : "bad"}>
-                  {t("tools.projectPlanner.fpsBadge", { fps: nf1.format(best.processor.maxFrameRateHz ?? fps) })}
+                <CapabilityChip state={activeRow.processor.maxFrameRateHz === null || activeRow.processor.maxFrameRateHz >= fps ? "ok" : "bad"}>
+                  {t("tools.projectPlanner.fpsBadge", { fps: nf1.format(activeRow.processor.maxFrameRateHz ?? fps) })}
                 </CapabilityChip>
               </div>
             </div>
 
             <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950">
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.bestReceiver")}</p>
-              <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{best.card.name}</h3>
+              <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{activeRow.card.name}</h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
                 {t("tools.projectPlanner.selectedCardLine", {
-                  series: best.card.series,
-                  capacity: best.card.maxCapacityLabel,
-                  pixels: nf0.format(best.card.maxCapacityPixels),
+                  series: activeRow.card.series,
+                  capacity: activeRow.card.maxCapacityLabel,
+                  pixels: nf0.format(activeRow.card.maxCapacityPixels),
                 })}
               </p>
               <div className="mt-3 flex flex-wrap gap-1">
-                <CapabilityChip state={best.support.depthOk ? "ok" : best.support.depthKnown ? "bad" : "unknown"}>
-                  {best.support.depthKnown
-                    ? t("tools.projectPlanner.depthBadge", { bpc: nf0.format(best.card.maxColorDepthBpc ?? 0) })
+                <CapabilityChip state={activeRow.support.depthOk ? "ok" : activeRow.support.depthKnown ? "bad" : "unknown"}>
+                  {activeRow.support.depthKnown
+                    ? t("tools.projectPlanner.depthBadge", { bpc: nf0.format(activeRow.card.maxColorDepthBpc ?? 0) })
                     : t("tools.projectPlanner.depthUnknown")}
                 </CapabilityChip>
-                <CapabilityChip state={best.support.frameOk ? "ok" : best.support.frameKnown ? "bad" : "unknown"}>
-                  {best.support.frameKnown
-                    ? t("tools.projectPlanner.fpsBadge", { fps: nf1.format(best.card.maxFrameRateHz ?? 0) })
+                <CapabilityChip state={activeRow.support.frameOk ? "ok" : activeRow.support.frameKnown ? "bad" : "unknown"}>
+                  {activeRow.support.frameKnown
+                    ? t("tools.projectPlanner.fpsBadge", { fps: nf1.format(activeRow.card.maxFrameRateHz ?? 0) })
                     : t("tools.projectPlanner.fpsUnknown")}
                 </CapabilityChip>
-                <CapabilityChip state="ok">{modeLabel(t, best.card.portSpeed)}</CapabilityChip>
+                <CapabilityChip state="ok">{modeLabel(t, activeRow.card.portSpeed)}</CapabilityChip>
               </div>
             </div>
           </div>
         ) : null}
+
+        {activeRow ? (
+          <dl className="mt-4 grid gap-4 lg:grid-cols-2 xl:grid-cols-4">
+            <LessonLine label={plannerText("tools.projectPlanner.guideWhy")}>
+              {activeRow.processorOutput
+                ? plannerText("tools.projectPlanner.outputCapacityLine", {
+                    output: activeRow.processorOutput.label,
+                    required: nf0.format(activeRow.requiredPorts),
+                    available: nf0.format(activeRow.processorOutput.ports),
+                    capacity: nf0.format(activeRow.processorOutput.capacityPixels),
+                  })
+                : t("tools.projectPlanner.noProcessorOutput")}
+            </LessonLine>
+            <LessonLine label={plannerText("tools.projectPlanner.guideInstall")}>
+              {plannerText("tools.projectPlanner.cardsInstallLine", {
+                cards: nf0.format(activeRow.installedCards),
+                perCabinet: nf0.format(activeRow.perCabinet),
+                minimum: nf0.format(activeRow.pixelMinimum),
+              })}
+            </LessonLine>
+            <LessonLine label={plannerText("tools.projectPlanner.guideSignal")}>
+              {plannerText("tools.projectPlanner.bandwidthLine", {
+                gbps: nf2.format(requiredMbps / 1000),
+                mode: modeLabel(t, activeRow.outputMode),
+              })}
+            </LessonLine>
+            <LessonLine label={plannerText("tools.projectPlanner.guideVerify")}>
+              {activeRow.exact
+                ? plannerText("tools.projectPlanner.verifyCards")
+                : plannerText("tools.projectPlanner.verifyReview", { misses: nf0.format(activeRow.requirementMisses) })}
+            </LessonLine>
+          </dl>
+        ) : null}
       </section>
-
-      {recommendationRows.length > 0 ? (
-      <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.recommendationsTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          {hasExactRecommendations ? t("tools.projectPlanner.recommendationsSubtitle") : t("tools.projectPlanner.noExactRecommendations")}
-        </p>
-
-        <div className="mt-4 max-h-[min(85vh,1400px)] space-y-3 overflow-y-auto pr-1">
-          {recommendationRows.map((row, index) => (
-            <article
-              key={`${index}-${row.processor.name}-${row.card.name}-${row.processorOutput?.mode ?? "none"}`}
-              className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950"
-            >
-              <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                <div>
-                  <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
-                    {index === 0 ? plannerText("tools.projectPlanner.recommendedChoice") : plannerText("tools.projectPlanner.optionLabel", { rank: nf0.format(index + 1) })}
-                  </p>
-                  <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">
-                    {row.processor.name} + {row.card.name}
-                  </h3>
-                  <p className="mt-1 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">
-                    {row.exact ? plannerText("tools.projectPlanner.exactReason") : plannerText("tools.projectPlanner.reviewReason")}
-                  </p>
-                </div>
-
-                <div className="flex flex-wrap gap-1 lg:justify-end">
-                  <CapabilityChip state={row.exact ? "ok" : row.processorSupport.outputOk ? "unknown" : "bad"}>
-                    {row.exact ? t("tools.projectPlanner.fitExact") : row.processorSupport.outputOk ? t("tools.projectPlanner.fitReview") : t("tools.projectPlanner.fitNoOutput")}
-                  </CapabilityChip>
-                  <CapabilityChip state={row.support.depthOk ? "ok" : row.support.depthKnown ? "bad" : "unknown"}>
-                    {row.support.depthKnown
-                      ? t("tools.projectPlanner.depthBadge", { bpc: nf0.format(row.card.maxColorDepthBpc ?? 0) })
-                      : t("tools.projectPlanner.depthUnknown")}
-                  </CapabilityChip>
-                  <CapabilityChip state={row.support.frameOk ? "ok" : row.support.frameKnown ? "bad" : "unknown"}>
-                    {row.support.frameKnown
-                      ? t("tools.projectPlanner.fpsBadge", { fps: nf1.format(row.card.maxFrameRateHz ?? 0) })
-                      : t("tools.projectPlanner.fpsUnknown")}
-                  </CapabilityChip>
-                </div>
-              </div>
-
-              <dl className="mt-4 grid gap-4 lg:grid-cols-4">
-                <LessonLine label={plannerText("tools.projectPlanner.guideWhy")}>
-                  {row.processorOutput
-                    ? plannerText("tools.projectPlanner.outputCapacityLine", {
-                        output: row.processorOutput.label,
-                        required: nf0.format(row.requiredPorts),
-                        available: nf0.format(row.processorOutput.ports),
-                        capacity: nf0.format(row.processorOutput.capacityPixels),
-                      })
-                    : t("tools.projectPlanner.noProcessorOutput")}
-                </LessonLine>
-                <LessonLine label={plannerText("tools.projectPlanner.guideInstall")}>
-                  {plannerText("tools.projectPlanner.cardsInstallLine", {
-                    cards: nf0.format(row.installedCards),
-                    perCabinet: nf0.format(row.perCabinet),
-                    minimum: nf0.format(row.pixelMinimum),
-                  })}
-                </LessonLine>
-                <LessonLine label={plannerText("tools.projectPlanner.guideSignal")}>
-                  {plannerText("tools.projectPlanner.bandwidthLine", {
-                    gbps: nf2.format(requiredMbps / 1000),
-                    mode: modeLabel(t, row.outputMode),
-                  })}
-                </LessonLine>
-                <LessonLine label={plannerText("tools.projectPlanner.guideVerify")}>
-                  {row.exact
-                    ? plannerText("tools.projectPlanner.verifyCards")
-                    : plannerText("tools.projectPlanner.verifyReview", { misses: nf0.format(row.requirementMisses) })}
-                </LessonLine>
-              </dl>
-
-              <div className="mt-4 space-y-1 border-t border-zinc-100 pt-3 dark:border-zinc-800">
-                {row.inputBoard ? (
-                  <BoardLine
-                    label={inputBoardLabel}
-                    name={row.inputBoard.name}
-                    model={row.inputBoard.model}
-                    quantity={row.inputBoard.quantity}
-                    maxBoards={row.inputBoard.maxBoards}
-                    withinLimit={row.inputBoard.withinLimit}
-                  />
-                ) : null}
-                {row.outputBoard ? (
-                  <BoardLine
-                    label={outputBoardLabel}
-                    name={row.outputBoard.name}
-                    model={row.outputBoard.model}
-                    quantity={row.outputBoard.quantity}
-                    maxBoards={row.outputBoard.maxBoards}
-                    withinLimit={row.outputBoard.withinLimit}
-                  />
-                ) : null}
-              </div>
-            </article>
-          ))}
-        </div>
-      </section>
-      ) : null}
     </div>
   );
 }

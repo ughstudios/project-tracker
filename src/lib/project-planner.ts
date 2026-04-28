@@ -12,6 +12,26 @@ export type ProcessorOutputMode = "1g" | "5g" | "10g";
 export type ProjectOutputPreference = "1g" | "5g";
 export type ProjectRequirement = "hdr" | "lowLatency" | "redundancy" | "monitoring";
 
+/** User-selected physical input connectors for planning notes (maps to typical Colorlight input boards). */
+export const PLANNER_INPUT_INTERFACE_IDS = [
+  "hdmi20",
+  "hdmi21",
+  "dp12",
+  "dp14",
+  "sdi3g",
+  "sdi6g",
+  "sdi12g",
+  "threeInOne",
+  "st2110",
+] as const;
+export type PlannerInputInterfaceId = (typeof PLANNER_INPUT_INTERFACE_IDS)[number];
+
+export type PlannerInputLine = { interfaceId: PlannerInputInterfaceId; count: number };
+
+export function totalInputConnectors(lines: PlannerInputLine[]): number {
+  return lines.reduce((sum, line) => sum + Math.max(0, Math.trunc(line.count)), 0);
+}
+
 type RawReceiverCard = {
   name?: string;
   series?: string;
@@ -120,6 +140,13 @@ export type SenderProcessorCatalogItem = {
   outputs: ProcessorOutput[];
   features: string[];
 };
+
+export function processorHasAllowedOutputMode(
+  processor: SenderProcessorCatalogItem,
+  allowedModes: ProcessorOutputMode[],
+): boolean {
+  return processor.outputs.some((o) => allowedModes.includes(o.mode));
+}
 
 export type CabinetPixelSize = {
   width: number;
