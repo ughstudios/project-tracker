@@ -16,6 +16,9 @@ import {
   portsNeededForMbps,
   processorMeetsRequirement,
   processorSupportsTarget,
+  recommendProcessorInputBoard,
+  recommendProcessorOutputBoard,
+  requiredPortsForProcessorOutput,
   receiverMeetsRequirement,
   receiverSupportsTarget,
   usableMbpsForPortSpeed,
@@ -56,6 +59,29 @@ function modeLabel(t: TranslateFn, mode: ProcessorOutputMode | ReceiverPortSpeed
   if (mode === "10g") return t("tools.projectPlanner.port10g");
   if (mode === "unknown") return t("tools.projectPlanner.port1gAssumed");
   return t("tools.projectPlanner.port1g");
+}
+
+function BoardLine({
+  label,
+  name,
+  model,
+  quantity,
+  maxBoards,
+  withinLimit,
+}: {
+  label: string;
+  name: string;
+  model: string;
+  quantity: number;
+  maxBoards: number;
+  withinLimit: boolean;
+}) {
+  return (
+    <p className={withinLimit ? "text-xs text-zinc-500 dark:text-zinc-400" : "text-xs text-red-700 dark:text-red-300"}>
+      <span className="font-medium">{label}</span>{" "}
+      {quantity} x {name} ({model}) - {quantity}/{maxBoards}
+    </p>
+  );
 }
 
 function CapabilityChip({
@@ -136,7 +162,6 @@ export function ProjectPlannerTools() {
     const receiverSpeed = planningPortSpeed(card);
     const allowedModes = outputModesForPreference(outputPreference, card.portSpeed);
     const outputMode = allowedModes.includes(receiverSpeed) ? receiverSpeed : allowedModes[0] ?? receiverSpeed;
-    const requiredPorts = portsNeededForMbps(requiredMbps, usableMbpsForPortSpeed(outputMode === "5g" ? "5g" : "1g"));
     const support = receiverSupportsTarget(card, fps, rgbBpc);
     const perCabinet = cardsPerCabinet(cabinetPixels.pixels, card.maxCapacityPixels);
     const pixelMinimum = cardsNeededByPixels(totalPixels, card.maxCapacityPixels);
@@ -150,16 +175,21 @@ export function ProjectPlannerTools() {
       (outputPreference === "auto" || outputPreference === receiverSpeed);
 
     return SENDER_PROCESSOR_CATALOG.map((processor) => {
-      const processorOutput = pickProcessorOutput(processor, totalPixels, requiredPorts, allowedModes);
+      const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, allowedModes);
+      const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
       const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
       const processorRequirementHits = requirements.filter((requirement) => processorMeetsRequirement(processor, requirement)).length;
       const exact = receiverExact && processorSupport.exact && processorRequirementHits === requirements.length;
       const requirementMisses = requirements.length * 2 - receiverRequirementHits - processorRequirementHits;
+      const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps);
+      const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts);
 
       return {
         card,
         processor,
         processorOutput,
+        inputBoard,
+        outputBoard,
         support,
         processorSupport,
         outputMode,
@@ -190,6 +220,10 @@ export function ProjectPlannerTools() {
 
   const best = recommendationRows[0];
   const hasExactRecommendations = recommendationRows.some((row) => row.exact);
+  const translatedInputBoard = t("tools.projectPlanner.inputBoard");
+  const translatedOutputBoard = t("tools.projectPlanner.outputBoard");
+  const inputBoardLabel = translatedInputBoard === "tools.projectPlanner.inputBoard" ? "Input board" : translatedInputBoard;
+  const outputBoardLabel = translatedOutputBoard === "tools.projectPlanner.outputBoard" ? "Output board" : translatedOutputBoard;
 
   function toggleRequirement(requirement: ProjectRequirement) {
     setRequirements((current) =>
@@ -331,6 +365,30 @@ export function ProjectPlannerTools() {
               <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.bestProcessor")}</p>
               <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{best.processor.name}</h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{best.processor.overview}</p>
+              {best.inputBoard || best.outputBoard ? (
+                <div className="mt-3 space-y-1">
+                  {best.inputBoard ? (
+                    <BoardLine
+                      label={inputBoardLabel}
+                      name={best.inputBoard.name}
+                      model={best.inputBoard.model}
+                      quantity={best.inputBoard.quantity}
+                      maxBoards={best.inputBoard.maxBoards}
+                      withinLimit={best.inputBoard.withinLimit}
+                    />
+                  ) : null}
+                  {best.outputBoard ? (
+                    <BoardLine
+                      label={outputBoardLabel}
+                      name={best.outputBoard.name}
+                      model={best.outputBoard.model}
+                      quantity={best.outputBoard.quantity}
+                      maxBoards={best.outputBoard.maxBoards}
+                      withinLimit={best.outputBoard.withinLimit}
+                    />
+                  ) : null}
+                </div>
+              ) : null}
               <div className="mt-3 flex flex-wrap gap-1">
                 <CapabilityChip state={best.processorSupport.exact ? "ok" : "bad"}>
                   {best.processorOutput
@@ -399,6 +457,26 @@ export function ProjectPlannerTools() {
                   <td className="py-3 pr-3">
                     <p className="font-semibold text-zinc-900 dark:text-zinc-100">{row.processor.name}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">{row.processor.series}</p>
+                    {row.inputBoard ? (
+                      <BoardLine
+                        label={inputBoardLabel}
+                        name={row.inputBoard.name}
+                        model={row.inputBoard.model}
+                        quantity={row.inputBoard.quantity}
+                        maxBoards={row.inputBoard.maxBoards}
+                        withinLimit={row.inputBoard.withinLimit}
+                      />
+                    ) : null}
+                    {row.outputBoard ? (
+                      <BoardLine
+                        label={outputBoardLabel}
+                        name={row.outputBoard.name}
+                        model={row.outputBoard.model}
+                        quantity={row.outputBoard.quantity}
+                        maxBoards={row.outputBoard.maxBoards}
+                        withinLimit={row.outputBoard.withinLimit}
+                      />
+                    ) : null}
                   </td>
                   <td className="px-3 py-3">
                     <p className="font-semibold text-zinc-900 dark:text-zinc-100">{row.card.name}</p>
