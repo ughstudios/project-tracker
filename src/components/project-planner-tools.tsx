@@ -24,7 +24,7 @@ import {
   type ProjectRequirement,
   type ReceiverCardCatalogItem,
   type ReceiverPortSpeed,
-} from "@/lib/receiver-card-planner";
+} from "@/lib/project-planner";
 import type { ReactNode } from "react";
 import { useMemo, useState } from "react";
 
@@ -52,10 +52,10 @@ function planningPortSpeed(card: ReceiverCardCatalogItem): Exclude<ReceiverPortS
 }
 
 function modeLabel(t: TranslateFn, mode: ProcessorOutputMode | ReceiverPortSpeed): string {
-  if (mode === "5g") return t("tools.receiverPlanner.port5g");
-  if (mode === "10g") return t("tools.projectSuggestor.port10g");
-  if (mode === "unknown") return t("tools.receiverPlanner.port1gAssumed");
-  return t("tools.receiverPlanner.port1g");
+  if (mode === "5g") return t("tools.projectPlanner.port5g");
+  if (mode === "10g") return t("tools.projectPlanner.port10g");
+  if (mode === "unknown") return t("tools.projectPlanner.port1gAssumed");
+  return t("tools.projectPlanner.port1g");
 }
 
 function CapabilityChip({
@@ -93,7 +93,7 @@ function Metric({
   );
 }
 
-export function ReceiverCardPlannerTools() {
+export function ProjectPlannerTools() {
   const { t, locale } = useI18n();
   const nf0 = useMemo(
     () => new Intl.NumberFormat(locale === "zh" ? "zh-CN" : "en-US", { maximumFractionDigits: 0 }),
@@ -200,18 +200,18 @@ export function ReceiverCardPlannerTools() {
   return (
     <div className="space-y-4">
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectSuggestor.title")}</h2>
-        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectSuggestor.subtitle")}</p>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.title")}</h2>
+        <p className="mt-2 text-sm leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.subtitle")}</p>
         <ul className="mt-2 list-inside list-disc text-sm text-zinc-600 dark:text-zinc-400">
-          <li>{t("tools.projectSuggestor.sourceNote")}</li>
-          <li>{t("tools.receiverPlanner.disclaimerBulletPorts")}</li>
-          <li>{t("tools.receiverPlanner.disclaimerBulletCards")}</li>
+          <li>{t("tools.projectPlanner.sourceNote")}</li>
+          <li>{t("tools.projectPlanner.disclaimerBulletPorts")}</li>
+          <li>{t("tools.projectPlanner.disclaimerBulletCards")}</li>
         </ul>
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectSuggestor.formTitle")}</h2>
-        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.projectSuggestor.formSubtitle")}</p>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.formTitle")}</h2>
+        <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.formSubtitle")}</p>
 
         <div className="mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <label className="block text-sm">
@@ -223,7 +223,7 @@ export function ReceiverCardPlannerTools() {
             <input className="input w-full" inputMode="numeric" value={screenHStr} onChange={(e) => setScreenHStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.receiverPlanner.labelRefresh")}</span>
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelRefresh")}</span>
             <input className="input w-full" inputMode="decimal" value={fpsStr} onChange={(e) => setFpsStr(e.target.value)} />
           </label>
           <label className="block text-sm">
@@ -240,29 +240,29 @@ export function ReceiverCardPlannerTools() {
 
         <div className="mt-6 grid gap-3 lg:grid-cols-4">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.receiverPlanner.labelCabinetWidth")}</span>
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetWidth")}</span>
             <input className="input w-full" inputMode="decimal" value={cabinetWStr} onChange={(e) => setCabinetWStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.receiverPlanner.labelCabinetHeight")}</span>
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetHeight")}</span>
             <input className="input w-full" inputMode="decimal" value={cabinetHStr} onChange={(e) => setCabinetHStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.receiverPlanner.labelPixelPitch")}</span>
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelPixelPitch")}</span>
             <input className="input w-full" inputMode="decimal" value={pitchStr} onChange={(e) => setPitchStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectSuggestor.labelOutputPreference")}</span>
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelOutputPreference")}</span>
             <select className="input w-full" value={outputPreference} onChange={(e) => setOutputPreference(e.target.value as ProjectOutputPreference)}>
-              <option value="auto">{t("tools.projectSuggestor.outputAuto")}</option>
-              <option value="1g">{t("tools.receiverPlanner.port1g")}</option>
-              <option value="5g">{t("tools.receiverPlanner.port5g")}</option>
+              <option value="auto">{t("tools.projectPlanner.outputAuto")}</option>
+              <option value="1g">{t("tools.projectPlanner.port1g")}</option>
+              <option value="5g">{t("tools.projectPlanner.port5g")}</option>
             </select>
           </label>
         </div>
 
         <fieldset className="mt-4">
-          <legend className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectSuggestor.requirements")}</legend>
+          <legend className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.requirements")}</legend>
           <div className="mt-2 flex flex-wrap gap-2">
             {REQUIREMENTS.map((requirement) => (
               <label
@@ -274,23 +274,23 @@ export function ReceiverCardPlannerTools() {
                   checked={requirements.includes(requirement)}
                   onChange={() => toggleRequirement(requirement)}
                 />
-                {t(`tools.projectSuggestor.requirement.${requirement}`)}
+                {t(`tools.projectPlanner.requirement.${requirement}`)}
               </label>
             ))}
           </div>
         </fieldset>
 
         <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
-          <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.receiverPlanner.cabinetPixels")}</p>
+          <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.cabinetPixels")}</p>
           <p className="mt-1 tabular-nums text-zinc-600 dark:text-zinc-400">
-            {t("tools.receiverPlanner.cabinetPixelsValue", {
+            {t("tools.projectPlanner.cabinetPixelsValue", {
               w: nf0.format(cabinetPixels.width),
               h: nf0.format(cabinetPixels.height),
               pixels: nf0.format(cabinetPixels.pixels),
             })}
           </p>
           <p className="mt-1 tabular-nums text-zinc-600 dark:text-zinc-400">
-            {t("tools.receiverPlanner.cabinetGridValue", {
+            {t("tools.projectPlanner.cabinetGridValue", {
               across: nf0.format(cabinetGrid.across),
               tall: nf0.format(cabinetGrid.tall),
               total: nf0.format(cabinetGrid.total),
@@ -300,9 +300,9 @@ export function ReceiverCardPlannerTools() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectSuggestor.resultTitle")}</h2>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.resultTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          {t("tools.receiverPlanner.resultSummary", {
+          {t("tools.projectPlanner.resultSummary", {
             w: nf0.format(screenW),
             h: nf0.format(screenH),
             fps: nf1.format(fps),
@@ -312,13 +312,13 @@ export function ReceiverCardPlannerTools() {
         </p>
 
         <dl className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          <Metric label={t("tools.receiverPlanner.metricPixels")} value={nf0.format(totalPixels)} note={t("tools.receiverPlanner.metricPixelsNote")} />
-          <Metric label={t("tools.receiverPlanner.metricBandwidth")} value={`${nf2.format(requiredMbps / 1000)} Gbit/s`} note={t("tools.receiverPlanner.metricBandwidthNote")} />
-          <Metric label={t("tools.receiverPlanner.metricPorts")} value={`${nf0.format(ports1g)} / ${nf0.format(ports5g)}`} note={t("tools.receiverPlanner.metricPortsNote")} />
+          <Metric label={t("tools.projectPlanner.metricPixels")} value={nf0.format(totalPixels)} note={t("tools.projectPlanner.metricPixelsNote")} />
+          <Metric label={t("tools.projectPlanner.metricBandwidth")} value={`${nf2.format(requiredMbps / 1000)} Gbit/s`} note={t("tools.projectPlanner.metricBandwidthNote")} />
+          <Metric label={t("tools.projectPlanner.metricPorts")} value={`${nf0.format(ports1g)} / ${nf0.format(ports5g)}`} note={t("tools.projectPlanner.metricPortsNote")} />
           <Metric
-            label={t("tools.receiverPlanner.metricCabinets")}
+            label={t("tools.projectPlanner.metricCabinets")}
             value={nf0.format(cabinetGrid.total)}
-            note={t("tools.receiverPlanner.metricCabinetsNote", {
+            note={t("tools.projectPlanner.metricCabinetsNote", {
               across: nf0.format(cabinetGrid.across),
               tall: nf0.format(cabinetGrid.tall),
             })}
@@ -328,30 +328,30 @@ export function ReceiverCardPlannerTools() {
         {best ? (
           <div className="mt-4 grid gap-3 lg:grid-cols-2">
             <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectSuggestor.bestProcessor")}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.bestProcessor")}</p>
               <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{best.processor.name}</h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">{best.processor.overview}</p>
               <div className="mt-3 flex flex-wrap gap-1">
                 <CapabilityChip state={best.processorSupport.exact ? "ok" : "bad"}>
                   {best.processorOutput
-                    ? t("tools.projectSuggestor.processorOutput", {
+                    ? t("tools.projectPlanner.processorOutput", {
                         mode: modeLabel(t, best.processorOutput.mode),
                         ports: nf0.format(best.processorOutput.ports),
                         capacity: nf0.format(best.processorOutput.capacityPixels),
                       })
-                    : t("tools.projectSuggestor.noProcessorOutput")}
+                    : t("tools.projectPlanner.noProcessorOutput")}
                 </CapabilityChip>
                 <CapabilityChip state={best.processor.maxFrameRateHz === null || best.processor.maxFrameRateHz >= fps ? "ok" : "bad"}>
-                  {t("tools.receiverPlanner.fpsBadge", { fps: nf1.format(best.processor.maxFrameRateHz ?? fps) })}
+                  {t("tools.projectPlanner.fpsBadge", { fps: nf1.format(best.processor.maxFrameRateHz ?? fps) })}
                 </CapabilityChip>
               </div>
             </div>
 
             <div className="rounded-lg border border-zinc-200 bg-white p-4 dark:border-zinc-700 dark:bg-zinc-950">
-              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectSuggestor.bestReceiver")}</p>
+              <p className="text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.bestReceiver")}</p>
               <h3 className="mt-1 text-lg font-semibold text-zinc-900 dark:text-zinc-100">{best.card.name}</h3>
               <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-                {t("tools.receiverPlanner.selectedCardLine", {
+                {t("tools.projectPlanner.selectedCardLine", {
                   series: best.card.series,
                   capacity: best.card.maxCapacityLabel,
                   pixels: nf0.format(best.card.maxCapacityPixels),
@@ -360,13 +360,13 @@ export function ReceiverCardPlannerTools() {
               <div className="mt-3 flex flex-wrap gap-1">
                 <CapabilityChip state={best.support.depthOk ? "ok" : best.support.depthKnown ? "bad" : "unknown"}>
                   {best.support.depthKnown
-                    ? t("tools.receiverPlanner.depthBadge", { bpc: nf0.format(best.card.maxColorDepthBpc ?? 0) })
-                    : t("tools.receiverPlanner.depthUnknown")}
+                    ? t("tools.projectPlanner.depthBadge", { bpc: nf0.format(best.card.maxColorDepthBpc ?? 0) })
+                    : t("tools.projectPlanner.depthUnknown")}
                 </CapabilityChip>
                 <CapabilityChip state={best.support.frameOk ? "ok" : best.support.frameKnown ? "bad" : "unknown"}>
                   {best.support.frameKnown
-                    ? t("tools.receiverPlanner.fpsBadge", { fps: nf1.format(best.card.maxFrameRateHz ?? 0) })
-                    : t("tools.receiverPlanner.fpsUnknown")}
+                    ? t("tools.projectPlanner.fpsBadge", { fps: nf1.format(best.card.maxFrameRateHz ?? 0) })
+                    : t("tools.projectPlanner.fpsUnknown")}
                 </CapabilityChip>
                 <CapabilityChip state="ok">{modeLabel(t, best.card.portSpeed)}</CapabilityChip>
               </div>
@@ -376,21 +376,21 @@ export function ReceiverCardPlannerTools() {
       </section>
 
       <section className="panel-surface rounded-xl p-4">
-        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectSuggestor.recommendationsTitle")}</h2>
+        <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{t("tools.projectPlanner.recommendationsTitle")}</h2>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          {hasExactRecommendations ? t("tools.projectSuggestor.recommendationsSubtitle") : t("tools.projectSuggestor.noExactRecommendations")}
+          {hasExactRecommendations ? t("tools.projectPlanner.recommendationsSubtitle") : t("tools.projectPlanner.noExactRecommendations")}
         </p>
 
         <div className="mt-4 overflow-x-auto">
           <table className="min-w-[980px] w-full text-left text-sm">
             <thead className="border-b border-zinc-200 text-xs uppercase tracking-wide text-zinc-500 dark:border-zinc-700 dark:text-zinc-400">
               <tr>
-                <th className="py-2 pr-3 font-semibold">{t("tools.projectSuggestor.tableProcessor")}</th>
-                <th className="px-3 py-2 font-semibold">{t("tools.receiverPlanner.tableCard")}</th>
-                <th className="px-3 py-2 font-semibold">{t("tools.projectSuggestor.tableOutput")}</th>
-                <th className="px-3 py-2 font-semibold">{t("tools.receiverPlanner.tableCards")}</th>
-                <th className="px-3 py-2 font-semibold">{t("tools.receiverPlanner.tableCapability")}</th>
-                <th className="py-2 pl-3 font-semibold">{t("tools.projectSuggestor.tableFit")}</th>
+                <th className="py-2 pr-3 font-semibold">{t("tools.projectPlanner.tableProcessor")}</th>
+                <th className="px-3 py-2 font-semibold">{t("tools.projectPlanner.tableCard")}</th>
+                <th className="px-3 py-2 font-semibold">{t("tools.projectPlanner.tableOutput")}</th>
+                <th className="px-3 py-2 font-semibold">{t("tools.projectPlanner.tableCards")}</th>
+                <th className="px-3 py-2 font-semibold">{t("tools.projectPlanner.tableCapability")}</th>
+                <th className="py-2 pl-3 font-semibold">{t("tools.projectPlanner.tableFit")}</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-800">
@@ -409,7 +409,7 @@ export function ReceiverCardPlannerTools() {
                       <>
                         <p className="font-medium text-zinc-900 dark:text-zinc-100">{row.processorOutput.label}</p>
                         <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                          {t("tools.projectSuggestor.outputBreakdown", {
+                          {t("tools.projectPlanner.outputBreakdown", {
                             required: nf0.format(row.requiredPorts),
                             available: nf0.format(row.processorOutput.ports),
                             capacity: nf0.format(row.processorOutput.capacityPixels),
@@ -417,13 +417,13 @@ export function ReceiverCardPlannerTools() {
                         </p>
                       </>
                     ) : (
-                      <p className="text-red-700 dark:text-red-300">{t("tools.projectSuggestor.noProcessorOutput")}</p>
+                      <p className="text-red-700 dark:text-red-300">{t("tools.projectPlanner.noProcessorOutput")}</p>
                     )}
                   </td>
                   <td className="px-3 py-3 tabular-nums">
                     <p className="font-medium text-zinc-900 dark:text-zinc-100">{nf0.format(row.installedCards)}</p>
                     <p className="text-xs text-zinc-500 dark:text-zinc-400">
-                      {t("tools.receiverPlanner.cardsBreakdown", {
+                      {t("tools.projectPlanner.cardsBreakdown", {
                         perCabinet: nf0.format(row.perCabinet),
                         minimum: nf0.format(row.pixelMinimum),
                       })}
@@ -433,19 +433,19 @@ export function ReceiverCardPlannerTools() {
                     <div className="flex flex-wrap gap-1">
                       <CapabilityChip state={row.support.depthOk ? "ok" : row.support.depthKnown ? "bad" : "unknown"}>
                         {row.support.depthKnown
-                          ? t("tools.receiverPlanner.depthBadge", { bpc: nf0.format(row.card.maxColorDepthBpc ?? 0) })
-                          : t("tools.receiverPlanner.depthUnknown")}
+                          ? t("tools.projectPlanner.depthBadge", { bpc: nf0.format(row.card.maxColorDepthBpc ?? 0) })
+                          : t("tools.projectPlanner.depthUnknown")}
                       </CapabilityChip>
                       <CapabilityChip state={row.support.frameOk ? "ok" : row.support.frameKnown ? "bad" : "unknown"}>
                         {row.support.frameKnown
-                          ? t("tools.receiverPlanner.fpsBadge", { fps: nf1.format(row.card.maxFrameRateHz ?? 0) })
-                          : t("tools.receiverPlanner.fpsUnknown")}
+                          ? t("tools.projectPlanner.fpsBadge", { fps: nf1.format(row.card.maxFrameRateHz ?? 0) })
+                          : t("tools.projectPlanner.fpsUnknown")}
                       </CapabilityChip>
                     </div>
                   </td>
                   <td className="py-3 pl-3">
                     <CapabilityChip state={row.exact ? "ok" : row.processorSupport.outputOk ? "unknown" : "bad"}>
-                      {row.exact ? t("tools.projectSuggestor.fitExact") : row.processorSupport.outputOk ? t("tools.projectSuggestor.fitReview") : t("tools.projectSuggestor.fitNoOutput")}
+                      {row.exact ? t("tools.projectPlanner.fitExact") : row.processorSupport.outputOk ? t("tools.projectPlanner.fitReview") : t("tools.projectPlanner.fitNoOutput")}
                     </CapabilityChip>
                   </td>
                 </tr>
