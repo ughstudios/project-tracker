@@ -1,0 +1,104 @@
+{
+  "generated_at": "2026-04-28",
+  "source_folder": "C:\\Users\\pbssu\\OneDrive\\Desktop\\ColorlightDatasheets\\extracted_specsheets",
+  "selection_notes": "Condensed from extracted sender_processor markdown/spec indexes. LED capacities are model-level published loads where available; VX models use 650,000 pixels per 1G output port.",
+  "processors": [
+    {
+      "name": "U15 Max",
+      "series": "U Series",
+      "overview": "Modular video splicer with up to 520 million pixels through 10G fiber, 472 million pixels through 5G Ethernet, or 262 million pixels through 1G Ethernet output boards.",
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_frame_rate_hz": 240,
+      "max_color_depth_bpc": 10,
+      "outputs": [
+        { "mode": "1g", "ports": 400, "capacity_pixels": 262000000, "label": "1G Ethernet output boards" },
+        { "mode": "5g", "ports": 100, "capacity_pixels": 472000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 20, "capacity_pixels": 520000000, "label": "10G fiber output boards" }
+      ],
+      "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
+    },
+    {
+      "name": "U9 Max",
+      "series": "U Series",
+      "overview": "Modular video splicer for large LED projects with 10G fiber, 5G Ethernet, and 1G Ethernet output board options.",
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_frame_rate_hz": 240,
+      "max_color_depth_bpc": 10,
+      "outputs": [
+        { "mode": "1g", "ports": 100, "capacity_pixels": 65000000, "label": "1G Ethernet output boards" },
+        { "mode": "5g", "ports": 50, "capacity_pixels": 236000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 10, "capacity_pixels": 260000000, "label": "10G fiber output boards" }
+      ],
+      "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
+    },
+    {
+      "name": "U6 Max",
+      "series": "U Series",
+      "overview": "Modular video splicer for medium and large projects with 10G fiber, 5G Ethernet, and 1G Ethernet output board options.",
+      "max_width": 32768,
+      "max_height": 32768,
+      "max_frame_rate_hz": 240,
+      "max_color_depth_bpc": 10,
+      "outputs": [
+        { "mode": "1g", "ports": 100, "capacity_pixels": 65000000, "label": "1G Ethernet output boards" },
+        { "mode": "5g", "ports": 25, "capacity_pixels": 118000000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 5, "capacity_pixels": 130000000, "label": "10G fiber output boards" }
+      ],
+      "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
+    },
+    {
+      "name": "VX20",
+      "series": "VX Series",
+      "overview": "All-in-one video controller with 20 1G Ethernet output ports and 13 million pixels total load at 8-bit 60 Hz.",
+      "max_width": 16384,
+      "max_height": 8192,
+      "max_frame_rate_hz": 240,
+      "max_color_depth_bpc": 10,
+      "outputs": [
+        { "mode": "1g", "ports": 20, "capacity_pixels": 13000000, "label": "20 x 1G Ethernet ports" }
+      ],
+      "features": ["redundancy", "low_latency"]
+    },
+    {
+      "name": "VX12F",
+      "series": "VX Series",
+      "overview": "All-in-one video controller with 12 1G Ethernet-class outputs and 7.86 million pixels total load.",
+      "max_width": 16384,
+      "max_height": 8192,
+      "max_frame_rate_hz": 60,
+      "max_color_depth_bpc": 8,
+      "outputs": [
+        { "mode": "1g", "ports": 12, "capacity_pixels": 7860000, "label": "12 x 1G Ethernet ports" }
+      ],
+      "features": ["redundancy"]
+    },
+    {
+      "name": "VX10",
+      "series": "VX Series",
+      "overview": "All-in-one video controller with 10 1G Ethernet output ports.",
+      "max_width": 8192,
+      "max_height": 8192,
+      "max_frame_rate_hz": 60,
+      "max_color_depth_bpc": 8,
+      "outputs": [
+        { "mode": "1g", "ports": 10, "capacity_pixels": 6500000, "label": "10 x 1G Ethernet ports" }
+      ],
+      "features": ["low_latency"]
+    },
+    {
+      "name": "VX6",
+      "series": "VX Series",
+      "overview": "All-in-one video controller with 6 1G Ethernet output ports.",
+      "max_width": 8192,
+      "max_height": 8192,
+      "max_frame_rate_hz": 60,
+      "max_color_depth_bpc": 8,
+      "outputs": [
+        { "mode": "1g", "ports": 6, "capacity_pixels": 3900000, "label": "6 x 1G Ethernet ports" }
+      ],
+      "features": ["low_latency"]
+    }
+  ]
+}
