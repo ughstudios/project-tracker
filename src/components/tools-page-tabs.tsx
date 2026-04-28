@@ -3,7 +3,7 @@
 import { HdmiDpCompatibilityTools } from "@/components/hdmi-dp-compatibility-tools";
 import { EdidCompatibilityTools } from "@/components/edid-compatibility-tools";
 import { LedBandwidthTools } from "@/components/led-bandwidth-tools";
-import { ReceiverCardPlannerTools } from "@/components/receiver-card-planner-tools";
+import { ProjectPlannerTools } from "@/components/project-planner-tools";
 import { useI18n } from "@/i18n/context";
 import { TOOLS_PAGE_TAB_IDS, type ToolsPageTabId } from "@/lib/tools-page-tabs";
 import { useId, useState } from "react";
@@ -26,8 +26,8 @@ function renderToolPanel(id: ToolsPageTabId) {
       return <HdmiDpCompatibilityTools />;
     case "edid-check":
       return <EdidCompatibilityTools />;
-    case "receiver-cards":
-      return <ReceiverCardPlannerTools />;
+    case "project-planner":
+      return <ProjectPlannerTools />;
     default:
       return null;
   }

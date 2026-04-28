@@ -500,7 +500,7 @@ const en: MessageTree = {
       "led-bandwidth": "LED bandwidth",
       "display-io": "HDMI / DisplayPort",
       "edid-check": "EDID check",
-      "receiver-cards": "Project suggestor",
+      "project-planner": "Project planner",
     },
     disabledTabs: {
       "edid-check": "EDID check is temporarily disabled.",
@@ -639,8 +639,8 @@ const en: MessageTree = {
       tableVertical: "Vertical timing",
       tableSource: "Source",
     },
-    receiverPlanner: {
-      disclaimerTitle: "Receiver card planner",
+    projectPlanner: {
+      disclaimerTitle: "Project planner",
       disclaimerBody:
         "Estimate output ports and receiver card quantities using screen size, refresh rate, color depth, cabinet size, and pixel pitch.",
       disclaimerBulletPorts:
@@ -695,11 +695,9 @@ const en: MessageTree = {
       tablePorts: "Ports",
       capacityPixels: "{pixels} pixels",
       cardsBreakdown: "{perCabinet}/cabinet · {minimum} pixel min",
-    },
-    projectSuggestor: {
-      title: "Project hardware suggestor",
+      title: "Project planner",
       subtitle:
-        "Suggests a processor and receiver-card package from the extracted Colorlight sender and receiver specifications.",
+        "Plans a processor and receiver-card package from the extracted Colorlight sender and receiver specifications.",
       sourceNote: "Processor data comes from the extracted sender specs; receiver-card data comes from parsed receiver-card specifications.",
       formTitle: "Project specifications",
       formSubtitle: "Enter the screen, cabinet, signal, output, and feature requirements for the project.",
@@ -1464,7 +1462,7 @@ const zh: MessageTree = {
       "led-bandwidth": "LED 带宽",
       "display-io": "HDMI / DisplayPort",
       "edid-check": "EDID 校验",
-      "receiver-cards": "项目推荐",
+      "project-planner": "项目推荐",
     },
     disabledTabs: {
       "edid-check": "EDID 校验暂未启用。",
@@ -1600,10 +1598,10 @@ const zh: MessageTree = {
       tableVertical: "垂直时序",
       tableSource: "来源",
     },
-    receiverPlanner: {
-      disclaimerTitle: "接收卡规划",
+    projectPlanner: {
+      disclaimerTitle: "项目规划",
       disclaimerBody:
-        "本工具使用 receiver-cards.json 里的接收卡规格，根据屏体尺寸、刷新率、色深、箱体尺寸与点间距估算所需网口和接收卡数量。",
+        "本工具使用发送端与接收卡规格，根据屏体尺寸、刷新率、色深、箱体尺寸与点间距估算处理器、网口和接收卡数量。",
       disclaimerBulletPorts: "网口数量按理想未压缩 RGB 码流估算，并沿用 LED 带宽工具中的 1G / 5G 可用带宽上限。",
       disclaimerBulletCards:
         "接收卡数量按各型号公布的像素带载能力估算。实际带载会受扫描方式、驱动 IC、灰度模式、校正和箱体走线影响。",
@@ -1653,10 +1651,8 @@ const zh: MessageTree = {
       tablePorts: "网口",
       capacityPixels: "{pixels} 像素",
       cardsBreakdown: "{perCabinet}/箱 · 理论下限 {minimum}",
-    },
-    projectSuggestor: {
-      title: "项目硬件推荐",
-      subtitle: "根据已提取的 Colorlight 发送端与接收卡规格，推荐处理器和接收卡组合。",
+      title: "项目规划",
+      subtitle: "根据已提取的 Colorlight 发送端与接收卡规格，规划处理器和接收卡组合。",
       sourceNote: "处理器数据来自已提取的发送端规格；接收卡数据来自已解析的接收卡规格。",
       formTitle: "项目规格",
       formSubtitle: "填写屏体、箱体、信号、输出方式与功能要求。",
