@@ -299,10 +299,13 @@ export const RECEIVER_CARD_CATALOG: ReceiverCardCatalogItem[] = rawCards
     return seriesCompare === 0 ? a.name.localeCompare(b.name, undefined, { numeric: true }) : seriesCompare;
   });
 
+const PLANNER_EXCLUDED_RECEIVER_NAMES = new Set(["i5a", "i10_lv"]);
+
 /** Which receiver cards appear in the project planner for the selected link set (excludes 5A-* entirely). */
 export function receiverCardInPlannerCatalog(card: ReceiverCardCatalogItem, preference: ProjectOutputPreference): boolean {
   const name = card.name;
   if (/^5A-/i.test(name)) return false;
+  if (PLANNER_EXCLUDED_RECEIVER_NAMES.has(name.toLowerCase())) return false;
   if (preference === "5g") {
     return name === "HC5" || name === "RV5000";
   }
