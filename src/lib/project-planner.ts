@@ -148,6 +148,11 @@ export function processorHasAllowedOutputMode(
   return processor.outputs.some((o) => allowedModes.includes(o.mode));
 }
 
+/** True when the catalog marks the sender as modular (swappable input/output boards). VX all-in-one models omit this. */
+export function processorHasSwappableBoards(processor: SenderProcessorCatalogItem): boolean {
+  return processor.features.includes("modular");
+}
+
 export type CabinetPixelSize = {
   width: number;
   height: number;

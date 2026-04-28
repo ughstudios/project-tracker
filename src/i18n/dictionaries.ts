@@ -700,10 +700,10 @@ const en: MessageTree = {
       formSubtitle:
         "Enter screen and cabinet details, pick one processor and one receiving card, list your input connectors, and set the link set and feature requirements.",
       inputSourcesTitle: "Video inputs (planning)",
-      inputSourcesLead:
-        "Add each connector type and how many you need. Bandwidth is not calculated here—this is a source checklist. Modular controllers (e.g. Z8t, U series) use swappable input boards; all-in-one models do not.",
-      inputSourcesLeadVx:
-        "VX models are all-in-one controllers with fixed built-in video inputs—not swappable input boards. Use the rows only to match your sources against what this chassis actually provides (see datasheet).",
+      inputSourcesLeadModular:
+        "For modular controllers (e.g. U Max, Z8t), add connector types and counts to sketch input-board staffing. This does not run signal math yet.",
+      inputSourcesLeadFixed:
+        "VX Series models are all-in-one controllers: inputs are fixed on the chassis (see datasheet)—there are no swappable input boards. The connector checklist below is hidden for this processor.",
       inputType: "Input type",
       inputCount: "Count",
       inputAdd: "Add input row",
@@ -1712,10 +1712,10 @@ const zh: MessageTree = {
       formSubtitle:
         "填写屏体与箱体参数；各选一个处理器与接收卡；列出输入接口类型与数量；再设置链路组与功能要求。",
       inputSourcesTitle: "视频输入（规划）",
-      inputSourcesLead:
-        "按连接器类型与数量填写；此处不算带宽，仅作信号源清单。插卡式控制器（如 Z8t、U 系列）才有可换输入板；一体机则不是。",
-      inputSourcesLeadVx:
-        "VX 系列为一体式处理器，视频输入为机型固定的板载接口，不支持像插卡式发送器那样更换输入子卡。下面各行仅用于对照您的信号源与该机实际接口（以规格书为准）。",
+      inputSourcesLeadModular:
+        "适用于插卡式处理器（如 U Max、Z8t）：按连接器类型与数量填写，便于对照输入板配置（不参与带宽运算）。",
+      inputSourcesLeadFixed:
+        "VX 系列为一体机，输入接口固定在机箱上（见规格书），不支持更换输入子卡。当前所选为非插卡式处理器，已隐藏下方连接器清单。",
       inputType: "接口类型",
       inputCount: "数量",
       inputAdd: "添加一行",

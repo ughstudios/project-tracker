@@ -17,6 +17,7 @@ import {
   plannerPairingMeetsSignalLimits,
   portsNeededForMbps,
   processorHasAllowedOutputMode,
+  processorHasSwappableBoards,
   processorMeetsRequirement,
   processorSupportsTarget,
   recommendProcessorInputBoard,
@@ -216,6 +217,9 @@ export function ProjectPlannerTools() {
     [processorName],
   );
   const selectedCard = useMemo(() => plannerCards.find((c) => c.name === cardName) ?? null, [plannerCards, cardName]);
+  const processorIsModular = selectedProcessor ? processorHasSwappableBoards(selectedProcessor) : false;
+  /** VX and other all-in-one models: no swappable input boards. Until a processor is chosen, show modular input rows. */
+  const showModularInputPlanner = !selectedProcessor || processorIsModular;
 
   const activeRow = useMemo(() => {
     if (!selectedProcessor || !selectedCard) return null;
@@ -467,61 +471,64 @@ export function ProjectPlannerTools() {
 
         <div className="mt-6">
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>
-          <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.inputSourcesLead")}</p>
-          {selectedProcessor?.series.toLowerCase().includes("vx") ? (
-            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">{t("tools.projectPlanner.inputSourcesLeadVx")}</p>
-          ) : null}
-          <div className="mt-3 space-y-2">
-            {inputLines.map((line, index) => (
-              <div key={inputLineKey(line, index)} className="flex flex-wrap items-end gap-2">
-                <label className="min-w-[200px] flex-1 text-sm">
-                  <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputType")}</span>
-                  <select
-                    className="input w-full"
-                    value={line.interfaceId}
-                    onChange={(e) => setInputLine(index, { interfaceId: e.target.value as PlannerInputInterfaceId })}
-                  >
-                    {PLANNER_INPUT_INTERFACE_IDS.map((id) => (
-                      <option key={id} value={id}>
-                        {t(`tools.projectPlanner.inputIf.${id}`)}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <label className="w-28 text-sm">
-                  <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputCount")}</span>
-                  <input
-                    className="input w-full"
-                    inputMode="numeric"
-                    min={1}
-                    value={line.count}
-                    onChange={(e) => setInputLine(index, { count: Math.max(1, parsePositiveInt(e.target.value, 1)) })}
-                  />
-                </label>
-                <button
-                  type="button"
-                  className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
-                  onClick={() => removeInputLine(index)}
-                  disabled={inputLines.length <= 1}
-                >
-                  {t("tools.projectPlanner.inputRemove")}
-                </button>
+          {!showModularInputPlanner ? (
+            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.inputSourcesLeadFixed")}</p>
+          ) : (
+            <>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.inputSourcesLeadModular")}</p>
+              <div className="mt-3 space-y-2">
+                {inputLines.map((line, index) => (
+                  <div key={inputLineKey(line, index)} className="flex flex-wrap items-end gap-2">
+                    <label className="min-w-[200px] flex-1 text-sm">
+                      <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputType")}</span>
+                      <select
+                        className="input w-full"
+                        value={line.interfaceId}
+                        onChange={(e) => setInputLine(index, { interfaceId: e.target.value as PlannerInputInterfaceId })}
+                      >
+                        {PLANNER_INPUT_INTERFACE_IDS.map((id) => (
+                          <option key={id} value={id}>
+                            {t(`tools.projectPlanner.inputIf.${id}`)}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                    <label className="w-28 text-sm">
+                      <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputCount")}</span>
+                      <input
+                        className="input w-full"
+                        inputMode="numeric"
+                        min={1}
+                        value={line.count}
+                        onChange={(e) => setInputLine(index, { count: Math.max(1, parsePositiveInt(e.target.value, 1)) })}
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                      onClick={() => removeInputLine(index)}
+                      disabled={inputLines.length <= 1}
+                    >
+                      {t("tools.projectPlanner.inputRemove")}
+                    </button>
+                  </div>
+                ))}
               </div>
-            ))}
-          </div>
-          <button
-            type="button"
-            className="mt-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-900"
-            onClick={addInputLine}
-          >
-            {t("tools.projectPlanner.inputAdd")}
-          </button>
-          <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
-            {t("tools.projectPlanner.inputSummary", {
-              total: nf0.format(inputConnectorTotal),
-              list: inputSummaryText || t("tools.projectPlanner.inputSummaryEmpty"),
-            })}
-          </p>
+              <button
+                type="button"
+                className="mt-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-900"
+                onClick={addInputLine}
+              >
+                {t("tools.projectPlanner.inputAdd")}
+              </button>
+              <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+                {t("tools.projectPlanner.inputSummary", {
+                  total: nf0.format(inputConnectorTotal),
+                  list: inputSummaryText || t("tools.projectPlanner.inputSummaryEmpty"),
+                })}
+              </p>
+            </>
+          )}
         </div>
 
         <fieldset className="mt-4">
