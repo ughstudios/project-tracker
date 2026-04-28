@@ -49,6 +49,20 @@
       "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
     },
     {
+      "name": "Z8t",
+      "series": "Z Series",
+      "overview": "Super processor for high-end LED with modular 5G Ethernet or 10G fiber outputs, 8/10/12-bit color depth, HDR, and low latency. Published load and port counts vary by output configuration; confirm field layout against the latest datasheet.",
+      "max_width": 16384,
+      "max_height": 8192,
+      "max_frame_rate_hz": 240,
+      "max_color_depth_bpc": 12,
+      "outputs": [
+        { "mode": "5g", "ports": 32, "capacity_pixels": 23590000, "label": "5G Ethernet output boards" },
+        { "mode": "10g", "ports": 32, "capacity_pixels": 23590000, "label": "10G fiber output boards" }
+      ],
+      "features": ["modular", "hdr", "low_latency", "redundancy", "monitoring", "multi_screen"]
+    },
+    {
       "name": "VX20",
       "series": "VX Series",
       "overview": "All-in-one video controller with 20 1G Ethernet output ports and 13 million pixels total load at 8-bit 60 Hz.",

@@ -513,7 +513,8 @@ export function processorSupportsTarget(
   const widthOk = processor.maxWidth === null || width <= processor.maxWidth;
   const heightOk = processor.maxHeight === null || height <= processor.maxHeight;
   const frameOk = processor.maxFrameRateHz === null || fps <= processor.maxFrameRateHz;
-  const depthOk = processor.maxColorDepthBpc === null || bitsPerChannel <= processor.maxColorDepthBpc;
+  const depthOk =
+    processor.maxColorDepthBpc !== null && bitsPerChannel <= processor.maxColorDepthBpc;
 
   return {
     outputOk: output !== null,
@@ -523,4 +524,24 @@ export function processorSupportsTarget(
     depthOk,
     exact: output !== null && widthOk && heightOk && frameOk && depthOk,
   };
+}
+
+/** True when both sides publish enough bit depth, frame rate, and canvas size, and the processor has a matching output. */
+export function plannerPairingMeetsSignalLimits(args: {
+  processorOutput: ProcessorOutput | null;
+  card: ReceiverCardCatalogItem;
+  support: ReturnType<typeof receiverSupportsTarget>;
+  processorSupport: ReturnType<typeof processorSupportsTarget>;
+}): boolean {
+  const { processorOutput, card, support, processorSupport } = args;
+  return (
+    processorOutput !== null &&
+    card.maxCapacityPixels > 0 &&
+    support.depthOk &&
+    support.frameOk &&
+    processorSupport.depthOk &&
+    processorSupport.frameOk &&
+    processorSupport.widthOk &&
+    processorSupport.heightOk
+  );
 }

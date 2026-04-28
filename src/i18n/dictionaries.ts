@@ -720,6 +720,8 @@ const en: MessageTree = {
       recommendationsSubtitle:
         "Every viable pairing is listed below, ordered from the smallest sufficient controller output upward (least overkill first), then by model name. Compare and verify for your project.",
       noExactRecommendations: "No package satisfies every requirement exactly; these cards show the closest review candidates and what to check.",
+      noViablePairings:
+        "No catalog pairing matches your resolution, refresh, color depth, and link set at the same time. Try a different link set (for example 5G for 12-bit paths), lower refresh or bit depth, or confirm hardware with the vendor.",
       recommendedChoice: "Recommended starting point",
       optionLabel: "Option {rank}",
       exactReason: "This pairing clears the signal, output, feature, and receiver-card capacity checks entered above.",
@@ -1687,6 +1689,8 @@ const zh: MessageTree = {
       recommendationsSubtitle:
         "下列为所有可行组合，按「满足需求的最小输出带载」优先（不过度留余量），再按型号排序。请逐项对照确认。",
       noExactRecommendations: "没有完全满足所有要求的组合；下表显示最接近的复核候选。",
+      noViablePairings:
+        "当前目录下没有同时满足分辨率、刷新率、色深和链路组的处理器 + 接收卡组合。可尝试更换链路组（12bit 场景常需 5G）、降低刷新或色深，或与厂商确认实际可配硬件。",
       tableProcessor: "处理器",
       tableOutput: "处理器输出",
       tableFit: "匹配",
