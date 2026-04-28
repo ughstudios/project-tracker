@@ -46,7 +46,7 @@ export const publicFormsForEn: MessageTree = {
     projectPlanner: {
       title: "Project Planner Form",
       subtitle:
-        "Share this public calculator with customers or partners to estimate processor and receiver-card requirements.",
+        "Share this public calculator to estimate processor and receiver-card needs. Enter your real single-cabinet pixel size (not mm ÷ pitch).",
       back: "Back to Forms",
     },
   },
@@ -238,7 +238,7 @@ export const publicFormsForZh: MessageTree = {
     },
     projectPlanner: {
       title: "项目规划表",
-      subtitle: "可将此公开计算器分享给客户或合作伙伴，用于估算处理器和接收卡需求。",
+      subtitle: "可将此计算器分享给客户或合作伙伴。单箱请填实际像素宽×高，勿用 mm÷点间距推算。",
       back: "返回表单列表",
     },
   },

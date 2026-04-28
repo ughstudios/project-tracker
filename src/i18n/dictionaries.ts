@@ -641,7 +641,7 @@ const en: MessageTree = {
     projectPlanner: {
       disclaimerTitle: "Project planner",
       disclaimerBody:
-        "Estimate output ports and receiver card quantities using screen size, refresh rate, color depth, cabinet size, and pixel pitch.",
+        "Estimate output ports and receiver card quantities using screen size, refresh rate, color depth, and single-cabinet pixel width × height (enter the real cabinet resolution, not mm ÷ pitch).",
       disclaimerBulletPorts:
         "Port estimates assume an ideal uncompressed RGB stream and use the same effective 1G / 5G payload limits as the LED bandwidth tool.",
       disclaimerBulletCards:
@@ -652,9 +652,11 @@ const en: MessageTree = {
       labelRefresh: "Refresh rate (Hz)",
       labelCabinetWidth: "Cabinet width (mm)",
       labelCabinetHeight: "Cabinet height (mm)",
+      labelCabinetWidthPx: "Cabinet width (px)",
+      labelCabinetHeightPx: "Cabinet height (px)",
       labelPixelPitch: "Pixel pitch (mm)",
       labelReceiverCard: "Receiver card",
-      cabinetPixels: "Computed cabinet pixels",
+      cabinetPixels: "Single cabinet (pixels)",
       cabinetPixelsValue: "{w} x {h} px = {pixels} pixels",
       cabinetGridValue: "{across} x {tall} cabinets = {total} cabinets",
       resultSummary:
@@ -694,7 +696,8 @@ const en: MessageTree = {
         "Plans a processor and receiver-card package from the extracted Colorlight sender and receiver specifications.",
       sourceNote: "Processor data comes from the extracted sender specs; receiver-card data comes from parsed receiver-card specifications.",
       formTitle: "Project specifications",
-      formSubtitle: "Enter the screen, cabinet, signal, output, and feature requirements for the project.",
+      formSubtitle:
+        "Enter screen resolution, one cabinet’s pixel width × height, signal, 1G/5G link set, and feature requirements.",
       labelOutputPreference: "Receiver link set",
       outputSet1g: "1G set",
       outputSet5g: "5G set",
@@ -1611,7 +1614,7 @@ const zh: MessageTree = {
     projectPlanner: {
       disclaimerTitle: "项目规划",
       disclaimerBody:
-        "本工具使用发送端与接收卡规格，根据屏体尺寸、刷新率、色深、箱体尺寸与点间距估算处理器、网口和接收卡数量。",
+        "本工具使用发送端与接收卡规格，根据屏体尺寸、刷新率、色深、单箱像素宽×高（请填实际分辨，不用 mm÷点间距推算）估算处理器、网口和接收卡数量。",
       disclaimerBulletPorts: "网口数量按理想未压缩 RGB 码流估算，并沿用 LED 带宽工具中的 1G / 5G 可用带宽上限。",
       disclaimerBulletCards:
         "接收卡数量按各型号公布的像素带载能力估算。实际带载会受扫描方式、驱动 IC、灰度模式、校正和箱体走线影响。",
@@ -1621,9 +1624,11 @@ const zh: MessageTree = {
       labelRefresh: "刷新率（Hz）",
       labelCabinetWidth: "箱体宽度（mm）",
       labelCabinetHeight: "箱体高度（mm）",
+      labelCabinetWidthPx: "单箱宽度（px）",
+      labelCabinetHeightPx: "单箱高度（px）",
       labelPixelPitch: "点间距（mm）",
       labelReceiverCard: "接收卡",
-      cabinetPixels: "计算得到的箱体像素",
+      cabinetPixels: "单箱像素",
       cabinetPixelsValue: "{w} x {h} px = {pixels} 像素",
       cabinetGridValue: "{across} x {tall} 个箱体 = {total} 个箱体",
       resultSummary: "{w} x {h} @ {fps} Hz、{bpc}bit RGB 约需 {mbps} Mbps（未计入控制器特定打包或额外开销）。",
@@ -1661,7 +1666,7 @@ const zh: MessageTree = {
       subtitle: "根据已提取的 Colorlight 发送端与接收卡规格，规划处理器和接收卡组合。",
       sourceNote: "处理器数据来自已提取的发送端规格；接收卡数据来自已解析的接收卡规格。",
       formTitle: "项目规格",
-      formSubtitle: "填写屏体、箱体、信号、输出方式与功能要求。",
+      formSubtitle: "填写屏体分辨率、单箱像素宽×高、信号、1G/5G 链路与功能要求。",
       labelOutputPreference: "接收链路组",
       outputSet1g: "1G 组",
       outputSet5g: "5G 组",

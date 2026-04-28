@@ -339,6 +339,15 @@ export function portsNeededForMbps(requiredMbps: number, usableMbps: number): nu
   return Math.ceil(requiredMbps / usableMbps);
 }
 
+/** Single-cabinet pixel grid when width × height in px are known (preferred over mm ÷ pitch). */
+export function cabinetPixelsFromResolution(widthPx: number, heightPx: number): CabinetPixelSize {
+  const width = Math.max(0, Math.trunc(widthPx));
+  const height = Math.max(0, Math.trunc(heightPx));
+  if (width <= 0 || height <= 0) return { width: 0, height: 0, pixels: 0 };
+  return { width, height, pixels: width * height };
+}
+
+/** Legacy: derive cabinet pixels from cabinet mm size and pitch (approximate). Prefer {@link cabinetPixelsFromResolution}. */
 export function cabinetPixelSize(widthMm: number, heightMm: number, pixelPitchMm: number): CabinetPixelSize {
   if (widthMm <= 0 || heightMm <= 0 || pixelPitchMm <= 0) {
     return { width: 0, height: 0, pixels: 0 };

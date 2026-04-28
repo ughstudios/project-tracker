@@ -7,7 +7,7 @@ import {
   RECEIVER_CARD_CATALOG,
   receiverCardInPlannerCatalog,
   SENDER_PROCESSOR_CATALOG,
-  cabinetPixelSize,
+  cabinetPixelsFromResolution,
   cabinetsNeeded,
   cardsNeededByPixels,
   cardsPerCabinet,
@@ -170,24 +170,22 @@ export function ProjectPlannerTools() {
   const [screenHStr, setScreenHStr] = useState("2160");
   const [fpsStr, setFpsStr] = useState("120");
   const [rgbBpc, setRgbBpc] = useState<RgbBitsPerChannel>(10);
-  const [cabinetWStr, setCabinetWStr] = useState("600");
-  const [cabinetHStr, setCabinetHStr] = useState("337.5");
-  const [pitchStr, setPitchStr] = useState("1.25");
+  const [cabinetWpStr, setCabinetWpStr] = useState("480");
+  const [cabinetHpStr, setCabinetHpStr] = useState("270");
   const [outputPreference, setOutputPreference] = useState<ProjectOutputPreference>("1g");
   const [requirements, setRequirements] = useState<ProjectRequirement[]>(["hdr", "lowLatency"]);
 
   const screenW = parsePositiveInt(screenWStr, 0);
   const screenH = parsePositiveInt(screenHStr, 0);
   const fps = parsePositiveFloat(fpsStr, 0);
-  const cabinetWmm = parsePositiveFloat(cabinetWStr, 0);
-  const cabinetHmm = parsePositiveFloat(cabinetHStr, 0);
-  const pitchMm = parsePositiveFloat(pitchStr, 0);
+  const cabinetWpx = parsePositiveInt(cabinetWpStr, 0);
+  const cabinetHpx = parsePositiveInt(cabinetHpStr, 0);
 
   const totalPixels = screenW * screenH;
   const requiredMbps = ledSignalMbps(screenW, screenH, fps, rgbBpc);
   const ports1g = portsNeededForMbps(requiredMbps, usableMbpsForPortSpeed("1g"));
   const ports5g = portsNeededForMbps(requiredMbps, usableMbpsForPortSpeed("5g"));
-  const cabinetPixels = cabinetPixelSize(cabinetWmm, cabinetHmm, pitchMm);
+  const cabinetPixels = cabinetPixelsFromResolution(cabinetWpx, cabinetHpx);
   const cabinetGrid = cabinetsNeeded(screenW, screenH, cabinetPixels.width, cabinetPixels.height);
 
   const plannerCards = RECEIVER_CARD_CATALOG.filter((card) => receiverCardInPlannerCatalog(card, outputPreference));
@@ -317,18 +315,14 @@ export function ProjectPlannerTools() {
           </label>
         </div>
 
-        <div className="mt-6 grid gap-3 lg:grid-cols-4">
+        <div className="mt-6 grid gap-3 lg:grid-cols-3">
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetWidth")}</span>
-            <input className="input w-full" inputMode="decimal" value={cabinetWStr} onChange={(e) => setCabinetWStr(e.target.value)} />
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetWidthPx")}</span>
+            <input className="input w-full" inputMode="numeric" value={cabinetWpStr} onChange={(e) => setCabinetWpStr(e.target.value)} />
           </label>
           <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetHeight")}</span>
-            <input className="input w-full" inputMode="decimal" value={cabinetHStr} onChange={(e) => setCabinetHStr(e.target.value)} />
-          </label>
-          <label className="block text-sm">
-            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelPixelPitch")}</span>
-            <input className="input w-full" inputMode="decimal" value={pitchStr} onChange={(e) => setPitchStr(e.target.value)} />
+            <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelCabinetHeightPx")}</span>
+            <input className="input w-full" inputMode="numeric" value={cabinetHpStr} onChange={(e) => setCabinetHpStr(e.target.value)} />
           </label>
           <fieldset className="block text-sm">
             <legend className="mb-1 font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelOutputPreference")}</legend>
