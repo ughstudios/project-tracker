@@ -468,6 +468,9 @@ export function ProjectPlannerTools() {
         <div className="mt-6">
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>
           <p className="mt-1 text-xs text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.inputSourcesLead")}</p>
+          {selectedProcessor?.series.toLowerCase().includes("vx") ? (
+            <p className="mt-2 text-xs text-amber-800 dark:text-amber-200">{t("tools.projectPlanner.inputSourcesLeadVx")}</p>
+          ) : null}
           <div className="mt-3 space-y-2">
             {inputLines.map((line, index) => (
               <div key={inputLineKey(line, index)} className="flex flex-wrap items-end gap-2">
