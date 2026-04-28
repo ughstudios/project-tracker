@@ -646,6 +646,8 @@ const en: MessageTree = {
         "Port estimates assume an ideal uncompressed RGB stream and use the same effective 1G / 5G payload limits as the LED bandwidth tool.",
       disclaimerBulletCards:
         "Card totals use each receiver card's published pixel-loading capacity. Actual mapping can vary with scan type, driver IC, grayscale settings, calibration, and cabinet wiring.",
+      disclaimerBulletVx:
+        "VX all-in-one controllers only appear when the link set is 1G (our catalog lists 1G outputs for them) and total screen pixels fit within that model's published load—for example VX20 tops out around 13M pixels, so a 7680×2160 canvas (~16.6M px) cannot use VX. U-series modular processors cover larger loads and 5G.",
       disclaimerBulletController: "Controller and I/O card recommendations are not included yet.",
       labelRefresh: "Refresh rate (Hz)",
       labelCabinetWidth: "Cabinet width (mm)",
@@ -1613,6 +1615,8 @@ const zh: MessageTree = {
       disclaimerBulletPorts: "网口数量按理想未压缩 RGB 码流估算，并沿用 LED 带宽工具中的 1G / 5G 可用带宽上限。",
       disclaimerBulletCards:
         "接收卡数量按各型号公布的像素带载能力估算。实际带载会受扫描方式、驱动 IC、灰度模式、校正和箱体走线影响。",
+      disclaimerBulletVx:
+        "VX 一体机仅在接收链路组为 1G 且屏体总像素不超过该型号公布的带载时出现（规格里只有 1G 输出）。例如 VX20 约 1300 万像素上限，7680×2160（约 1660 万像素）无法选用 VX；更大负载或 5G 请看不插卡式 U 系列。",
       disclaimerBulletController: "暂不推荐控制器和 I/O 卡，后续可再加入。",
       labelRefresh: "刷新率（Hz）",
       labelCabinetWidth: "箱体宽度（mm）",

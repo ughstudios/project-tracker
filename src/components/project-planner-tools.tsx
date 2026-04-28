@@ -284,6 +284,7 @@ export function ProjectPlannerTools() {
           <li>{t("tools.projectPlanner.sourceNote")}</li>
           <li>{t("tools.projectPlanner.disclaimerBulletPorts")}</li>
           <li>{t("tools.projectPlanner.disclaimerBulletCards")}</li>
+          <li>{t("tools.projectPlanner.disclaimerBulletVx")}</li>
         </ul>
       </section>
 
