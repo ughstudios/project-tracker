@@ -79,7 +79,7 @@ export async function seedRepairsOnce() {
         id, quantity, model, repair_type, company, rma_number, rma_form_url,
         assigned_to, repaired_by, status, notes, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz)
       ON CONFLICT (id) DO NOTHING
       `,
       row.id,
