@@ -253,6 +253,35 @@ export function getUsSeriesInputBoardById(id: string): UsSeriesInputBoardSpec | 
   return US_SERIES_INPUT_BOARD_OPTIONS.find((b) => b.id === id);
 }
 
+/**
+ * Picks a representative U-series input board SKU from the connector mix in planning rows
+ * (same checklist as the video-inputs UI — no separate board dropdown).
+ */
+export function inferUsSeriesInputBoardSpecFromPlannerLines(lines: PlannerInputLine[]): UsSeriesInputBoardSpec {
+  const active = lines.filter((l) => l.count > 0);
+  if (active.length === 0) return US_SERIES_INPUT_BOARD_OPTIONS[0];
+
+  const ids = new Set(active.map((l) => l.interfaceId));
+  const hasHdmi = [...ids].some((id) => id === "hdmi20" || id === "hdmi21");
+  const hasDp = [...ids].some((id) => id === "dp12" || id === "dp14");
+  const hasSdi = [...ids].some((id) => id === "sdi3g" || id === "sdi6g" || id === "sdi12g");
+  const needsCombo = ids.has("threeInOne") || ids.has("st2110");
+
+  if (needsCombo || (hasHdmi && hasDp)) {
+    return getUsSeriesInputBoardById("2hdmi2dp12") ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
+  }
+  if (hasHdmi && !hasDp && !hasSdi) {
+    return getUsSeriesInputBoardById("2hdmi20") ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
+  }
+  if (hasDp && !hasHdmi && !hasSdi) {
+    return getUsSeriesInputBoardById("2dp12") ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
+  }
+  if (hasSdi && !hasHdmi && !hasDp) {
+    return getUsSeriesInputBoardById("2sdi12g") ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
+  }
+  return getUsSeriesInputBoardById("2hdmi2dp12") ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
+}
+
 export function listUsSeriesOutputBoardsForMode(mode: ProcessorOutputMode): UsSeriesOutputBoardSpec[] {
   return US_SERIES_OUTPUT_BOARD_OPTIONS.filter((b) => b.mode === mode);
 }
@@ -605,6 +634,7 @@ export function recommendProcessorInputBoard(
   height: number,
   fps: number,
   inputBoardSpec?: UsSeriesInputBoardSpec,
+  connectorLines?: PlannerInputLine[],
 ): ProcessorBoardSuggestion | null {
   const limits = U_SERIES_BOARD_LIMITS[processor.name];
   if (!limits) return null;
@@ -612,7 +642,18 @@ export function recommendProcessorInputBoard(
   const spec = inputBoardSpec ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
   const sourcePixelRate = Math.max(0, width) * Math.max(0, height) * Math.max(0, fps);
   const sourceInputs = sourcePixelRate > 0 ? Math.ceil(sourcePixelRate / spec.sourcePixelRatePerInput) : 0;
-  const quantity = Math.max(1, Math.ceil(sourceInputs / spec.inputsPerBoard));
+  const quantityBySignal = Math.max(0, Math.ceil(sourceInputs / spec.inputsPerBoard));
+  const plannedConnectors =
+    connectorLines && connectorLines.length > 0 ? totalInputConnectors(connectorLines) : 0;
+  const quantityByConnectors =
+    plannedConnectors > 0 ? Math.ceil(plannedConnectors / spec.inputsPerBoard) : 0;
+  const quantity = Math.max(1, quantityBySignal, quantityByConnectors);
+
+  const parts: string[] = [];
+  parts.push(`${sourceInputs} 4K60-equivalent source input${sourceInputs === 1 ? "" : "s"}`);
+  if (plannedConnectors > 0) {
+    parts.push(`${plannedConnectors} planned connector${plannedConnectors === 1 ? "" : "s"}`);
+  }
 
   return {
     name: spec.name,
@@ -620,7 +661,7 @@ export function recommendProcessorInputBoard(
     quantity,
     portsPerBoard: spec.inputsPerBoard,
     maxBoards: limits.maxInputBoards,
-    note: `${sourceInputs} 4K60-equivalent source input${sourceInputs === 1 ? "" : "s"}`,
+    note: parts.join("; "),
     withinLimit: quantity <= limits.maxInputBoards,
   };
 }

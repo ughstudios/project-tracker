@@ -657,7 +657,6 @@ const en: MessageTree = {
       labelPixelPitch: "Pixel pitch (mm)",
       labelReceiverCard: "Receiver card",
       labelProcessor: "Processor",
-      labelUsInputBoard: "U-series input board",
       outputSourcesTitle: "Video outputs (planning)",
       outputSourcesLeadUs:
         "Add RJ45 Ethernet (1G or 5G) and/or 10G fiber as you plan cabling to receivers. Count is planned ports (runs). The package below estimates output boards from signal math plus these rows.",
@@ -715,7 +714,7 @@ const en: MessageTree = {
         "Enter screen and cabinet details, pick one processor and one receiving card, list modular input connectors if applicable, and set the receiver link set.",
       inputSourcesTitle: "Video inputs (planning)",
       inputSourcesLeadModular:
-        "For modular controllers (e.g. U Max, Z8t), add connector types and counts to sketch input-board staffing. This does not run signal math yet.",
+        "For modular controllers (e.g. U Max, Z8t), add connector types and counts below. For U-series processors, the suggested package infers the input board SKU from this mix and sizes boards from canvas bandwidth plus your connector totals.",
       inputSourcesLeadFixed:
         "VX Series models are all-in-one controllers: inputs are fixed on the chassis (see datasheet)—there are no swappable input boards. The connector checklist below is hidden for this processor.",
       inputType: "Input type",
@@ -1687,7 +1686,6 @@ const zh: MessageTree = {
       labelPixelPitch: "点间距（mm）",
       labelReceiverCard: "接收卡",
       labelProcessor: "处理器",
-      labelUsInputBoard: "U 系列输入子卡",
       outputSourcesTitle: "视频输出（规划）",
       outputSourcesLeadUs:
         "按规划添加 RJ45 百兆/千兆网线与 10G 光纤等下行链路；数量为规划的网口/光纤路数。下方推荐配置会结合信号估算与这些行给出输出子卡数量。",
@@ -1743,7 +1741,7 @@ const zh: MessageTree = {
         "填写屏体与箱体参数；各选一个处理器与接收卡；若为插卡式可列出输入接口；再设置接收链路组。",
       inputSourcesTitle: "视频输入（规划）",
       inputSourcesLeadModular:
-        "适用于插卡式处理器（如 U Max、Z8t）：按连接器类型与数量填写，便于对照输入板配置（不参与带宽运算）。",
+        "适用于插卡式处理器（如 U Max、Z8t）：在下方填写连接器类型与数量。U 系列发送端会在推荐配置中根据接口组合推断输入子卡型号，并结合画布带宽与连接器总数估算板卡数量。",
       inputSourcesLeadFixed:
         "VX 系列为一体机，输入接口固定在机箱上（见规格书），不支持更换输入子卡。当前所选为非插卡式处理器，已隐藏下方连接器清单。",
       inputType: "接口类型",

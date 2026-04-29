@@ -20,11 +20,10 @@ import {
   processorHasSwappableBoards,
   PLANNER_OUTPUT_INTERFACE_IDS,
   boardSpecForPrimaryOutputPlanning,
-  getUsSeriesInputBoardById,
+  inferUsSeriesInputBoardSpecFromPlannerLines,
   isUsSeriesProcessorName,
   processorSupportsTarget,
   totalPlannedOutputPorts,
-  US_SERIES_INPUT_BOARD_OPTIONS,
   recommendProcessorInputBoard,
   recommendProcessorOutputBoard,
   requiredPortsForProcessorOutput,
@@ -55,7 +54,6 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.verifyCards": "Confirm scan type, cabinet wiring, calibration mode, and receiver-card version against the real cabinet design.",
   "tools.projectPlanner.verifyWhenNotExact":
     "Resolve the warnings above and confirm cabinet mapping, wiring, and datasheet limits before quoting.",
-  "tools.projectPlanner.labelUsInputBoard": "U-series input board",
   "tools.projectPlanner.outputSourcesTitle": "Video outputs (planning)",
   "tools.projectPlanner.outputSourcesLeadUs":
     "Add RJ45 Ethernet (1G or 5G) and/or 10G fiber as you plan cabling to receivers. Count is planned ports (runs). The package below estimates output boards from signal math plus these rows.",
@@ -204,7 +202,6 @@ export function ProjectPlannerTools() {
 
   const [processorName, setProcessorName] = useState(() => SENDER_PROCESSOR_CATALOG[0]?.name ?? "");
   const [cardName, setCardName] = useState("");
-  const [usInputBoardId, setUsInputBoardId] = useState(US_SERIES_INPUT_BOARD_OPTIONS[0]?.id ?? "2hdmi2dp12");
   const [outputLines, setOutputLines] = useState<PlannerOutputLine[]>([{ interfaceId: "ethernet_1g_rj45", count: 1 }]);
   const [inputLines, setInputLines] = useState<PlannerInputLine[]>([{ interfaceId: "hdmi20", count: 1 }]);
 
@@ -241,13 +238,6 @@ export function ProjectPlannerTools() {
   /** VX and other all-in-one models: no swappable input boards. Until a processor is chosen, show modular input rows. */
   const showModularInputPlanner = !selectedProcessor || processorIsModular;
 
-  useEffect(() => {
-    if (!selectedProcessor || !isUsSeriesProcessorName(selectedProcessor.name)) return;
-    if (!getUsSeriesInputBoardById(usInputBoardId)) {
-      setUsInputBoardId(US_SERIES_INPUT_BOARD_OPTIONS[0]?.id ?? "2hdmi2dp12");
-    }
-  }, [selectedProcessor?.name, usInputBoardId]);
-
   const activeRow = useMemo(() => {
     if (!selectedProcessor || !selectedCard) return null;
 
@@ -275,12 +265,11 @@ export function ProjectPlannerTools() {
     const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
     const exact = receiverExact && processorSupport.exact;
 
-    const inputSpec =
-      isUsSeriesProcessorName(processor.name) ? getUsSeriesInputBoardById(usInputBoardId) ?? US_SERIES_INPUT_BOARD_OPTIONS[0] : undefined;
+    const inputSpec = isUsSeriesProcessorName(processor.name) ? inferUsSeriesInputBoardSpecFromPlannerLines(inputLines) : undefined;
     const outputSpec =
       isUsSeriesProcessorName(processor.name) && processorOutput ? plannedOutputBoardSpec ?? undefined : undefined;
 
-    const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps, inputSpec);
+    const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps, inputSpec, inputLines);
     const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts, outputSpec);
 
     return {
@@ -310,7 +299,7 @@ export function ProjectPlannerTools() {
     cabinetGrid.total,
     totalPixels,
     requiredMbps,
-    usInputBoardId,
+    inputLines,
     outputLines,
   ]);
 
@@ -494,21 +483,6 @@ export function ProjectPlannerTools() {
             </select>
           </label>
         </div>
-
-        {selectedProcessor && isUsSeriesProcessorName(selectedProcessor.name) ? (
-          <div className="mt-6">
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelUsInputBoard")}</span>
-              <select className="input w-full max-w-xl" value={usInputBoardId} onChange={(e) => setUsInputBoardId(e.target.value)}>
-                {US_SERIES_INPUT_BOARD_OPTIONS.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} ({b.model})
-                  </option>
-                ))}
-              </select>
-            </label>
-          </div>
-        ) : null}
 
         <div className="mt-6">
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>
