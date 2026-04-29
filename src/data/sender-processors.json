@@ -103,11 +103,11 @@
         { "label": "1× HDMI 2.0" },
         { "label": "1× HDMI 1.4 (with loop)" },
         { "label": "2× DVI" },
-        { "label": "1× 3G-SDI (with loop)" },
-        { "label": "1× 10G fiber (video input)" }
+        { "label": "1× 3G-SDI (with loop)" }
       ],
       "outputs": [
-        { "mode": "1g", "ports": 10, "capacity_pixels": 6500000, "label": "10 x 1G Ethernet ports" }
+        { "mode": "1g", "ports": 10, "capacity_pixels": 6500000, "label": "10 x 1G Ethernet ports" },
+        { "mode": "10g", "ports": 1, "capacity_pixels": 6500000, "label": "1× 10G fiber (output to receiving cards)" }
       ],
       "features": ["low_latency"]
     },
@@ -123,11 +123,11 @@
         { "label": "1× HDMI 2.0" },
         { "label": "1× HDMI 1.4 (with loop)" },
         { "label": "2× DVI" },
-        { "label": "1× 3G-SDI (with loop)" },
-        { "label": "1× 10G fiber (video input)" }
+        { "label": "1× 3G-SDI (with loop)" }
       ],
       "outputs": [
-        { "mode": "1g", "ports": 6, "capacity_pixels": 3900000, "label": "6 x 1G Ethernet ports" }
+        { "mode": "1g", "ports": 6, "capacity_pixels": 3900000, "label": "6 x 1G Ethernet ports" },
+        { "mode": "10g", "ports": 1, "capacity_pixels": 3900000, "label": "1× 10G fiber (output to receiving cards)" }
       ],
       "features": ["low_latency"]
     }
