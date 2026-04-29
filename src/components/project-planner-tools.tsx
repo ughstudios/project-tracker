@@ -18,13 +18,13 @@ import {
   portsNeededForMbps,
   processorHasAllowedOutputMode,
   processorHasSwappableBoards,
+  PLANNER_OUTPUT_INTERFACE_IDS,
+  boardSpecForPrimaryOutputPlanning,
   getUsSeriesInputBoardById,
-  getUsSeriesOutputBoardById,
   isUsSeriesProcessorName,
-  listUsSeriesOutputBoardsForMode,
   processorSupportsTarget,
+  totalPlannedOutputPorts,
   US_SERIES_INPUT_BOARD_OPTIONS,
-  US_SERIES_OUTPUT_BOARD_OPTIONS,
   recommendProcessorInputBoard,
   recommendProcessorOutputBoard,
   requiredPortsForProcessorOutput,
@@ -34,6 +34,7 @@ import {
   usableMbpsForPortSpeed,
   type PlannerInputInterfaceId,
   type PlannerInputLine,
+  type PlannerOutputLine,
   type ProcessorOutputMode,
   type ProjectOutputPreference,
   type ReceiverCardCatalogItem,
@@ -55,9 +56,18 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.verifyWhenNotExact":
     "Resolve the warnings above and confirm cabinet mapping, wiring, and datasheet limits before quoting.",
   "tools.projectPlanner.labelUsInputBoard": "U-series input board",
-  "tools.projectPlanner.labelUsOutputBoard": "U-series output board",
-  "tools.projectPlanner.usOutputBoardHint":
-    "Choices match the link set that stays feasible for this layout (1G / 5G / 10G). Board counts in the package update from the selected SKU.",
+  "tools.projectPlanner.outputSourcesTitle": "Video outputs (planning)",
+  "tools.projectPlanner.outputSourcesLeadUs":
+    "Add RJ45 Ethernet (1G or 5G) and/or 10G fiber as you plan cabling to receivers. Count is planned ports (runs). The package below estimates output boards from signal math plus these rows.",
+  "tools.projectPlanner.outputType": "Output link",
+  "tools.projectPlanner.outputSummary": "Planned output ports (your rows): {total}. {list}",
+  "tools.projectPlanner.outputSummaryEmpty": "No outputs listed.",
+  "tools.projectPlanner.outputBandwidthHint":
+    "Minimum ports from bandwidth at the chosen tier: about {required} (compare to your planned runs).",
+  "tools.projectPlanner.outputAdd": "Add output row",
+  "tools.projectPlanner.outputIf.ethernet_1g_rj45": "1G Ethernet (RJ45)",
+  "tools.projectPlanner.outputIf.ethernet_5g_rj45": "5G Ethernet (RJ45)",
+  "tools.projectPlanner.outputIf.fiber_10g": "10G fiber",
 };
 
 function parsePositiveInt(raw: string, fallback: number): number {
@@ -165,6 +175,10 @@ function inputLineKey(line: PlannerInputLine, index: number): string {
   return `${line.interfaceId}-${index}`;
 }
 
+function outputLineKey(line: PlannerOutputLine, index: number): string {
+  return `${line.interfaceId}-${index}`;
+}
+
 export function ProjectPlannerTools() {
   const { t, locale } = useI18n();
   const nf0 = useMemo(
@@ -191,7 +205,7 @@ export function ProjectPlannerTools() {
   const [processorName, setProcessorName] = useState(() => SENDER_PROCESSOR_CATALOG[0]?.name ?? "");
   const [cardName, setCardName] = useState("");
   const [usInputBoardId, setUsInputBoardId] = useState(US_SERIES_INPUT_BOARD_OPTIONS[0]?.id ?? "2hdmi2dp12");
-  const [usOutputBoardId, setUsOutputBoardId] = useState("8x5g");
+  const [outputLines, setOutputLines] = useState<PlannerOutputLine[]>([{ interfaceId: "ethernet_1g_rj45", count: 1 }]);
   const [inputLines, setInputLines] = useState<PlannerInputLine[]>([{ interfaceId: "hdmi20", count: 1 }]);
 
   const screenW = parsePositiveInt(screenWStr, 0);
@@ -227,18 +241,6 @@ export function ProjectPlannerTools() {
   /** VX and other all-in-one models: no swappable input boards. Until a processor is chosen, show modular input rows. */
   const showModularInputPlanner = !selectedProcessor || processorIsModular;
 
-  /** One SKU per link mode (1G / 5G / 10G) that this processor actually lists in the catalog. */
-  const usOutputBoardOptions = useMemo(() => {
-    if (!selectedProcessor || !isUsSeriesProcessorName(selectedProcessor.name)) return [];
-    const modesOnProcessor = new Set(selectedProcessor.outputs.map((o) => o.mode));
-    return US_SERIES_OUTPUT_BOARD_OPTIONS.filter((b) => modesOnProcessor.has(b.mode));
-  }, [selectedProcessor]);
-
-  useEffect(() => {
-    if (usOutputBoardOptions.length === 0) return;
-    setUsOutputBoardId((prev) => (usOutputBoardOptions.some((o) => o.id === prev) ? prev : usOutputBoardOptions[0].id));
-  }, [selectedProcessor?.name, usOutputBoardOptions]);
-
   useEffect(() => {
     if (!selectedProcessor || !isUsSeriesProcessorName(selectedProcessor.name)) return;
     if (!getUsSeriesInputBoardById(usInputBoardId)) {
@@ -264,9 +266,9 @@ export function ProjectPlannerTools() {
       support.frameOk &&
       outputPreference === receiverSpeed;
 
-    const pickedOutputBoardSpec = getUsSeriesOutputBoardById(usOutputBoardId);
+    const plannedOutputBoardSpec = boardSpecForPrimaryOutputPlanning(outputLines, outputPreference);
     const modesForProcessorPick =
-      isUsSeriesProcessorName(processor.name) && pickedOutputBoardSpec ? [pickedOutputBoardSpec.mode] : linkSetModes;
+      isUsSeriesProcessorName(processor.name) && plannedOutputBoardSpec ? [plannedOutputBoardSpec.mode] : linkSetModes;
 
     const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, modesForProcessorPick);
     const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
@@ -275,11 +277,8 @@ export function ProjectPlannerTools() {
 
     const inputSpec =
       isUsSeriesProcessorName(processor.name) ? getUsSeriesInputBoardById(usInputBoardId) ?? US_SERIES_INPUT_BOARD_OPTIONS[0] : undefined;
-    const outputCandidates = processorOutput ? listUsSeriesOutputBoardsForMode(processorOutput.mode) : [];
     const outputSpec =
-      isUsSeriesProcessorName(processor.name) && processorOutput
-        ? outputCandidates.find((o) => o.id === usOutputBoardId) ?? outputCandidates[0]
-        : undefined;
+      isUsSeriesProcessorName(processor.name) && processorOutput ? plannedOutputBoardSpec ?? undefined : undefined;
 
     const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps, inputSpec);
     const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts, outputSpec);
@@ -312,7 +311,7 @@ export function ProjectPlannerTools() {
     totalPixels,
     requiredMbps,
     usInputBoardId,
-    usOutputBoardId,
+    outputLines,
   ]);
 
   const issueLines = useMemo(() => {
@@ -382,6 +381,24 @@ export function ProjectPlannerTools() {
   function removeInputLine(index: number) {
     setInputLines((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== index)));
   }
+
+  function setOutputLine(index: number, patch: Partial<PlannerOutputLine>) {
+    setOutputLines((rows) => rows.map((row, i) => (i === index ? { ...row, ...patch } : row)));
+  }
+
+  function addOutputLine() {
+    setOutputLines((rows) => [...rows, { interfaceId: "ethernet_5g_rj45", count: 1 }]);
+  }
+
+  function removeOutputLine(index: number) {
+    setOutputLines((rows) => (rows.length <= 1 ? rows : rows.filter((_, i) => i !== index)));
+  }
+
+  const plannedOutputPortTotal = totalPlannedOutputPorts(outputLines);
+  const outputSummaryText = outputLines
+    .filter((l) => l.count > 0)
+    .map((l) => `${nf0.format(l.count)}× ${t(`tools.projectPlanner.outputIf.${l.interfaceId}`)}`)
+    .join("; ");
 
   return (
     <div className="space-y-4">
@@ -479,32 +496,16 @@ export function ProjectPlannerTools() {
         </div>
 
         {selectedProcessor && isUsSeriesProcessorName(selectedProcessor.name) ? (
-          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          <div className="mt-6">
             <label className="block text-sm">
               <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelUsInputBoard")}</span>
-              <select className="input w-full" value={usInputBoardId} onChange={(e) => setUsInputBoardId(e.target.value)}>
+              <select className="input w-full max-w-xl" value={usInputBoardId} onChange={(e) => setUsInputBoardId(e.target.value)}>
                 {US_SERIES_INPUT_BOARD_OPTIONS.map((b) => (
                   <option key={b.id} value={b.id}>
                     {b.name} ({b.model})
                   </option>
                 ))}
               </select>
-            </label>
-            <label className="block text-sm">
-              <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelUsOutputBoard")}</span>
-              <select
-                className="input w-full"
-                value={usOutputBoardId}
-                onChange={(e) => setUsOutputBoardId(e.target.value)}
-                disabled={usOutputBoardOptions.length === 0}
-              >
-                {usOutputBoardOptions.map((b) => (
-                  <option key={b.id} value={b.id}>
-                    {b.name} ({b.model})
-                  </option>
-                ))}
-              </select>
-              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.usOutputBoardHint")}</p>
             </label>
           </div>
         ) : null}
@@ -570,6 +571,71 @@ export function ProjectPlannerTools() {
             </>
           )}
         </div>
+
+        {selectedProcessor && isUsSeriesProcessorName(selectedProcessor.name) ? (
+          <div className="mt-6">
+            <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.outputSourcesTitle")}</p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.outputSourcesLeadUs")}</p>
+            <div className="mt-3 space-y-2">
+              {outputLines.map((line, index) => (
+                <div key={outputLineKey(line, index)} className="flex flex-wrap items-end gap-2">
+                  <label className="min-w-[220px] flex-1 text-sm">
+                    <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.outputType")}</span>
+                    <select
+                      className="input w-full"
+                      value={line.interfaceId}
+                      onChange={(e) =>
+                        setOutputLine(index, { interfaceId: e.target.value as PlannerOutputLine["interfaceId"] })
+                      }
+                    >
+                      {PLANNER_OUTPUT_INTERFACE_IDS.map((id) => (
+                        <option key={id} value={id}>
+                          {t(`tools.projectPlanner.outputIf.${id}`)}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <label className="w-28 text-sm">
+                    <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputCount")}</span>
+                    <input
+                      className="input w-full"
+                      inputMode="numeric"
+                      min={1}
+                      value={line.count}
+                      onChange={(e) => setOutputLine(index, { count: Math.max(1, parsePositiveInt(e.target.value, 1)) })}
+                    />
+                  </label>
+                  <button
+                    type="button"
+                    className="rounded-lg border border-zinc-200 bg-white px-3 py-2 text-sm text-zinc-700 hover:bg-zinc-50 dark:border-zinc-600 dark:bg-zinc-950 dark:text-zinc-300 dark:hover:bg-zinc-900"
+                    onClick={() => removeOutputLine(index)}
+                    disabled={outputLines.length <= 1}
+                  >
+                    {t("tools.projectPlanner.inputRemove")}
+                  </button>
+                </div>
+              ))}
+            </div>
+            <button
+              type="button"
+              className="mt-2 rounded-lg border border-dashed border-zinc-300 px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 dark:border-zinc-600 dark:text-zinc-400 dark:hover:bg-zinc-900"
+              onClick={addOutputLine}
+            >
+              {t("tools.projectPlanner.outputAdd")}
+            </button>
+            <p className="mt-3 text-xs text-zinc-600 dark:text-zinc-400">
+              {t("tools.projectPlanner.outputSummary", {
+                total: nf0.format(plannedOutputPortTotal),
+                list: outputSummaryText || t("tools.projectPlanner.outputSummaryEmpty"),
+              })}
+            </p>
+            {activeRow ? (
+              <p className="mt-2 text-xs text-zinc-500 dark:text-zinc-400">
+                {t("tools.projectPlanner.outputBandwidthHint", { required: nf0.format(activeRow.requiredPorts) })}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
 
         <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
           <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.cabinetPixels")}</p>

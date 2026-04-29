@@ -261,6 +261,61 @@ export function getUsSeriesOutputBoardById(id: string): UsSeriesOutputBoardSpec 
   return US_SERIES_OUTPUT_BOARD_OPTIONS.find((b) => b.id === id);
 }
 
+/** Planned downlink to receivers (RJ45 Ethernet vs fiber). Maps 1:1 to U-series output board SKUs. */
+export const PLANNER_OUTPUT_INTERFACE_IDS = ["ethernet_1g_rj45", "ethernet_5g_rj45", "fiber_10g"] as const;
+export type PlannerOutputInterfaceId = (typeof PLANNER_OUTPUT_INTERFACE_IDS)[number];
+
+export type PlannerOutputLine = { interfaceId: PlannerOutputInterfaceId; count: number };
+
+export function totalPlannedOutputPorts(lines: PlannerOutputLine[]): number {
+  return lines.reduce((sum, line) => sum + Math.max(0, Math.trunc(line.count)), 0);
+}
+
+export function usOutputBoardSpecFromPlanningInterface(id: PlannerOutputInterfaceId): UsSeriesOutputBoardSpec | undefined {
+  const boardIdByInterface: Record<PlannerOutputInterfaceId, string> = {
+    ethernet_1g_rj45: "20x1g",
+    ethernet_5g_rj45: "8x5g",
+    fiber_10g: "4x10g",
+  };
+  return getUsSeriesOutputBoardById(boardIdByInterface[id]);
+}
+
+export function primaryProcessorModeFromOutputPlanningLines(
+  lines: PlannerOutputLine[],
+  linkPreference: ProjectOutputPreference,
+): ProcessorOutputMode | null {
+  let sum1g = 0;
+  let sum5g = 0;
+  let sumFiber = 0;
+  for (const line of lines) {
+    const c = Math.max(0, Math.trunc(line.count));
+    if (line.interfaceId === "ethernet_1g_rj45") sum1g += c;
+    if (line.interfaceId === "ethernet_5g_rj45") sum5g += c;
+    if (line.interfaceId === "fiber_10g") sumFiber += c;
+  }
+  if (sum1g === 0 && sum5g === 0 && sumFiber === 0) return null;
+  if (sumFiber > 0) return "10g";
+  if (sum5g > 0 && sum1g === 0) return "5g";
+  if (sum1g > 0 && sum5g === 0) return "1g";
+  return linkPreference === "5g" ? "5g" : "1g";
+}
+
+function planningInterfaceIdForMode(mode: ProcessorOutputMode): PlannerOutputInterfaceId {
+  if (mode === "10g") return "fiber_10g";
+  if (mode === "5g") return "ethernet_5g_rj45";
+  return "ethernet_1g_rj45";
+}
+
+/** Board SKU used for staffing when rows imply a primary link tier (mixed RJ45 rows follow receiver link preference). */
+export function boardSpecForPrimaryOutputPlanning(
+  lines: PlannerOutputLine[],
+  linkPreference: ProjectOutputPreference,
+): UsSeriesOutputBoardSpec | undefined {
+  const mode = primaryProcessorModeFromOutputPlanningLines(lines, linkPreference);
+  if (!mode) return undefined;
+  return usOutputBoardSpecFromPlanningInterface(planningInterfaceIdForMode(mode));
+}
+
 function cleanText(raw: string | null | undefined): string {
   return raw?.replaceAll(/\s+/g, " ").trim() ?? "";
 }
