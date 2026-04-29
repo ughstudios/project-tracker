@@ -18,7 +18,13 @@ import {
   portsNeededForMbps,
   processorHasAllowedOutputMode,
   processorHasSwappableBoards,
+  getUsSeriesInputBoardById,
+  getUsSeriesOutputBoardById,
+  isUsSeriesProcessorName,
+  listUsSeriesOutputBoardsForMode,
   processorSupportsTarget,
+  US_SERIES_INPUT_BOARD_OPTIONS,
+  US_SERIES_OUTPUT_BOARD_OPTIONS,
   recommendProcessorInputBoard,
   recommendProcessorOutputBoard,
   requiredPortsForProcessorOutput,
@@ -48,6 +54,10 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.verifyCards": "Confirm scan type, cabinet wiring, calibration mode, and receiver-card version against the real cabinet design.",
   "tools.projectPlanner.verifyWhenNotExact":
     "Resolve the warnings above and confirm cabinet mapping, wiring, and datasheet limits before quoting.",
+  "tools.projectPlanner.labelUsInputBoard": "U-series input board",
+  "tools.projectPlanner.labelUsOutputBoard": "U-series output board",
+  "tools.projectPlanner.usOutputBoardHint":
+    "Choices match the link set that stays feasible for this layout (1G / 5G / 10G). Board counts in the package update from the selected SKU.",
 };
 
 function parsePositiveInt(raw: string, fallback: number): number {
@@ -180,6 +190,8 @@ export function ProjectPlannerTools() {
 
   const [processorName, setProcessorName] = useState(() => SENDER_PROCESSOR_CATALOG[0]?.name ?? "");
   const [cardName, setCardName] = useState("");
+  const [usInputBoardId, setUsInputBoardId] = useState(US_SERIES_INPUT_BOARD_OPTIONS[0]?.id ?? "2hdmi2dp12");
+  const [usOutputBoardId, setUsOutputBoardId] = useState("8x5g");
   const [inputLines, setInputLines] = useState<PlannerInputLine[]>([{ interfaceId: "hdmi20", count: 1 }]);
 
   const screenW = parsePositiveInt(screenWStr, 0);
@@ -215,14 +227,33 @@ export function ProjectPlannerTools() {
   /** VX and other all-in-one models: no swappable input boards. Until a processor is chosen, show modular input rows. */
   const showModularInputPlanner = !selectedProcessor || processorIsModular;
 
+  /** One SKU per link mode (1G / 5G / 10G) that this processor actually lists in the catalog. */
+  const usOutputBoardOptions = useMemo(() => {
+    if (!selectedProcessor || !isUsSeriesProcessorName(selectedProcessor.name)) return [];
+    const modesOnProcessor = new Set(selectedProcessor.outputs.map((o) => o.mode));
+    return US_SERIES_OUTPUT_BOARD_OPTIONS.filter((b) => modesOnProcessor.has(b.mode));
+  }, [selectedProcessor]);
+
+  useEffect(() => {
+    if (usOutputBoardOptions.length === 0) return;
+    setUsOutputBoardId((prev) => (usOutputBoardOptions.some((o) => o.id === prev) ? prev : usOutputBoardOptions[0].id));
+  }, [selectedProcessor?.name, usOutputBoardOptions]);
+
+  useEffect(() => {
+    if (!selectedProcessor || !isUsSeriesProcessorName(selectedProcessor.name)) return;
+    if (!getUsSeriesInputBoardById(usInputBoardId)) {
+      setUsInputBoardId(US_SERIES_INPUT_BOARD_OPTIONS[0]?.id ?? "2hdmi2dp12");
+    }
+  }, [selectedProcessor?.name, usInputBoardId]);
+
   const activeRow = useMemo(() => {
     if (!selectedProcessor || !selectedCard) return null;
 
     const card = selectedCard;
     const processor = selectedProcessor;
     const receiverSpeed = planningPortSpeed(card);
-    const allowedModes = outputModesForPreference(outputPreference);
-    const outputMode = allowedModes.includes(receiverSpeed) ? receiverSpeed : allowedModes[0] ?? receiverSpeed;
+    const linkSetModes = outputModesForPreference(outputPreference);
+    const outputMode = linkSetModes.includes(receiverSpeed) ? receiverSpeed : linkSetModes[0] ?? receiverSpeed;
     const support = receiverSupportsTarget(card, fps, rgbBpc);
     const perCabinet = cardsPerCabinet(cabinetPixels.pixels, card.maxCapacityPixels);
     const pixelMinimum = cardsNeededByPixels(totalPixels, card.maxCapacityPixels);
@@ -233,12 +264,25 @@ export function ProjectPlannerTools() {
       support.frameOk &&
       outputPreference === receiverSpeed;
 
-    const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, allowedModes);
+    const pickedOutputBoardSpec = getUsSeriesOutputBoardById(usOutputBoardId);
+    const modesForProcessorPick =
+      isUsSeriesProcessorName(processor.name) && pickedOutputBoardSpec ? [pickedOutputBoardSpec.mode] : linkSetModes;
+
+    const processorOutput = pickProcessorOutput(processor, totalPixels, requiredMbps, modesForProcessorPick);
     const requiredPorts = requiredPortsForProcessorOutput(processorOutput, requiredMbps);
     const processorSupport = processorSupportsTarget(processor, processorOutput, screenW, screenH, fps, rgbBpc);
     const exact = receiverExact && processorSupport.exact;
-    const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps);
-    const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts);
+
+    const inputSpec =
+      isUsSeriesProcessorName(processor.name) ? getUsSeriesInputBoardById(usInputBoardId) ?? US_SERIES_INPUT_BOARD_OPTIONS[0] : undefined;
+    const outputCandidates = processorOutput ? listUsSeriesOutputBoardsForMode(processorOutput.mode) : [];
+    const outputSpec =
+      isUsSeriesProcessorName(processor.name) && processorOutput
+        ? outputCandidates.find((o) => o.id === usOutputBoardId) ?? outputCandidates[0]
+        : undefined;
+
+    const inputBoard = recommendProcessorInputBoard(processor, screenW, screenH, fps, inputSpec);
+    const outputBoard = recommendProcessorOutputBoard(processor, processorOutput, totalPixels, requiredPorts, outputSpec);
 
     return {
       card,
@@ -267,6 +311,8 @@ export function ProjectPlannerTools() {
     cabinetGrid.total,
     totalPixels,
     requiredMbps,
+    usInputBoardId,
+    usOutputBoardId,
   ]);
 
   const issueLines = useMemo(() => {
@@ -431,6 +477,37 @@ export function ProjectPlannerTools() {
             </select>
           </label>
         </div>
+
+        {selectedProcessor && isUsSeriesProcessorName(selectedProcessor.name) ? (
+          <div className="mt-6 grid gap-4 lg:grid-cols-2">
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelUsInputBoard")}</span>
+              <select className="input w-full" value={usInputBoardId} onChange={(e) => setUsInputBoardId(e.target.value)}>
+                {US_SERIES_INPUT_BOARD_OPTIONS.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.model})
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="block text-sm">
+              <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.labelUsOutputBoard")}</span>
+              <select
+                className="input w-full"
+                value={usOutputBoardId}
+                onChange={(e) => setUsOutputBoardId(e.target.value)}
+                disabled={usOutputBoardOptions.length === 0}
+              >
+                {usOutputBoardOptions.map((b) => (
+                  <option key={b.id} value={b.id}>
+                    {b.name} ({b.model})
+                  </option>
+                ))}
+              </select>
+              <p className="mt-1 text-xs text-zinc-500 dark:text-zinc-400">{t("tools.projectPlanner.usOutputBoardHint")}</p>
+            </label>
+          </div>
+        ) : null}
 
         <div className="mt-6">
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>

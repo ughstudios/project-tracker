@@ -168,36 +168,98 @@ const U_SERIES_BOARD_LIMITS: Record<string, { maxInputBoards: number; maxOutputB
   "U6 Max": { maxInputBoards: 10, maxOutputBoards: 5 },
 };
 
-const U_SERIES_INPUT_BOARD = {
-  name: "U_2xHDMI 2.0+2xDP 1.2 input board",
-  model: "U_IN_2HDMI20_2DP12",
-  inputsPerBoard: 2,
-  sourcePixelRatePerInput: 4096 * 2160 * 60,
+/** Swappable U-series input boards (staffing uses 4K@60-equivalent per connector). */
+export type UsSeriesInputBoardSpec = {
+  id: string;
+  name: string;
+  model: string;
+  inputsPerBoard: number;
+  sourcePixelRatePerInput: number;
 };
 
-const U_SERIES_OUTPUT_BOARDS: Record<
-  ProcessorOutputMode,
-  { name: string; model: string; portsPerBoard: number; capacityPixelsPerBoard: number }
-> = {
-  "1g": {
+export const US_SERIES_INPUT_BOARD_OPTIONS: readonly UsSeriesInputBoardSpec[] = [
+  {
+    id: "2hdmi2dp12",
+    name: "U_2xHDMI 2.0+2xDP 1.2 input board",
+    model: "U_IN_2HDMI20_2DP12",
+    inputsPerBoard: 2,
+    sourcePixelRatePerInput: 4096 * 2160 * 60,
+  },
+  {
+    id: "2hdmi20",
+    name: "U_2xHDMI 2.0 input board",
+    model: "U_IN_2HDMI20",
+    inputsPerBoard: 2,
+    sourcePixelRatePerInput: 4096 * 2160 * 60,
+  },
+  {
+    id: "2dp12",
+    name: "U_2xDP 1.2 input board",
+    model: "U_IN_2DP12",
+    inputsPerBoard: 2,
+    sourcePixelRatePerInput: 4096 * 2160 * 60,
+  },
+  {
+    id: "2sdi12g",
+    name: "U_2x12G-SDI input board",
+    model: "U_IN_2SDI12G",
+    inputsPerBoard: 2,
+    sourcePixelRatePerInput: 4096 * 2160 * 60,
+  },
+];
+
+/** Swappable U-series output boards by link mode (matches sender hardware options). */
+export type UsSeriesOutputBoardSpec = {
+  id: string;
+  mode: ProcessorOutputMode;
+  name: string;
+  model: string;
+  portsPerBoard: number;
+  capacityPixelsPerBoard: number;
+};
+
+export const US_SERIES_OUTPUT_BOARD_OPTIONS: readonly UsSeriesOutputBoardSpec[] = [
+  {
+    id: "20x1g",
+    mode: "1g",
     name: "U_20x1G Ethernet output board",
     model: "U_OUT_20x1G_RJ45",
     portsPerBoard: 20,
     capacityPixelsPerBoard: 13000000,
   },
-  "5g": {
+  {
+    id: "8x5g",
+    mode: "5g",
     name: "U_8x5G Ethernet output board",
     model: "U_OUT_8x5G_RJ45",
     portsPerBoard: 8,
     capacityPixelsPerBoard: 23600000,
   },
-  "10g": {
+  {
+    id: "4x10g",
+    mode: "10g",
     name: "U_4x10G fiber output board",
     model: "U_OUT_4x10G_FIBER",
     portsPerBoard: 4,
     capacityPixelsPerBoard: 26000000,
   },
-};
+];
+
+export function isUsSeriesProcessorName(name: string): boolean {
+  return Object.prototype.hasOwnProperty.call(U_SERIES_BOARD_LIMITS, name);
+}
+
+export function getUsSeriesInputBoardById(id: string): UsSeriesInputBoardSpec | undefined {
+  return US_SERIES_INPUT_BOARD_OPTIONS.find((b) => b.id === id);
+}
+
+export function listUsSeriesOutputBoardsForMode(mode: ProcessorOutputMode): UsSeriesOutputBoardSpec[] {
+  return US_SERIES_OUTPUT_BOARD_OPTIONS.filter((b) => b.mode === mode);
+}
+
+export function getUsSeriesOutputBoardById(id: string): UsSeriesOutputBoardSpec | undefined {
+  return US_SERIES_OUTPUT_BOARD_OPTIONS.find((b) => b.id === id);
+}
 
 function cleanText(raw: string | null | undefined): string {
   return raw?.replaceAll(/\s+/g, " ").trim() ?? "";
@@ -487,19 +549,21 @@ export function recommendProcessorInputBoard(
   width: number,
   height: number,
   fps: number,
+  inputBoardSpec?: UsSeriesInputBoardSpec,
 ): ProcessorBoardSuggestion | null {
   const limits = U_SERIES_BOARD_LIMITS[processor.name];
   if (!limits) return null;
 
+  const spec = inputBoardSpec ?? US_SERIES_INPUT_BOARD_OPTIONS[0];
   const sourcePixelRate = Math.max(0, width) * Math.max(0, height) * Math.max(0, fps);
-  const sourceInputs = sourcePixelRate > 0 ? Math.ceil(sourcePixelRate / U_SERIES_INPUT_BOARD.sourcePixelRatePerInput) : 0;
-  const quantity = Math.max(1, Math.ceil(sourceInputs / U_SERIES_INPUT_BOARD.inputsPerBoard));
+  const sourceInputs = sourcePixelRate > 0 ? Math.ceil(sourcePixelRate / spec.sourcePixelRatePerInput) : 0;
+  const quantity = Math.max(1, Math.ceil(sourceInputs / spec.inputsPerBoard));
 
   return {
-    name: U_SERIES_INPUT_BOARD.name,
-    model: U_SERIES_INPUT_BOARD.model,
+    name: spec.name,
+    model: spec.model,
     quantity,
-    portsPerBoard: U_SERIES_INPUT_BOARD.inputsPerBoard,
+    portsPerBoard: spec.inputsPerBoard,
     maxBoards: limits.maxInputBoards,
     note: `${sourceInputs} 4K60-equivalent source input${sourceInputs === 1 ? "" : "s"}`,
     withinLimit: quantity <= limits.maxInputBoards,
@@ -511,11 +575,15 @@ export function recommendProcessorOutputBoard(
   output: ProcessorOutput | null,
   totalPixels: number,
   requiredPorts: number,
+  outputBoardSpec?: UsSeriesOutputBoardSpec,
 ): ProcessorBoardSuggestion | null {
   const limits = U_SERIES_BOARD_LIMITS[processor.name];
   if (!limits || !output) return null;
 
-  const board = U_SERIES_OUTPUT_BOARDS[output.mode];
+  const modeOptions = listUsSeriesOutputBoardsForMode(output.mode);
+  const board = outputBoardSpec ?? modeOptions[0];
+  if (!board) return null;
+
   const quantityByPorts = requiredPorts > 0 ? Math.ceil(requiredPorts / board.portsPerBoard) : 0;
   const quantityByPixels = totalPixels > 0 ? Math.ceil(totalPixels / board.capacityPixelsPerBoard) : 0;
   const quantity = Math.max(1, quantityByPorts, quantityByPixels);

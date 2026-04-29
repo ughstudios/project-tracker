@@ -657,6 +657,10 @@ const en: MessageTree = {
       labelPixelPitch: "Pixel pitch (mm)",
       labelReceiverCard: "Receiver card",
       labelProcessor: "Processor",
+      labelUsInputBoard: "U-series input board",
+      labelUsOutputBoard: "U-series output board",
+      usOutputBoardHint:
+        "Choices match the link set that stays feasible for this layout (1G / 5G / 10G). Board counts in the package update from the selected SKU.",
       cabinetPixels: "Single cabinet (pixels)",
       cabinetPixelsValue: "{w} x {h} px = {pixels} pixels",
       cabinetGridValue: "{across} x {tall} cabinets = {total} cabinets",
@@ -1673,6 +1677,10 @@ const zh: MessageTree = {
       labelPixelPitch: "点间距（mm）",
       labelReceiverCard: "接收卡",
       labelProcessor: "处理器",
+      labelUsInputBoard: "U 系列输入子卡",
+      labelUsOutputBoard: "U 系列输出子卡",
+      usOutputBoardHint:
+        "可选型号与当前布局下仍可满足的链路组（1G / 5G / 10G）一致；选定 SKU 后上方「推荐配置」中的板卡数量会随之更新。",
       cabinetPixels: "单箱像素",
       cabinetPixelsValue: "{w} x {h} px = {pixels} 像素",
       cabinetGridValue: "{across} x {tall} 个箱体 = {total} 个箱体",
