@@ -70,6 +70,10 @@ type RawProcessorOutput = {
   label?: string;
 };
 
+type RawProcessorFixedInput = {
+  label?: string;
+};
+
 type RawSenderProcessor = {
   name?: string;
   series?: string;
@@ -78,6 +82,8 @@ type RawSenderProcessor = {
   max_height?: number | null;
   max_frame_rate_hz?: number | null;
   max_color_depth_bpc?: number | null;
+  /** Fixed chassis video inputs (e.g. VX all-in-one); optional until extracted per SKU. */
+  inputs?: RawProcessorFixedInput[];
   outputs?: RawProcessorOutput[];
   features?: string[];
 };
@@ -118,6 +124,11 @@ export type ProcessorOutput = {
   label: string;
 };
 
+/** Fixed on-board video inputs (VX etc.), when present in the sender JSON extract. */
+export type ProcessorFixedInput = {
+  label: string;
+};
+
 export type ProcessorBoardSuggestion = {
   name: string;
   model: string;
@@ -137,6 +148,7 @@ export type SenderProcessorCatalogItem = {
   maxHeight: number | null;
   maxFrameRateHz: number | null;
   maxColorDepthBpc: number | null;
+  inputs?: ProcessorFixedInput[];
   outputs: ProcessorOutput[];
   features: string[];
 };
@@ -454,6 +466,11 @@ function isProcessorOutputMode(mode: string | undefined): mode is ProcessorOutpu
 }
 
 function normalizeProcessor(processor: RawSenderProcessor): SenderProcessorCatalogItem {
+  const inputs =
+    processor.inputs
+      ?.map((row) => ({ label: cleanText(row.label) }))
+      .filter((row) => row.label.length > 0) ?? [];
+
   return {
     name: cleanText(processor.name) || "Unknown",
     series: cleanText(processor.series) || "Uncategorized",
@@ -462,6 +479,7 @@ function normalizeProcessor(processor: RawSenderProcessor): SenderProcessorCatal
     maxHeight: Number.isFinite(processor.max_height) ? processor.max_height ?? null : null,
     maxFrameRateHz: Number.isFinite(processor.max_frame_rate_hz) ? processor.max_frame_rate_hz ?? null : null,
     maxColorDepthBpc: Number.isFinite(processor.max_color_depth_bpc) ? processor.max_color_depth_bpc ?? null : null,
+    inputs: inputs.length > 0 ? inputs : undefined,
     outputs: (processor.outputs ?? [])
       .filter((output): output is RawProcessorOutput & { mode: ProcessorOutputMode } => isProcessorOutputMode(output.mode))
       .map((output) => ({

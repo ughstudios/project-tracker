@@ -657,9 +657,13 @@ const en: MessageTree = {
       labelPixelPitch: "Pixel pitch (mm)",
       labelReceiverCard: "Receiver card",
       labelProcessor: "Processor",
-      vxFixedPortsTitle: "VX Series — available outputs",
-      vxFixedPortsLead:
-        "This model is an all-in-one controller (no swappable output cards). Published output ports from our catalog:",
+      vxFixedChassisTitle: "VX Series — fixed chassis I/O",
+      vxFixedChassisLead:
+        "All-in-one controller (no swappable input/output cards). Outputs use structured port counts from our catalog; inputs are listed when extracted for this SKU.",
+      vxSubOutputs: "Outputs to LED wall",
+      vxSubInputs: "Video inputs",
+      vxInputsNotInCatalog:
+        "Input connector detail isn’t in our planner extract for this SKU yet—see the Colorlight datasheet.",
       vxPortsWord: "ports",
       outputSourcesTitle: "Video outputs (planning)",
       outputSourcesLeadUs:
@@ -720,7 +724,7 @@ const en: MessageTree = {
       inputSourcesLeadModular:
         "For modular controllers (e.g. U Max, Z8t), add connector types and counts below. For U-series processors, the suggested package infers the input board SKU from this mix and sizes boards from canvas bandwidth plus your connector totals.",
       inputSourcesLeadFixed:
-        "VX Series models are all-in-one controllers: inputs are fixed on the chassis (see datasheet)—there are no swappable input boards. The connector checklist below is hidden for this processor.",
+        "VX Series models are all-in-one: inputs are fixed on the chassis (no swappable input boards), so the connector checklist below is hidden. Fixed inputs and outputs for your model are summarized in the catalog box above when available.",
       inputType: "Input type",
       inputCount: "Count",
       inputAdd: "Add input row",
@@ -1690,9 +1694,13 @@ const zh: MessageTree = {
       labelPixelPitch: "点间距（mm）",
       labelReceiverCard: "接收卡",
       labelProcessor: "处理器",
-      vxFixedPortsTitle: "VX 系列 — 可用输出",
-      vxFixedPortsLead:
-        "该型号为一体机（无可更换输出子卡）。以下为目录中的公布输出端口：",
+      vxFixedChassisTitle: "VX 系列 — 机箱固定 I/O",
+      vxFixedChassisLead:
+        "一体机（无可更换输入/输出子卡）。输出端口数为结构化数据；输入接口在我们已为该型号摘录时显示在下方。",
+      vxSubOutputs: "送至 LED 墙体的输出",
+      vxSubInputs: "视频输入",
+      vxInputsNotInCatalog:
+        "当前规划工具尚未摘录该型号的输入明细—请以 Colorlight 规格书为准。",
       vxPortsWord: "个端口",
       outputSourcesTitle: "视频输出（规划）",
       outputSourcesLeadUs:
@@ -1751,7 +1759,7 @@ const zh: MessageTree = {
       inputSourcesLeadModular:
         "适用于插卡式处理器（如 U Max、Z8t）：在下方填写连接器类型与数量。U 系列发送端会在推荐配置中根据接口组合推断输入子卡型号，并结合画布带宽与连接器总数估算板卡数量。",
       inputSourcesLeadFixed:
-        "VX 系列为一体机，输入接口固定在机箱上（见规格书），不支持更换输入子卡。当前所选为非插卡式处理器，已隐藏下方连接器清单。",
+        "VX 系列为一体机，输入固定在机箱上（无可更换输入子卡），故隐藏下方连接器清单。固定输入与输出会在上方目录摘录框中列出（若已收录）。",
       inputType: "接口类型",
       inputCount: "数量",
       inputAdd: "添加一行",

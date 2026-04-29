@@ -67,9 +67,13 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.outputIf.ethernet_1g_rj45": "1G Ethernet (RJ45)",
   "tools.projectPlanner.outputIf.ethernet_5g_rj45": "5G Ethernet (RJ45)",
   "tools.projectPlanner.outputIf.fiber_10g": "10G fiber",
-  "tools.projectPlanner.vxFixedPortsTitle": "VX Series — available outputs",
-  "tools.projectPlanner.vxFixedPortsLead":
-    "This model is an all-in-one controller (no swappable output cards). Published output ports from our catalog:",
+  "tools.projectPlanner.vxFixedChassisTitle": "VX Series — fixed chassis I/O",
+  "tools.projectPlanner.vxFixedChassisLead":
+    "All-in-one controller (no swappable input/output cards). Outputs use structured port counts from our catalog; inputs are listed when extracted for this SKU.",
+  "tools.projectPlanner.vxSubOutputs": "Outputs to LED wall",
+  "tools.projectPlanner.vxSubInputs": "Video inputs",
+  "tools.projectPlanner.vxInputsNotInCatalog":
+    "Input connector detail isn’t in our planner extract for this SKU yet—see the Colorlight datasheet.",
   "tools.projectPlanner.vxPortsWord": "ports",
 };
 
@@ -491,9 +495,13 @@ export function ProjectPlannerTools() {
 
         {selectedProcessor && isVxSeriesProcessor(selectedProcessor) ? (
           <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
-            <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.vxFixedPortsTitle")}</p>
-            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.vxFixedPortsLead")}</p>
-            <ul className="mt-2 space-y-1.5 text-xs text-zinc-800 dark:text-zinc-200">
+            <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.vxFixedChassisTitle")}</p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.vxFixedChassisLead")}</p>
+
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              {t("tools.projectPlanner.vxSubOutputs")}
+            </p>
+            <ul className="mt-1.5 space-y-1.5 text-xs text-zinc-800 dark:text-zinc-200">
               {selectedProcessor.outputs.map((o) => (
                 <li key={`${o.mode}-${o.ports}-${o.label}`} className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
                   <span className="font-semibold">
@@ -504,6 +512,21 @@ export function ProjectPlannerTools() {
                 </li>
               ))}
             </ul>
+
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-zinc-500 dark:text-zinc-400">
+              {t("tools.projectPlanner.vxSubInputs")}
+            </p>
+            {selectedProcessor.inputs && selectedProcessor.inputs.length > 0 ? (
+              <ul className="mt-1.5 list-inside list-disc space-y-1 text-xs text-zinc-800 dark:text-zinc-200">
+                {selectedProcessor.inputs.map((row, i) => (
+                  <li key={`${row.label}-${i}`}>{row.label}</li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-1.5 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">
+                {t("tools.projectPlanner.vxInputsNotInCatalog")}
+              </p>
+            )}
           </div>
         ) : null}
 
