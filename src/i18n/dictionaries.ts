@@ -657,6 +657,10 @@ const en: MessageTree = {
       labelPixelPitch: "Pixel pitch (mm)",
       labelReceiverCard: "Receiver card",
       labelProcessor: "Processor",
+      vxFixedPortsTitle: "VX Series — available outputs",
+      vxFixedPortsLead:
+        "This model is an all-in-one controller (no swappable output cards). Published output ports from our catalog:",
+      vxPortsWord: "ports",
       outputSourcesTitle: "Video outputs (planning)",
       outputSourcesLeadUs:
         "Add RJ45 Ethernet (1G or 5G) and/or 10G fiber as you plan cabling to receivers. Count is planned ports (runs). The package below estimates output boards from signal math plus these rows.",
@@ -1686,6 +1690,10 @@ const zh: MessageTree = {
       labelPixelPitch: "点间距（mm）",
       labelReceiverCard: "接收卡",
       labelProcessor: "处理器",
+      vxFixedPortsTitle: "VX 系列 — 可用输出",
+      vxFixedPortsLead:
+        "该型号为一体机（无可更换输出子卡）。以下为目录中的公布输出端口：",
+      vxPortsWord: "个端口",
       outputSourcesTitle: "视频输出（规划）",
       outputSourcesLeadUs:
         "按规划添加 RJ45 百兆/千兆网线与 10G 光纤等下行链路；数量为规划的网口/光纤路数。下方推荐配置会结合信号估算与这些行给出输出子卡数量。",

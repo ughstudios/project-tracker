@@ -153,6 +153,11 @@ export function processorHasSwappableBoards(processor: SenderProcessorCatalogIte
   return processor.features.includes("modular");
 }
 
+/** All-in-one VX controllers: fixed Ethernet outputs on the chassis (see catalog labels). */
+export function isVxSeriesProcessor(processor: SenderProcessorCatalogItem): boolean {
+  return processor.series === "VX Series";
+}
+
 export type CabinetPixelSize = {
   width: number;
   height: number;

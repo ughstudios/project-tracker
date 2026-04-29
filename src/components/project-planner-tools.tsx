@@ -22,6 +22,7 @@ import {
   boardSpecForPrimaryOutputPlanning,
   inferUsSeriesInputBoardSpecFromPlannerLines,
   isUsSeriesProcessorName,
+  isVxSeriesProcessor,
   processorSupportsTarget,
   totalPlannedOutputPorts,
   recommendProcessorInputBoard,
@@ -66,6 +67,10 @@ const PLANNER_FALLBACK_TEXT: Record<string, string> = {
   "tools.projectPlanner.outputIf.ethernet_1g_rj45": "1G Ethernet (RJ45)",
   "tools.projectPlanner.outputIf.ethernet_5g_rj45": "5G Ethernet (RJ45)",
   "tools.projectPlanner.outputIf.fiber_10g": "10G fiber",
+  "tools.projectPlanner.vxFixedPortsTitle": "VX Series — available outputs",
+  "tools.projectPlanner.vxFixedPortsLead":
+    "This model is an all-in-one controller (no swappable output cards). Published output ports from our catalog:",
+  "tools.projectPlanner.vxPortsWord": "ports",
 };
 
 function parsePositiveInt(raw: string, fallback: number): number {
@@ -483,6 +488,24 @@ export function ProjectPlannerTools() {
             </select>
           </label>
         </div>
+
+        {selectedProcessor && isVxSeriesProcessor(selectedProcessor) ? (
+          <div className="mt-4 rounded-lg border border-zinc-200 bg-zinc-50 p-3 text-sm dark:border-zinc-700 dark:bg-zinc-900/60">
+            <p className="font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.vxFixedPortsTitle")}</p>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-600 dark:text-zinc-400">{t("tools.projectPlanner.vxFixedPortsLead")}</p>
+            <ul className="mt-2 space-y-1.5 text-xs text-zinc-800 dark:text-zinc-200">
+              {selectedProcessor.outputs.map((o) => (
+                <li key={`${o.mode}-${o.ports}-${o.label}`} className="flex flex-wrap items-baseline gap-x-2 tabular-nums">
+                  <span className="font-semibold">
+                    {nf0.format(o.ports)} {t("tools.projectPlanner.vxPortsWord")}
+                  </span>
+                  <span className="text-zinc-500 dark:text-zinc-400">· {modeLabel(t, o.mode)}</span>
+                  <span className="text-zinc-600 dark:text-zinc-300">— {o.label}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
 
         <div className="mt-6">
           <p className="text-sm font-medium text-zinc-800 dark:text-zinc-200">{t("tools.projectPlanner.inputSourcesTitle")}</p>
