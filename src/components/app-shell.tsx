@@ -94,7 +94,10 @@ export function AppShell({ user, onboardingCompleted, navAccess, onLogout, child
                 ) : null}
                 {showTab("kanban") ? <NavItem href="/kanban" label={t("nav.kanban")} /> : null}
                 {showTab("issues") ? (
-                  <NavItem href="/issues" label={t("nav.issues")} prefix />
+                  <>
+                    <NavItem href="/issues" label={t("nav.issues")} prefix />
+                    <NavItem href="/repairs" label="Repairs" prefix />
+                  </>
                 ) : null}
                 {showTab("projects") ? (
                   <NavItem href="/projects" label={t("nav.projects")} />
