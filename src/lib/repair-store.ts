@@ -8,7 +8,6 @@ import {
   normalizeRepairProductName,
 } from "@/lib/repair-products";
 import {
-  SEEDED_REPAIRS,
   type RepairRow,
   type RepairStatus,
   normalizeStatus,
@@ -16,7 +15,6 @@ import {
 
 type DbRepairRow = {
   id: string;
-  quantity: number;
   model: string;
   repair_type: string;
   issue_description: string;
@@ -45,7 +43,6 @@ type DbRepairRow = {
 const seedKey = "processor-repair-seed-2026-04-29";
 const repairRowColumns = `
   id,
-  quantity,
   model,
   repair_type,
   issue_description,
@@ -113,7 +110,6 @@ function mailingAddressText(payload: ProcessorRmaPayload): string {
 function toRepairRow(row: DbRepairRow): RepairRow {
   return {
     id: row.id,
-    quantity: 1,
     model: normalizeRepairProductName(row.model),
     repairType: row.repair_type,
     issueDescription: row.issue_description || row.repair_type,
@@ -143,7 +139,6 @@ export async function ensureRepairTables() {
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS processor_repairs (
       id TEXT PRIMARY KEY,
-      quantity INTEGER NOT NULL DEFAULT 1,
       model TEXT NOT NULL DEFAULT '',
       repair_type TEXT NOT NULL DEFAULT '',
       issue_description TEXT NOT NULL DEFAULT '',
@@ -174,6 +169,10 @@ export async function ensureRepairTables() {
     ALTER TABLE processor_repairs
     ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ
   `);
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE processor_repairs
+    DROP COLUMN IF EXISTS quantity
+  `);
   for (const column of [
     "issue_description TEXT NOT NULL DEFAULT ''",
     "contact_name TEXT NOT NULL DEFAULT ''",
@@ -193,8 +192,10 @@ export async function ensureRepairTables() {
   }
   await prisma.$executeRawUnsafe(`
     UPDATE processor_repairs
-    SET quantity = 1
-    WHERE quantity <> 1
+    SET archived_at = COALESCE(archived_at, NOW()),
+        updated_at = NOW()
+    WHERE id LIKE 'seed-%'
+      AND archived_at IS NULL
   `);
 
   await prisma.$executeRawUnsafe(`
@@ -212,33 +213,6 @@ export async function seedRepairsOnce() {
     seedKey,
   );
   if (markers.length > 0) return;
-
-  for (const row of SEEDED_REPAIRS) {
-    await prisma.$executeRawUnsafe(
-      `
-      INSERT INTO processor_repairs (
-      id, quantity, model, repair_type, issue_description, company, rma_number, rma_form_url,
-      assigned_to, repaired_by, status, notes, created_at, updated_at
-      )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz)
-      ON CONFLICT (id) DO NOTHING
-      `,
-      row.id,
-      1,
-      row.model,
-      row.repairType,
-      row.issueDescription,
-      row.company,
-      row.rmaNumber,
-      row.rmaFormUrl,
-      row.assignedTo,
-      row.repairedBy,
-      row.status,
-      row.notes,
-      row.createdAt,
-      row.updatedAt,
-    );
-  }
 
   await prisma.$executeRawUnsafe(
     `INSERT INTO app_seed_markers (seed_key) VALUES ($1) ON CONFLICT (seed_key) DO NOTHING`,
@@ -334,12 +308,12 @@ export async function upsertProcessorRmaRepair(
   await prisma.$executeRawUnsafe(
     `
     INSERT INTO processor_repairs (
-      id, quantity, model, repair_type, issue_description, company, contact_name, contact_email,
+      id, model, repair_type, issue_description, company, contact_name, contact_email,
       phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
       date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes, created_at, updated_at
     )
-    VALUES ($1, 1, $2, 'Processor RMA', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, '', '', 'OPEN', $17, $18::timestamptz, NOW())
+    VALUES ($1, $2, 'Processor RMA', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, '', '', 'OPEN', $17, $18::timestamptz, NOW())
     ON CONFLICT (id) DO UPDATE SET
       model = EXCLUDED.model,
       repair_type = EXCLUDED.repair_type,
@@ -438,16 +412,15 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
   const inserted = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     INSERT INTO processor_repairs (
-      id, quantity, model, repair_type, issue_description, company, contact_name, contact_email,
+      id, model, repair_type, issue_description, company, contact_name, contact_email,
       phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
       date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
     RETURNING ${repairRowColumns}
     `,
     row.id,
-    1,
     model,
     row.repairType,
     row.issueDescription,
@@ -498,32 +471,30 @@ export async function updateRepair(
   const updated = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     UPDATE processor_repairs
-    SET quantity = $2,
-        model = $3,
-        repair_type = $4,
-        issue_description = $5,
-        company = $6,
-        contact_name = $7,
-        contact_email = $8,
-        phone_number = $9,
-        rma_number = $10,
-        firmware = $11,
-        serial_number = $12,
-        purchase_number = $13,
-        date_purchased = $14,
-        usage_environment = $15,
-        mailing_address = $16,
-        photo_count = $17,
+    SET model = $2,
+        repair_type = $3,
+        issue_description = $4,
+        company = $5,
+        contact_name = $6,
+        contact_email = $7,
+        phone_number = $8,
+        rma_number = $9,
+        firmware = $10,
+        serial_number = $11,
+        purchase_number = $12,
+        date_purchased = $13,
+        usage_environment = $14,
+        mailing_address = $15,
+        photo_count = $16,
         assigned_to = '',
-        repaired_by = $18,
-        status = $19,
-        notes = $20,
+        repaired_by = $17,
+        status = $18,
+        notes = $19,
         updated_at = NOW()
     WHERE id = $1
     RETURNING ${repairRowColumns}
     `,
     id,
-    1,
     model,
     next.repairType,
     next.issueDescription,
