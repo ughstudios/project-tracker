@@ -105,16 +105,12 @@ export function AppShell({ user, onboardingCompleted, navAccess, onLogout, child
                 {showTab("work-records") ? (
                   <NavItem href="/work-records" label={t("nav.workRecords")} prefix />
                 ) : null}
-                {showTab("reports") ? (
-                  <NavItem href="/reports" label={t("nav.reports")} />
-                ) : null}
                 {showTab("customers") ? (
                   <NavItem href="/customers" label={t("nav.customers")} />
                 ) : null}
                 {showTab("inventory") ? (
                   <NavItem href="/inventory" label={t("nav.inventory")} />
                 ) : null}
-                {showTab("logs") ? <NavItem href="/logs" label={t("nav.logs")} /> : null}
                 {showTab("tools") ? <NavItem href="/tools" label={t("nav.tools")} /> : null}
                 <NavItem href="/forms" label="Forms" />
                 <NavItem href="/pending-customer-requests" label="Pending Requests" />
@@ -133,6 +129,10 @@ export function AppShell({ user, onboardingCompleted, navAccess, onLogout, child
                 <>
                   <NavRule />
                   <NavSection label={t("nav.footerAdmin")}>
+                    {showTab("reports") ? (
+                      <NavItem href="/reports" label={t("nav.reports")} />
+                    ) : null}
+                    {showTab("logs") ? <NavItem href="/logs" label={t("nav.logs")} /> : null}
                     <NavItem href="/employee-nav-access" label={t("nav.employeeNavAccess")} />
                     {staffAdmin ? (
                       <NavItem
