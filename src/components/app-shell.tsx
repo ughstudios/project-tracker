@@ -63,15 +63,17 @@ function NavSection({ label, children }: { label: string; children: React.ReactN
 
 export function AppShell({ user, onboardingCompleted, navAccess, onLogout, children }: Props) {
   const { t } = useI18n();
+  const pathname = usePathname();
   const staffAdmin = isPrivilegedAdmin(user.role);
   const superAdmin = isSuperAdmin(user.role);
   const showAdminSection = staffAdmin || superAdmin;
   const showTab = (id: EmployeeNavTabId) => navAccess[id] !== false;
+  const wideLayout = pathname === "/repairs" || pathname.startsWith("/repairs/");
 
   return (
     <div className="min-h-screen bg-zinc-50 dark:bg-[var(--body-bg)]">
       <OnboardingWizard onboardingCompleted={onboardingCompleted} />
-      <div className="mx-auto w-full max-w-7xl px-4 py-6">
+      <div className={["mx-auto w-full px-4 py-6", wideLayout ? "max-w-none" : "max-w-7xl"].join(" ")}>
         <div className="grid gap-5 lg:grid-cols-[216px_1fr]">
           <aside className="panel-surface flex flex-col rounded-xl p-3 lg:min-h-[calc(100vh-3rem)]">
             <div className="mb-3 border-b border-zinc-100 dark:border-zinc-800 pb-3">
