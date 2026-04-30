@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { parseProcessorRmaSubmission, type ProcessorRmaPayload } from "@/lib/pending-customer-request-payload";
+import { isAllowedRepairProductName, normalizeRepairProductName } from "@/lib/repair-products";
 import { SEEDED_REPAIRS, type RepairRow, type RepairStatus, normalizeStatus } from "@/lib/repairs";
 
 type DbRepairRow = {
@@ -60,7 +61,7 @@ function toRepairRow(row: DbRepairRow): RepairRow {
   return {
     id: row.id,
     quantity: row.quantity,
-    model: row.model,
+    model: normalizeRepairProductName(row.model),
     repairType: row.repair_type,
     company: row.company,
     rmaNumber: row.rma_number,
@@ -141,8 +142,36 @@ export async function seedRepairsOnce() {
   );
 }
 
+async function assertRepairProduct(model: string): Promise<string> {
+  const normalized = normalizeRepairProductName(model);
+  if (!normalized || !isAllowedRepairProductName(normalized)) {
+    throw new Error("Processor must be selected from the product catalog.");
+  }
+  return normalized;
+}
+
+async function assertCustomerName(company: string): Promise<string> {
+  const trimmed = company.trim();
+  if (!trimmed) return "";
+  const customer = await prisma.customer.findFirst({
+    where: { name: trimmed, archivedAt: null },
+    select: { name: true },
+  });
+  if (!customer) {
+    throw new Error("Company must be selected from Customers.");
+  }
+  return customer.name;
+}
+
 export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rmaFormUrl = "") {
   await ensureRepairTables();
+  const model = await assertRepairProduct(payload.processorModel);
+  const customer = await prisma.customer.upsert({
+    where: { name: payload.companyName },
+    update: { archivedAt: null },
+    create: { name: payload.companyName },
+    select: { name: true },
+  });
   await prisma.$executeRawUnsafe(
     `
     INSERT INTO processor_repairs (
@@ -159,8 +188,8 @@ export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rma
       notes = EXCLUDED.notes
     `,
     processorRmaRepairId(payload.id),
-    payload.processorModel,
-    payload.companyName,
+    model,
+    customer.name,
     payload.id.slice(0, 8),
     rmaFormUrl,
     processorRmaNotes(payload),
@@ -216,6 +245,8 @@ export async function listRepairs(): Promise<RepairRow[]> {
 
 export async function createRepair(row: RepairRow): Promise<RepairRow> {
   await ensureRepairTables();
+  const model = await assertRepairProduct(row.model);
+  const company = await assertCustomerName(row.company);
   const inserted = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     INSERT INTO processor_repairs (
@@ -227,9 +258,9 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
     `,
     row.id,
     row.quantity,
-    row.model,
+    model,
     row.repairType,
-    row.company,
+    company,
     row.rmaNumber,
     row.rmaFormUrl,
     row.assignedTo,
@@ -246,6 +277,8 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
   if (current.length === 0) return null;
   const row = toRepairRow(current[0]);
   const next = { ...row, ...patch, status: patch.status ? normalizeStatus(patch.status) : row.status };
+  const model = await assertRepairProduct(next.model);
+  const company = await assertCustomerName(next.company);
 
   const updated = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
@@ -255,22 +288,20 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
         repair_type = $4,
         company = $5,
         rma_number = $6,
-        rma_form_url = $7,
-        assigned_to = $8,
-        repaired_by = $9,
-        status = $10,
-        notes = $11,
+        assigned_to = $7,
+        repaired_by = $8,
+        status = $9,
+        notes = $10,
         updated_at = NOW()
     WHERE id = $1
     RETURNING *
     `,
     id,
     Math.max(0, Math.trunc(next.quantity || 0)),
-    next.model,
+    model,
     next.repairType,
-    next.company,
+    company,
     next.rmaNumber,
-    next.rmaFormUrl,
     next.assignedTo,
     next.repairedBy,
     next.status,

@@ -1,3 +1,5 @@
+import { normalizeRepairProductName, REPAIR_PRODUCT_OPTIONS } from "@/lib/repair-products";
+
 export type RepairStatus = "OPEN" | "IN_PROGRESS" | "DONE";
 
 export type RepairRow = {
@@ -45,7 +47,7 @@ function seedRepair(id: string, quantity: number, model: string, repairType: str
   return {
     id: `seed-${id.toLowerCase().replaceAll(/[^a-z0-9]+/g, "-").replaceAll(/^-|-$/g, "")}`,
     quantity,
-    model,
+    model: normalizeRepairProductName(model),
     repairType,
     company: "",
     rmaNumber: "",
@@ -69,7 +71,7 @@ export function makeBlankRepair(): RepairRow {
   return {
     id,
     quantity: 1,
-    model: "",
+    model: REPAIR_PRODUCT_OPTIONS[0] ?? "",
     repairType: "Processor repair",
     company: "",
     rmaNumber: "",

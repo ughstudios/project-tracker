@@ -1,11 +1,14 @@
 "use client";
 
 import { RepairRow, RepairStatus, groupRepairUnits, normalizeStatus, repairUnitTotal } from "@/lib/repairs";
+import { REPAIR_PRODUCT_OPTIONS } from "@/lib/repair-products";
 import { useEffect, useMemo, useState } from "react";
 
 type RepairsWorkspaceProps = {
   mode: "table" | "dashboard";
 };
+
+type CustomerOption = { id: string; name: string };
 
 const statusLabels: Record<RepairStatus, string> = {
   OPEN: "Open",
@@ -26,6 +29,7 @@ function inputClassName(extra = "") {
 
 function useRepairs() {
   const [repairs, setRepairs] = useState<RepairRow[]>([]);
+  const [customers, setCustomers] = useState<CustomerOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -35,8 +39,9 @@ function useRepairs() {
     try {
       const response = await fetch("/api/repairs", { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = (await response.json()) as { repairs: RepairRow[] };
+      const data = (await response.json()) as { repairs: RepairRow[]; customers: CustomerOption[] };
       setRepairs(data.repairs);
+      setCustomers(data.customers ?? []);
     } catch {
       setError("Could not load repairs.");
     } finally {
@@ -63,7 +68,8 @@ function useRepairs() {
     });
     if (!response.ok) {
       setRepairs(previous);
-      setError("Could not save repair changes.");
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? "Could not save repair changes.");
       return;
     }
     const data = (await response.json()) as { repair: RepairRow };
@@ -73,7 +79,8 @@ function useRepairs() {
   async function addRepair() {
     const response = await fetch("/api/repairs", { method: "POST" });
     if (!response.ok) {
-      setError("Could not add repair.");
+      const data = (await response.json().catch(() => ({}))) as { error?: string };
+      setError(data.error ?? "Could not add repair.");
       return;
     }
     const data = (await response.json()) as { repair: RepairRow };
@@ -92,11 +99,11 @@ function useRepairs() {
     }
   }
 
-  return { repairs, updateRepair, addRepair, removeRepair, loading, error };
+  return { repairs, customers, updateRepair, addRepair, removeRepair, loading, error };
 }
 
 export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
-  const { repairs, updateRepair, addRepair, removeRepair, loading, error } = useRepairs();
+  const { repairs, customers, updateRepair, addRepair, removeRepair, loading, error } = useRepairs();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | RepairStatus>("ALL");
 
@@ -224,31 +231,38 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input className={inputClassName("font-medium")} value={row.model} onChange={(event) => void updateRepair(row.id, { model: event.target.value })} />
+                    <select className={inputClassName("font-medium")} value={row.model} onChange={(event) => void updateRepair(row.id, { model: event.target.value })}>
+                      {REPAIR_PRODUCT_OPTIONS.map((model) => (
+                        <option key={model} value={model}>
+                          {model}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <input className={inputClassName()} value={row.repairType} onChange={(event) => void updateRepair(row.id, { repairType: event.target.value })} />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input className={inputClassName()} value={row.company} onChange={(event) => void updateRepair(row.id, { company: event.target.value })} />
+                    <select className={inputClassName()} value={row.company} onChange={(event) => void updateRepair(row.id, { company: event.target.value })}>
+                      <option value="">Unassigned</option>
+                      {customers.map((customer) => (
+                        <option key={customer.id} value={customer.name}>
+                          {customer.name}
+                        </option>
+                      ))}
+                    </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <input className={inputClassName()} value={row.rmaNumber} onChange={(event) => void updateRepair(row.id, { rmaNumber: event.target.value })} />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <div className="flex items-center">
-                      <input
-                        className={inputClassName("min-w-0 flex-1")}
-                        placeholder="https://..."
-                        value={row.rmaFormUrl}
-                        onChange={(event) => void updateRepair(row.id, { rmaFormUrl: event.target.value })}
-                      />
-                      {row.rmaFormUrl ? (
-                        <a className="px-2 text-xs font-semibold text-[#217346] underline-offset-2 hover:underline dark:text-emerald-300" href={row.rmaFormUrl} target="_blank" rel="noreferrer">
-                          Open
-                        </a>
-                      ) : null}
-                    </div>
+                    {row.rmaFormUrl ? (
+                      <a className="block px-2 py-1 text-xs font-semibold text-[#217346] underline-offset-2 hover:underline dark:text-emerald-300" href={row.rmaFormUrl} target="_blank" rel="noreferrer">
+                        Open customer form
+                      </a>
+                    ) : (
+                      <span className="block px-2 py-1 text-xs text-zinc-400 dark:text-zinc-500">No customer form</span>
+                    )}
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <input className={inputClassName()} list="repair-employees" value={row.assignedTo} onChange={(event) => void updateRepair(row.id, { assignedTo: event.target.value })} />

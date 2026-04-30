@@ -12,7 +12,13 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
 
   const { id } = await params;
   const patch = (await request.json()) as Partial<RepairRow>;
-  const repair = await updateRepair(id, patch);
+  const repair = await updateRepair(id, patch).catch((error) => {
+    if (error instanceof Error) return error;
+    return new Error("Could not update repair.");
+  });
+  if (repair instanceof Error) {
+    return NextResponse.json({ error: repair.message }, { status: 400 });
+  }
   if (!repair) {
     return NextResponse.json({ error: "Repair not found." }, { status: 404 });
   }
