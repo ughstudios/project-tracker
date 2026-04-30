@@ -1,7 +1,18 @@
 import { prisma } from "@/lib/prisma";
-import { parseProcessorRmaSubmission, type ProcessorRmaPayload } from "@/lib/pending-customer-request-payload";
-import { isAllowedRepairProductName, normalizeRepairProductName } from "@/lib/repair-products";
-import { SEEDED_REPAIRS, type RepairRow, type RepairStatus, normalizeStatus } from "@/lib/repairs";
+import {
+  parseProcessorRmaSubmission,
+  type ProcessorRmaPayload,
+} from "@/lib/pending-customer-request-payload";
+import {
+  isAllowedRepairProductName,
+  normalizeRepairProductName,
+} from "@/lib/repair-products";
+import {
+  SEEDED_REPAIRS,
+  type RepairRow,
+  type RepairStatus,
+  normalizeStatus,
+} from "@/lib/repairs";
 
 type DbRepairRow = {
   id: string;
@@ -38,15 +49,21 @@ function processorRmaRepairId(submissionId: string): string {
 }
 
 function processorRmaNotes(payload: ProcessorRmaPayload): string {
-  const photoLines = payload.files.map((file) => `- ${file.originalName}: ${file.storagePath}`);
+  const photoLines = payload.files.map(
+    (file) => `- ${file.originalName}: ${file.storagePath}`,
+  );
   return [
     `Public RMA submission ${payload.id}`,
     `Submitted: ${payload.submittedAt}`,
     `Contact: ${payload.contactName}`,
     `Email: ${payload.contactEmail}`,
     `Phone: ${payload.phoneNumber}`,
-    photoLines.length > 0 ? `Photos:\n${photoLines.join("\n")}` : "Photos: none",
-    payload.attachmentWarnings?.length ? `Attachment warnings:\n${payload.attachmentWarnings.join("\n")}` : "",
+    photoLines.length > 0
+      ? `Photos:\n${photoLines.join("\n")}`
+      : "Photos: none",
+    payload.attachmentWarnings?.length
+      ? `Attachment warnings:\n${payload.attachmentWarnings.join("\n")}`
+      : "",
   ]
     .filter(Boolean)
     .join("\n\n");
@@ -143,7 +160,9 @@ export async function ensureRepairTables() {
     "mailing_address TEXT NOT NULL DEFAULT ''",
     "photo_count INTEGER NOT NULL DEFAULT 0",
   ]) {
-    await prisma.$executeRawUnsafe(`ALTER TABLE processor_repairs ADD COLUMN IF NOT EXISTS ${column}`);
+    await prisma.$executeRawUnsafe(
+      `ALTER TABLE processor_repairs ADD COLUMN IF NOT EXISTS ${column}`,
+    );
   }
 
   await prisma.$executeRawUnsafe(`
@@ -232,15 +251,54 @@ async function assertEmployeeName(employee: string): Promise<string> {
   return user.name || user.email;
 }
 
-export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rmaFormUrl = "") {
+export async function upsertProcessorRmaRepair(
+  payload: ProcessorRmaPayload,
+  rmaFormUrl = "",
+) {
   await ensureRepairTables();
   const model = await assertRepairProduct(payload.processorModel);
   const customer = await prisma.customer.upsert({
     where: { name: payload.companyName },
     update: { archivedAt: null },
     create: { name: payload.companyName },
-    select: { name: true },
+    select: { id: true, name: true },
   });
+  const existingContact = payload.contactEmail
+    ? await prisma.customerContact.findFirst({
+        where: { customerId: customer.id, email: payload.contactEmail },
+        select: { id: true },
+      })
+    : null;
+  const contactNotes = [
+    "Created from processor RMA form.",
+    payload.mailingAddress || payload.address
+      ? `Mailing address:\n${mailingAddressText(payload)}`
+      : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+  if (existingContact) {
+    await prisma.customerContact.update({
+      where: { id: existingContact.id },
+      data: {
+        name: payload.contactName,
+        phone: payload.phoneNumber,
+        title: "RMA contact",
+        notes: contactNotes,
+      },
+    });
+  } else {
+    await prisma.customerContact.create({
+      data: {
+        customerId: customer.id,
+        name: payload.contactName,
+        email: payload.contactEmail,
+        phone: payload.phoneNumber,
+        title: "RMA contact",
+        notes: contactNotes,
+      },
+    });
+  }
   await prisma.$executeRawUnsafe(
     `
     INSERT INTO processor_repairs (
@@ -320,7 +378,9 @@ export async function migratePendingProcessorRmasToRepairs(): Promise<number> {
       payload,
       `/uploads/public-form-submissions/${payload.id}/submission.json`,
     );
-    await prisma.publicCustomerRequest.delete({ where: { submissionId: ticket.submissionId } });
+    await prisma.publicCustomerRequest.delete({
+      where: { submissionId: ticket.submissionId },
+    });
     moved += 1;
   }
   return moved;
@@ -380,15 +440,28 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
   return toRepairRow(inserted[0]);
 }
 
-export async function updateRepair(id: string, patch: Partial<RepairRow>): Promise<RepairRow | null> {
+export async function updateRepair(
+  id: string,
+  patch: Partial<RepairRow>,
+): Promise<RepairRow | null> {
   await ensureRepairTables();
-  const current = await prisma.$queryRawUnsafe<DbRepairRow[]>(`SELECT * FROM processor_repairs WHERE id = $1 LIMIT 1`, id);
+  const current = await prisma.$queryRawUnsafe<DbRepairRow[]>(
+    `SELECT * FROM processor_repairs WHERE id = $1 LIMIT 1`,
+    id,
+  );
   if (current.length === 0) return null;
   const row = toRepairRow(current[0]);
-  const next = { ...row, ...patch, status: patch.status ? normalizeStatus(patch.status) : row.status };
+  const next = {
+    ...row,
+    ...patch,
+    status: patch.status ? normalizeStatus(patch.status) : row.status,
+  };
   const model = await assertRepairProduct(next.model);
   const company = await assertCustomerName(next.company);
-  const repairedBy = patch.repairedBy !== undefined ? await assertEmployeeName(next.repairedBy) : next.repairedBy;
+  const repairedBy =
+    patch.repairedBy !== undefined
+      ? await assertEmployeeName(next.repairedBy)
+      : next.repairedBy;
 
   const updated = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
