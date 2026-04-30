@@ -170,6 +170,22 @@ async function assertCustomerName(company: string): Promise<string> {
   return customer.name;
 }
 
+async function assertEmployeeName(employee: string): Promise<string> {
+  const trimmed = employee.trim();
+  if (!trimmed) return "";
+  const user = await prisma.user.findFirst({
+    where: {
+      approvalStatus: "APPROVED",
+      OR: [{ name: trimmed }, { email: trimmed }],
+    },
+    select: { name: true, email: true },
+  });
+  if (!user) {
+    throw new Error("Repaired By must be selected from approved employees.");
+  }
+  return user.name || user.email;
+}
+
 export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rmaFormUrl = "") {
   await ensureRepairTables();
   const model = await assertRepairProduct(payload.processorModel);
@@ -256,6 +272,7 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
   await ensureRepairTables();
   const model = await assertRepairProduct(row.model);
   const company = await assertCustomerName(row.company);
+  const repairedBy = await assertEmployeeName(row.repairedBy);
   const inserted = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     INSERT INTO processor_repairs (
@@ -272,8 +289,8 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
     company,
     row.rmaNumber,
     row.rmaFormUrl,
-    row.assignedTo,
-    row.repairedBy,
+    "",
+    repairedBy,
     row.status,
     row.notes,
   );
@@ -288,6 +305,7 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
   const next = { ...row, ...patch, status: patch.status ? normalizeStatus(patch.status) : row.status };
   const model = await assertRepairProduct(next.model);
   const company = await assertCustomerName(next.company);
+  const repairedBy = patch.repairedBy !== undefined ? await assertEmployeeName(next.repairedBy) : next.repairedBy;
 
   const updated = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
@@ -297,10 +315,10 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
         repair_type = $4,
         company = $5,
         rma_number = $6,
-        assigned_to = $7,
-        repaired_by = $8,
-        status = $9,
-        notes = $10,
+        assigned_to = '',
+        repaired_by = $7,
+        status = $8,
+        notes = $9,
         updated_at = NOW()
     WHERE id = $1
     RETURNING *
@@ -311,8 +329,7 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
     next.repairType,
     company,
     next.rmaNumber,
-    next.assignedTo,
-    next.repairedBy,
+    repairedBy,
     next.status,
     next.notes,
   );

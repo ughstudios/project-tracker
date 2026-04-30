@@ -9,6 +9,7 @@ type RepairsWorkspaceProps = {
 };
 
 type CustomerOption = { id: string; name: string };
+type EmployeeOption = { id: string; name: string; email: string };
 
 const statusLabels: Record<RepairStatus, string> = {
   OPEN: "Open",
@@ -30,6 +31,7 @@ function inputClassName(extra = "") {
 function useRepairs() {
   const [repairs, setRepairs] = useState<RepairRow[]>([]);
   const [customers, setCustomers] = useState<CustomerOption[]>([]);
+  const [employees, setEmployees] = useState<EmployeeOption[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -39,9 +41,10 @@ function useRepairs() {
     try {
       const response = await fetch("/api/repairs", { cache: "no-store" });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      const data = (await response.json()) as { repairs: RepairRow[]; customers: CustomerOption[] };
+      const data = (await response.json()) as { repairs: RepairRow[]; customers: CustomerOption[]; employees: EmployeeOption[] };
       setRepairs(data.repairs);
       setCustomers(data.customers ?? []);
+      setEmployees(data.employees ?? []);
     } catch {
       setError("Could not load repairs.");
     } finally {
@@ -99,29 +102,20 @@ function useRepairs() {
     }
   }
 
-  return { repairs, customers, updateRepair, addRepair, archiveRepairRow, loading, error };
+  return { repairs, customers, employees, updateRepair, addRepair, archiveRepairRow, loading, error };
 }
 
 export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
-  const { repairs, customers, updateRepair, addRepair, archiveRepairRow, loading, error } = useRepairs();
+  const { repairs, customers, employees, updateRepair, addRepair, archiveRepairRow, loading, error } = useRepairs();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | RepairStatus>("ALL");
-
-  const employees = useMemo(() => {
-    const names = new Set<string>();
-    repairs.forEach((row) => {
-      if (row.assignedTo.trim()) names.add(row.assignedTo.trim());
-      if (row.repairedBy.trim()) names.add(row.repairedBy.trim());
-    });
-    return [...names].sort((a, b) => a.localeCompare(b));
-  }, [repairs]);
 
   const filteredRepairs = useMemo(() => {
     const q = query.trim().toLowerCase();
     return repairs.filter((row) => {
       if (statusFilter !== "ALL" && row.status !== statusFilter) return false;
       if (!q) return true;
-      return [row.model, row.repairType, row.company, row.rmaNumber, row.assignedTo, row.repairedBy, row.notes]
+      return [row.model, row.repairType, row.company, row.rmaNumber, row.repairedBy, row.notes]
         .join(" ")
         .toLowerCase()
         .includes(q);
@@ -175,14 +169,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
           </div>
         </div>
 
-        <datalist id="repair-employees">
-          {employees.map((employee) => (
-            <option key={employee} value={employee} />
-          ))}
-        </datalist>
-
         <div className="max-h-[calc(100vh-220px)] overflow-auto">
-          <table className="w-full min-w-[1260px] border-collapse table-fixed text-sm" aria-label="Editable repairs spreadsheet">
+          <table className="w-full min-w-[1120px] border-collapse table-fixed text-sm" aria-label="Editable repairs spreadsheet">
             <colgroup>
               <col className="w-12" />
               <col className="w-16" />
@@ -191,7 +179,6 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
               <col className="w-36" />
               <col className="w-28" />
               <col className="w-44" />
-              <col className="w-36" />
               <col className="w-36" />
               <col className="w-32" />
               <col className="w-64" />
@@ -207,7 +194,6 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                 <th className="border-r border-[#185c37] px-2 py-2">Company</th>
                 <th className="border-r border-[#185c37] px-2 py-2">RMA #</th>
                 <th className="border-r border-[#185c37] px-2 py-2">RMA form</th>
-                <th className="border-r border-[#185c37] px-2 py-2">Assigned to</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Repaired by</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Status</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Notes</th>
@@ -265,10 +251,17 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     )}
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input className={inputClassName()} list="repair-employees" value={row.assignedTo} onChange={(event) => void updateRepair(row.id, { assignedTo: event.target.value })} />
-                  </td>
-                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input className={inputClassName()} list="repair-employees" value={row.repairedBy} onChange={(event) => void updateRepair(row.id, { repairedBy: event.target.value })} />
+                    <select className={inputClassName()} value={row.repairedBy} onChange={(event) => void updateRepair(row.id, { repairedBy: event.target.value })}>
+                      <option value="">Unassigned</option>
+                      {employees.map((employee) => {
+                        const label = employee.name || employee.email;
+                        return (
+                          <option key={employee.id} value={label}>
+                            {label}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <select className={inputClassName()} value={row.status} onChange={(event) => void updateRepair(row.id, { status: normalizeStatus(event.target.value) })}>
@@ -302,7 +295,7 @@ function RepairsDashboard({ repairs, error }: { repairs: RepairRow[]; error: str
   const openRepairs = repairs.filter((row) => row.status !== "DONE");
   const completedRepairs = repairs.filter((row) => row.status === "DONE");
   const companyGroups = groupRepairUnits(repairs, "company");
-  const assignedGroups = groupRepairUnits(openRepairs, "assignedTo");
+  const openEmployeeGroups = groupRepairUnits(openRepairs, "repairedBy");
   const repairedByGroups = groupRepairUnits(completedRepairs, "repairedBy");
 
   return (
@@ -317,7 +310,7 @@ function RepairsDashboard({ repairs, error }: { repairs: RepairRow[]; error: str
 
       <div className="grid gap-3 lg:grid-cols-2">
         <SummaryPanel title="Repairs by company" rows={companyGroups} empty="No companies assigned yet." />
-        <SummaryPanel title="Open repairs by assignee" rows={assignedGroups} empty="No assigned open repairs yet." />
+        <SummaryPanel title="Open repairs by employee" rows={openEmployeeGroups} empty="No employee selected for open repairs yet." />
         <SummaryPanel title="Completed repairs by employee" rows={repairedByGroups} empty="No completed repairs yet." />
         <div className="panel-surface rounded-xl p-4">
           <h2 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">Recent repair rows</h2>
@@ -330,7 +323,7 @@ function RepairsDashboard({ repairs, error }: { repairs: RepairRow[]; error: str
                   <span>
                     {row.quantity} x {row.model || "Unnamed processor"}
                     <br />
-                    <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.company || "No company"} - {row.assignedTo || "Unassigned"}</span>
+                    <span className="text-xs text-zinc-500 dark:text-zinc-400">{row.company || "No company"} - {row.repairedBy || "Unassigned"}</span>
                   </span>
                   <span className="rounded-full bg-zinc-100 px-2 py-1 text-xs font-semibold text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200">{statusLabels[row.status]}</span>
                 </li>

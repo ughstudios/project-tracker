@@ -17,7 +17,12 @@ export async function GET() {
     orderBy: { name: "asc" },
     select: { id: true, name: true },
   });
-  return NextResponse.json({ repairs, customers }, { headers: { "Cache-Control": "private, no-store, must-revalidate" } });
+  const employees = await prisma.user.findMany({
+    where: { approvalStatus: "APPROVED" },
+    orderBy: { name: "asc" },
+    select: { id: true, name: true, email: true },
+  });
+  return NextResponse.json({ repairs, customers, employees }, { headers: { "Cache-Control": "private, no-store, must-revalidate" } });
 }
 
 export async function POST() {
