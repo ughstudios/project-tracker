@@ -321,7 +321,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
               <col className="w-[18%]" />
               <col className="w-[10%]" />
               <col className="w-[10%]" />
-              <col className="w-[13%]" />
+              <col className="w-[12%]" />
+              <col className="w-[14%]" />
               <col className="w-[9%]" />
               <col className="w-20" />
             </colgroup>
@@ -343,6 +344,9 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                 </th>
                 <th className="border-r border-[#185c37] px-2 py-2">
                   Repaired by
+                </th>
+                <th className="border-r border-[#185c37] px-2 py-2">
+                  Solution notes
                 </th>
                 <th className="border-r border-[#185c37] px-2 py-2">Status</th>
                 <th className="px-2 py-2">Action</th>
@@ -453,6 +457,15 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                         );
                       })}
                     </select>
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <EditableTextCell
+                      multiline
+                      value={row.notes}
+                      onCommit={(value) =>
+                        updateRepair(row.id, { notes: value })
+                      }
+                    />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <select
