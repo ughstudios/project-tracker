@@ -8,9 +8,20 @@ type DbRepairRow = {
   quantity: number;
   model: string;
   repair_type: string;
+  issue_description: string;
   company: string;
+  contact_name: string;
+  contact_email: string;
+  phone_number: string;
   rma_number: string;
   rma_form_url: string;
+  firmware: string;
+  serial_number: string;
+  purchase_number: string;
+  date_purchased: string;
+  usage_environment: string;
+  mailing_address: string;
+  photo_count: number;
   assigned_to: string;
   repaired_by: string;
   status: string;
@@ -27,16 +38,6 @@ function processorRmaRepairId(submissionId: string): string {
 }
 
 function processorRmaNotes(payload: ProcessorRmaPayload): string {
-  const mailing = payload.mailingAddress
-    ? [
-        payload.mailingAddress.line1,
-        payload.mailingAddress.line2,
-        `${payload.mailingAddress.city}, ${payload.mailingAddress.stateProvince} ${payload.mailingAddress.postalCode}`,
-        payload.mailingAddress.countryName,
-      ]
-        .filter(Boolean)
-        .join("\n")
-    : payload.address;
   const photoLines = payload.files.map((file) => `- ${file.originalName}: ${file.storagePath}`);
   return [
     `Public RMA submission ${payload.id}`,
@@ -44,18 +45,25 @@ function processorRmaNotes(payload: ProcessorRmaPayload): string {
     `Contact: ${payload.contactName}`,
     `Email: ${payload.contactEmail}`,
     `Phone: ${payload.phoneNumber}`,
-    mailing ? `Mailing address:\n${mailing}` : "",
-    `Firmware: ${payload.firmware || "-"}`,
-    `Serial: ${payload.serialNumber || "-"}`,
-    `Purchase number: ${payload.purchaseNumber || "-"}`,
-    `Date purchased: ${payload.datePurchased || "-"}`,
-    `Issue:\n${payload.issueDescription || "-"}`,
-    `Usage environment:\n${payload.usageEnvironment || "-"}`,
     photoLines.length > 0 ? `Photos:\n${photoLines.join("\n")}` : "Photos: none",
     payload.attachmentWarnings?.length ? `Attachment warnings:\n${payload.attachmentWarnings.join("\n")}` : "",
   ]
     .filter(Boolean)
     .join("\n\n");
+}
+
+function mailingAddressText(payload: ProcessorRmaPayload): string {
+  if (payload.mailingAddress) {
+    return [
+      payload.mailingAddress.line1,
+      payload.mailingAddress.line2,
+      `${payload.mailingAddress.city}, ${payload.mailingAddress.stateProvince} ${payload.mailingAddress.postalCode}`,
+      payload.mailingAddress.countryName,
+    ]
+      .filter(Boolean)
+      .join("\n");
+  }
+  return payload.address ?? "";
 }
 
 function toRepairRow(row: DbRepairRow): RepairRow {
@@ -64,9 +72,20 @@ function toRepairRow(row: DbRepairRow): RepairRow {
     quantity: row.quantity,
     model: normalizeRepairProductName(row.model),
     repairType: row.repair_type,
+    issueDescription: row.issue_description || row.repair_type,
     company: row.company,
+    contactName: row.contact_name,
+    contactEmail: row.contact_email,
+    phoneNumber: row.phone_number,
     rmaNumber: row.rma_number,
     rmaFormUrl: row.rma_form_url,
+    firmware: row.firmware,
+    serialNumber: row.serial_number,
+    purchaseNumber: row.purchase_number,
+    datePurchased: row.date_purchased,
+    usageEnvironment: row.usage_environment,
+    mailingAddress: row.mailing_address,
+    photoCount: row.photo_count,
     assignedTo: row.assigned_to,
     repairedBy: row.repaired_by,
     status: normalizeStatus(row.status),
@@ -83,9 +102,20 @@ export async function ensureRepairTables() {
       quantity INTEGER NOT NULL DEFAULT 1,
       model TEXT NOT NULL DEFAULT '',
       repair_type TEXT NOT NULL DEFAULT '',
+      issue_description TEXT NOT NULL DEFAULT '',
       company TEXT NOT NULL DEFAULT '',
+      contact_name TEXT NOT NULL DEFAULT '',
+      contact_email TEXT NOT NULL DEFAULT '',
+      phone_number TEXT NOT NULL DEFAULT '',
       rma_number TEXT NOT NULL DEFAULT '',
       rma_form_url TEXT NOT NULL DEFAULT '',
+      firmware TEXT NOT NULL DEFAULT '',
+      serial_number TEXT NOT NULL DEFAULT '',
+      purchase_number TEXT NOT NULL DEFAULT '',
+      date_purchased TEXT NOT NULL DEFAULT '',
+      usage_environment TEXT NOT NULL DEFAULT '',
+      mailing_address TEXT NOT NULL DEFAULT '',
+      photo_count INTEGER NOT NULL DEFAULT 0,
       assigned_to TEXT NOT NULL DEFAULT '',
       repaired_by TEXT NOT NULL DEFAULT '',
       status TEXT NOT NULL DEFAULT 'OPEN',
@@ -100,6 +130,21 @@ export async function ensureRepairTables() {
     ALTER TABLE processor_repairs
     ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ
   `);
+  for (const column of [
+    "issue_description TEXT NOT NULL DEFAULT ''",
+    "contact_name TEXT NOT NULL DEFAULT ''",
+    "contact_email TEXT NOT NULL DEFAULT ''",
+    "phone_number TEXT NOT NULL DEFAULT ''",
+    "firmware TEXT NOT NULL DEFAULT ''",
+    "serial_number TEXT NOT NULL DEFAULT ''",
+    "purchase_number TEXT NOT NULL DEFAULT ''",
+    "date_purchased TEXT NOT NULL DEFAULT ''",
+    "usage_environment TEXT NOT NULL DEFAULT ''",
+    "mailing_address TEXT NOT NULL DEFAULT ''",
+    "photo_count INTEGER NOT NULL DEFAULT 0",
+  ]) {
+    await prisma.$executeRawUnsafe(`ALTER TABLE processor_repairs ADD COLUMN IF NOT EXISTS ${column}`);
+  }
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS app_seed_markers (
@@ -121,16 +166,17 @@ export async function seedRepairsOnce() {
     await prisma.$executeRawUnsafe(
       `
       INSERT INTO processor_repairs (
-        id, quantity, model, repair_type, company, rma_number, rma_form_url,
-        assigned_to, repaired_by, status, notes, created_at, updated_at
+      id, quantity, model, repair_type, issue_description, company, rma_number, rma_form_url,
+      assigned_to, repaired_by, status, notes, created_at, updated_at
       )
-      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12::timestamptz, $13::timestamptz)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13::timestamptz, $14::timestamptz)
       ON CONFLICT (id) DO NOTHING
       `,
       row.id,
       row.quantity,
       row.model,
       row.repairType,
+      row.issueDescription,
       row.company,
       row.rmaNumber,
       row.rmaFormUrl,
@@ -198,24 +244,48 @@ export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rma
   await prisma.$executeRawUnsafe(
     `
     INSERT INTO processor_repairs (
-      id, quantity, model, repair_type, company, rma_number, rma_form_url,
+      id, quantity, model, repair_type, issue_description, company, contact_name, contact_email,
+      phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
+      date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes, created_at, updated_at
     )
-    VALUES ($1, 1, $2, 'Processor RMA', $3, $4, $5, '', '', 'OPEN', $6, $7::timestamptz, NOW())
+    VALUES ($1, 1, $2, 'Processor RMA', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, '', '', 'OPEN', $17, $18::timestamptz, NOW())
     ON CONFLICT (id) DO UPDATE SET
       model = EXCLUDED.model,
       repair_type = EXCLUDED.repair_type,
+      issue_description = EXCLUDED.issue_description,
       company = EXCLUDED.company,
+      contact_name = EXCLUDED.contact_name,
+      contact_email = EXCLUDED.contact_email,
+      phone_number = EXCLUDED.phone_number,
       rma_number = EXCLUDED.rma_number,
       rma_form_url = COALESCE(NULLIF(EXCLUDED.rma_form_url, ''), processor_repairs.rma_form_url),
+      firmware = EXCLUDED.firmware,
+      serial_number = EXCLUDED.serial_number,
+      purchase_number = EXCLUDED.purchase_number,
+      date_purchased = EXCLUDED.date_purchased,
+      usage_environment = EXCLUDED.usage_environment,
+      mailing_address = EXCLUDED.mailing_address,
+      photo_count = EXCLUDED.photo_count,
       notes = EXCLUDED.notes,
       archived_at = NULL
     `,
     processorRmaRepairId(payload.id),
     model,
+    payload.issueDescription,
     customer.name,
+    payload.contactName,
+    payload.contactEmail,
+    payload.phoneNumber,
     payload.id.slice(0, 8),
     rmaFormUrl,
+    payload.firmware,
+    payload.serialNumber,
+    payload.purchaseNumber,
+    payload.datePurchased,
+    payload.usageEnvironment,
+    mailingAddressText(payload),
+    payload.files.length,
     processorRmaNotes(payload),
     payload.submittedAt,
   );
@@ -276,19 +346,32 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
   const inserted = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     INSERT INTO processor_repairs (
-      id, quantity, model, repair_type, company, rma_number, rma_form_url,
+      id, quantity, model, repair_type, issue_description, company, contact_name, contact_email,
+      phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
+      date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     RETURNING *
     `,
     row.id,
     row.quantity,
     model,
     row.repairType,
+    row.issueDescription,
     company,
+    row.contactName,
+    row.contactEmail,
+    row.phoneNumber,
     row.rmaNumber,
     row.rmaFormUrl,
+    row.firmware,
+    row.serialNumber,
+    row.purchaseNumber,
+    row.datePurchased,
+    row.usageEnvironment,
+    row.mailingAddress,
+    row.photoCount,
     "",
     repairedBy,
     row.status,
@@ -313,12 +396,23 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
     SET quantity = $2,
         model = $3,
         repair_type = $4,
-        company = $5,
-        rma_number = $6,
+        issue_description = $5,
+        company = $6,
+        contact_name = $7,
+        contact_email = $8,
+        phone_number = $9,
+        rma_number = $10,
+        firmware = $11,
+        serial_number = $12,
+        purchase_number = $13,
+        date_purchased = $14,
+        usage_environment = $15,
+        mailing_address = $16,
+        photo_count = $17,
         assigned_to = '',
-        repaired_by = $7,
-        status = $8,
-        notes = $9,
+        repaired_by = $18,
+        status = $19,
+        notes = $20,
         updated_at = NOW()
     WHERE id = $1
     RETURNING *
@@ -327,8 +421,19 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
     Math.max(0, Math.trunc(next.quantity || 0)),
     model,
     next.repairType,
+    next.issueDescription,
     company,
+    next.contactName,
+    next.contactEmail,
+    next.phoneNumber,
     next.rmaNumber,
+    next.firmware,
+    next.serialNumber,
+    next.purchaseNumber,
+    next.datePurchased,
+    next.usageEnvironment,
+    next.mailingAddress,
+    next.photoCount,
     repairedBy,
     next.status,
     next.notes,

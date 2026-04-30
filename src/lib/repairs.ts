@@ -7,9 +7,20 @@ export type RepairRow = {
   quantity: number;
   model: string;
   repairType: string;
+  issueDescription: string;
   company: string;
+  contactName: string;
+  contactEmail: string;
+  phoneNumber: string;
   rmaNumber: string;
   rmaFormUrl: string;
+  firmware: string;
+  serialNumber: string;
+  purchaseNumber: string;
+  datePurchased: string;
+  usageEnvironment: string;
+  mailingAddress: string;
+  photoCount: number;
   assignedTo: string;
   repairedBy: string;
   status: RepairStatus;
@@ -49,9 +60,20 @@ function seedRepair(id: string, quantity: number, model: string, repairType: str
     quantity,
     model: normalizeRepairProductName(model),
     repairType,
+    issueDescription: repairType,
     company: "",
+    contactName: "",
+    contactEmail: "",
+    phoneNumber: "",
     rmaNumber: "",
     rmaFormUrl: "",
+    firmware: "",
+    serialNumber: "",
+    purchaseNumber: "",
+    datePurchased: "",
+    usageEnvironment: "",
+    mailingAddress: "",
+    photoCount: 0,
     assignedTo: "",
     repairedBy: "",
     status: "OPEN",
@@ -73,9 +95,20 @@ export function makeBlankRepair(): RepairRow {
     quantity: 1,
     model: REPAIR_PRODUCT_OPTIONS[0] ?? "",
     repairType: "Processor repair",
+    issueDescription: "",
     company: "",
+    contactName: "",
+    contactEmail: "",
+    phoneNumber: "",
     rmaNumber: "",
     rmaFormUrl: "",
+    firmware: "",
+    serialNumber: "",
+    purchaseNumber: "",
+    datePurchased: "",
+    usageEnvironment: "",
+    mailingAddress: "",
+    photoCount: 0,
     assignedTo: "",
     repairedBy: "",
     status: "OPEN",

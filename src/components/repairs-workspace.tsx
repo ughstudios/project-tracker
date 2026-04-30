@@ -115,7 +115,23 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
     return repairs.filter((row) => {
       if (statusFilter !== "ALL" && row.status !== statusFilter) return false;
       if (!q) return true;
-      return [row.model, row.repairType, row.company, row.rmaNumber, row.repairedBy, row.notes]
+      return [
+        row.model,
+        row.issueDescription,
+        row.company,
+        row.contactName,
+        row.contactEmail,
+        row.phoneNumber,
+        row.rmaNumber,
+        row.firmware,
+        row.serialNumber,
+        row.purchaseNumber,
+        row.datePurchased,
+        row.usageEnvironment,
+        row.mailingAddress,
+        row.repairedBy,
+        row.notes,
+      ]
         .join(" ")
         .toLowerCase()
         .includes(q);
@@ -139,7 +155,7 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
             <span className="mb-1 block font-semibold text-zinc-700 dark:text-zinc-200">Search</span>
             <input
               className="h-8 w-72 max-w-full border border-[#a6a6a6] bg-white px-2 text-sm text-zinc-950 outline-none focus:border-[#217346] focus:shadow-[0_0_0_1px_#217346] dark:border-zinc-600 dark:bg-[#111827] dark:text-zinc-100"
-              placeholder="Model, company, RMA, employee..."
+              placeholder="Model, issue, company, RMA, contact..."
               value={query}
               onChange={(event) => setQuery(event.target.value)}
             />
@@ -170,15 +186,25 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
         </div>
 
         <div className="max-h-[calc(100vh-220px)] overflow-auto">
-          <table className="w-full min-w-[1120px] border-collapse table-fixed text-sm" aria-label="Editable repairs spreadsheet">
+          <table className="w-full min-w-[2480px] border-collapse table-fixed text-sm" aria-label="Editable repairs spreadsheet">
             <colgroup>
               <col className="w-12" />
               <col className="w-16" />
               <col className="w-36" />
-              <col className="w-40" />
+              <col className="w-64" />
+              <col className="w-36" />
+              <col className="w-36" />
+              <col className="w-52" />
               <col className="w-36" />
               <col className="w-28" />
               <col className="w-44" />
+              <col className="w-32" />
+              <col className="w-36" />
+              <col className="w-36" />
+              <col className="w-32" />
+              <col className="w-56" />
+              <col className="w-64" />
+              <col className="w-20" />
               <col className="w-36" />
               <col className="w-32" />
               <col className="w-64" />
@@ -190,10 +216,20 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                 <th className="border-r border-[#185c37] px-2 py-2 text-center">#</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Qty</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Processor</th>
-                <th className="border-r border-[#185c37] px-2 py-2">Repair</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Description of issue</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Company</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Contact</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Email</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Phone</th>
                 <th className="border-r border-[#185c37] px-2 py-2">RMA #</th>
                 <th className="border-r border-[#185c37] px-2 py-2">RMA form</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Firmware</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Serial #</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Purchase #</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Purchased</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Usage environment</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Mailing address</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Photos</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Repaired by</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Status</th>
                 <th className="border-r border-[#185c37] px-2 py-2">Notes</th>
@@ -226,7 +262,7 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input className={inputClassName()} value={row.repairType} onChange={(event) => void updateRepair(row.id, { repairType: event.target.value })} />
+                    <textarea className={inputClassName("min-h-8 resize-none leading-6")} rows={1} value={row.issueDescription} onChange={(event) => void updateRepair(row.id, { issueDescription: event.target.value })} />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <select className={inputClassName()} value={row.company} onChange={(event) => void updateRepair(row.id, { company: event.target.value })}>
@@ -239,6 +275,15 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.contactName} onChange={(event) => void updateRepair(row.id, { contactName: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} type="email" value={row.contactEmail} onChange={(event) => void updateRepair(row.id, { contactEmail: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.phoneNumber} onChange={(event) => void updateRepair(row.id, { phoneNumber: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <input className={inputClassName()} value={row.rmaNumber} onChange={(event) => void updateRepair(row.id, { rmaNumber: event.target.value })} />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
@@ -249,6 +294,27 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     ) : (
                       <span className="block px-2 py-1 text-xs text-zinc-400 dark:text-zinc-500">No customer form</span>
                     )}
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.firmware} onChange={(event) => void updateRepair(row.id, { firmware: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.serialNumber} onChange={(event) => void updateRepair(row.id, { serialNumber: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.purchaseNumber} onChange={(event) => void updateRepair(row.id, { purchaseNumber: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} type="date" value={row.datePurchased} onChange={(event) => void updateRepair(row.id, { datePurchased: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <textarea className={inputClassName("min-h-8 resize-none leading-6")} rows={1} value={row.usageEnvironment} onChange={(event) => void updateRepair(row.id, { usageEnvironment: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <textarea className={inputClassName("min-h-8 resize-none whitespace-pre-line leading-6")} rows={1} value={row.mailingAddress} onChange={(event) => void updateRepair(row.id, { mailingAddress: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] px-2 py-1 align-middle text-sm tabular-nums dark:border-zinc-700">
+                    {row.photoCount}
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <select className={inputClassName()} value={row.repairedBy} onChange={(event) => void updateRepair(row.id, { repairedBy: event.target.value })}>
