@@ -9,6 +9,7 @@ import {
 } from "@/lib/repairs";
 import { REPAIR_PRODUCT_OPTIONS } from "@/lib/repair-products";
 import Link from "next/link";
+import type { ChangeEvent, KeyboardEvent } from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type RepairsWorkspaceProps = {
@@ -33,6 +34,70 @@ function inputClassName(extra = "") {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function EditableTextCell({
+  value,
+  onCommit,
+  multiline = false,
+  extraClassName = "",
+}: {
+  value: string;
+  onCommit: (value: string) => Promise<void>;
+  multiline?: boolean;
+  extraClassName?: string;
+}) {
+  const [draft, setDraft] = useState(value);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (!editing) setDraft(value);
+  }, [editing, value]);
+
+  async function commit() {
+    setEditing(false);
+    if (draft === value) return;
+    setSaving(true);
+    try {
+      await onCommit(draft);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  const className = inputClassName(
+    [
+      multiline ? "min-h-8 resize-none leading-6" : "",
+      saving ? "opacity-70" : "",
+      extraClassName,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+
+  const sharedProps = {
+    className,
+    value: draft,
+    onChange: (event: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+      setDraft(event.target.value),
+    onFocus: () => setEditing(true),
+    onBlur: () => void commit(),
+    onKeyDown: (
+      event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>,
+    ) => {
+      if (event.key === "Enter" && !event.shiftKey) {
+        event.preventDefault();
+        event.currentTarget.blur();
+      }
+    },
+  };
+
+  return multiline ? (
+    <textarea rows={1} {...sharedProps} />
+  ) : (
+    <input {...sharedProps} />
+  );
 }
 
 function useRepairs() {
@@ -308,16 +373,11 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     </select>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <textarea
-                      className={inputClassName(
-                        "min-h-8 resize-none leading-6",
-                      )}
-                      rows={1}
+                    <EditableTextCell
+                      multiline
                       value={row.issueDescription}
-                      onChange={(event) =>
-                        void updateRepair(row.id, {
-                          issueDescription: event.target.value,
-                        })
+                      onCommit={(value) =>
+                        updateRepair(row.id, { issueDescription: value })
                       }
                     />
                   </td>
@@ -350,13 +410,10 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     </div>
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input
-                      className={inputClassName()}
+                    <EditableTextCell
                       value={row.rmaNumber}
-                      onChange={(event) =>
-                        void updateRepair(row.id, {
-                          rmaNumber: event.target.value,
-                        })
+                      onCommit={(value) =>
+                        updateRepair(row.id, { rmaNumber: value })
                       }
                     />
                   </td>
