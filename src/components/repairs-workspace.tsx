@@ -25,6 +25,12 @@ const statusLabels: Record<RepairStatus, string> = {
   DONE: "Done",
 };
 
+function formatRepairDate(value: string) {
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleDateString();
+}
+
 function inputClassName(extra = "") {
   return [
     "h-8 w-full rounded-none border-0 bg-transparent px-2 py-1 text-sm text-zinc-950 outline-none",
@@ -324,6 +330,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
               <col className="w-[12%]" />
               <col className="w-[14%]" />
               <col className="w-[9%]" />
+              <col className="w-[8%]" />
+              <col className="w-[8%]" />
               <col className="w-20" />
             </colgroup>
             <thead>
@@ -349,6 +357,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                   Solution notes
                 </th>
                 <th className="border-r border-[#185c37] px-2 py-2">Status</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Created</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Updated</th>
                 <th className="px-2 py-2">Action</th>
               </tr>
             </thead>
@@ -481,6 +491,12 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                       <option value="IN_PROGRESS">In progress</option>
                       <option value="DONE">Done</option>
                     </select>
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] px-2 py-1 align-middle text-xs tabular-nums text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                    {formatRepairDate(row.createdAt)}
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] px-2 py-1 align-middle text-xs tabular-nums text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                    {formatRepairDate(row.updatedAt)}
                   </td>
                   <td className="border-t border-[#d9d9d9] px-2 py-1 align-middle dark:border-zinc-700">
                     <button
