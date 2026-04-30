@@ -43,6 +43,33 @@ type DbRepairRow = {
 };
 
 const seedKey = "processor-repair-seed-2026-04-29";
+const repairRowColumns = `
+  id,
+  quantity,
+  model,
+  repair_type,
+  issue_description,
+  company,
+  contact_name,
+  contact_email,
+  phone_number,
+  rma_number,
+  rma_form_url,
+  firmware,
+  serial_number,
+  purchase_number,
+  date_purchased,
+  usage_environment,
+  mailing_address,
+  photo_count,
+  assigned_to,
+  repaired_by,
+  status,
+  notes,
+  created_at,
+  updated_at,
+  archived_at
+`;
 
 function processorRmaRepairId(submissionId: string): string {
   return `rma-${submissionId}`;
@@ -390,7 +417,7 @@ export async function listRepairs(): Promise<RepairRow[]> {
   await migratePendingProcessorRmasToRepairs();
   await seedRepairsOnce();
   const rows = await prisma.$queryRawUnsafe<DbRepairRow[]>(`
-    SELECT *
+    SELECT ${repairRowColumns}
     FROM processor_repairs
     WHERE archived_at IS NULL
     ORDER BY created_at ASC, id ASC
@@ -412,7 +439,7 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
       assigned_to, repaired_by, status, notes
     )
     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
-    RETURNING *
+    RETURNING ${repairRowColumns}
     `,
     row.id,
     row.quantity,
@@ -446,7 +473,7 @@ export async function updateRepair(
 ): Promise<RepairRow | null> {
   await ensureRepairTables();
   const current = await prisma.$queryRawUnsafe<DbRepairRow[]>(
-    `SELECT * FROM processor_repairs WHERE id = $1 LIMIT 1`,
+    `SELECT ${repairRowColumns} FROM processor_repairs WHERE id = $1 LIMIT 1`,
     id,
   );
   if (current.length === 0) return null;
@@ -488,7 +515,7 @@ export async function updateRepair(
         notes = $20,
         updated_at = NOW()
     WHERE id = $1
-    RETURNING *
+    RETURNING ${repairRowColumns}
     `,
     id,
     Math.max(0, Math.trunc(next.quantity || 0)),
