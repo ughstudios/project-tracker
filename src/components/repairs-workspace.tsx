@@ -87,23 +87,23 @@ function useRepairs() {
     setRepairs((rows) => [data.repair, ...rows]);
   }
 
-  async function removeRepair(id: string) {
+  async function archiveRepairRow(id: string) {
     const row = repairs.find((repair) => repair.id === id);
-    if (!window.confirm(`Delete repair row "${row?.model || id}"?`)) return;
+    if (!window.confirm(`Archive repair row "${row?.model || id}"?`)) return;
     const previous = repairs;
     setRepairs((rows) => rows.filter((repair) => repair.id !== id));
     const response = await fetch(`/api/repairs/${encodeURIComponent(id)}`, { method: "DELETE" });
     if (!response.ok) {
       setRepairs(previous);
-      setError("Could not delete repair.");
+      setError("Could not archive repair.");
     }
   }
 
-  return { repairs, customers, updateRepair, addRepair, removeRepair, loading, error };
+  return { repairs, customers, updateRepair, addRepair, archiveRepairRow, loading, error };
 }
 
 export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
-  const { repairs, customers, updateRepair, addRepair, removeRepair, loading, error } = useRepairs();
+  const { repairs, customers, updateRepair, addRepair, archiveRepairRow, loading, error } = useRepairs();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | RepairStatus>("ALL");
 
@@ -284,8 +284,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                     {new Date(row.updatedAt).toLocaleDateString()}
                   </td>
                   <td className="border-t border-[#d9d9d9] px-2 py-1 align-middle dark:border-zinc-700">
-                    <button type="button" className="h-7 w-full border border-transparent text-xs font-semibold text-red-700 hover:border-red-300 hover:bg-red-50 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30" onClick={() => void removeRepair(row.id)}>
-                      Delete
+                    <button type="button" className="h-7 w-full border border-transparent text-xs font-semibold text-amber-700 hover:border-amber-300 hover:bg-amber-50 dark:text-amber-300 dark:hover:border-amber-800 dark:hover:bg-amber-950/30" onClick={() => void archiveRepairRow(row.id)}>
+                      Archive
                     </button>
                   </td>
                 </tr>

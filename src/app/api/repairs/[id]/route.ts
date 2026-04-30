@@ -1,7 +1,7 @@
 import { auth } from "@/auth";
 import { TABS_ISSUE_DATA } from "@/lib/employee-nav-shared";
 import { guardEmployeeNavApi } from "@/lib/employee-nav-api";
-import { deleteRepair, updateRepair } from "@/lib/repair-store";
+import { archiveRepair, updateRepair } from "@/lib/repair-store";
 import type { RepairRow } from "@/lib/repairs";
 import { NextResponse } from "next/server";
 
@@ -31,6 +31,6 @@ export async function DELETE(_request: Request, { params }: { params: Promise<{ 
   if (denied) return denied;
 
   const { id } = await params;
-  await deleteRepair(id);
+  await archiveRepair(id);
   return NextResponse.json({ ok: true });
 }

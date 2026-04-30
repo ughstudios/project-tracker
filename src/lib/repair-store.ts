@@ -17,6 +17,7 @@ type DbRepairRow = {
   notes: string;
   created_at: Date;
   updated_at: Date;
+  archived_at: Date | null;
 };
 
 const seedKey = "processor-repair-seed-2026-04-29";
@@ -90,8 +91,14 @@ export async function ensureRepairTables() {
       status TEXT NOT NULL DEFAULT 'OPEN',
       notes TEXT NOT NULL DEFAULT '',
       created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      archived_at TIMESTAMPTZ
     )
+  `);
+
+  await prisma.$executeRawUnsafe(`
+    ALTER TABLE processor_repairs
+    ADD COLUMN IF NOT EXISTS archived_at TIMESTAMPTZ
   `);
 
   await prisma.$executeRawUnsafe(`
@@ -185,7 +192,8 @@ export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rma
       company = EXCLUDED.company,
       rma_number = EXCLUDED.rma_number,
       rma_form_url = COALESCE(NULLIF(EXCLUDED.rma_form_url, ''), processor_repairs.rma_form_url),
-      notes = EXCLUDED.notes
+      notes = EXCLUDED.notes,
+      archived_at = NULL
     `,
     processorRmaRepairId(payload.id),
     model,
@@ -238,6 +246,7 @@ export async function listRepairs(): Promise<RepairRow[]> {
   const rows = await prisma.$queryRawUnsafe<DbRepairRow[]>(`
     SELECT *
     FROM processor_repairs
+    WHERE archived_at IS NULL
     ORDER BY created_at ASC, id ASC
   `);
   return rows.map(toRepairRow);
@@ -310,9 +319,17 @@ export async function updateRepair(id: string, patch: Partial<RepairRow>): Promi
   return toRepairRow(updated[0]);
 }
 
-export async function deleteRepair(id: string) {
+export async function archiveRepair(id: string) {
   await ensureRepairTables();
-  await prisma.$executeRawUnsafe(`DELETE FROM processor_repairs WHERE id = $1`, id);
+  await prisma.$executeRawUnsafe(
+    `
+    UPDATE processor_repairs
+    SET archived_at = COALESCE(archived_at, NOW()),
+        updated_at = NOW()
+    WHERE id = $1
+    `,
+    id,
+  );
 }
 
 export function isRepairStatus(value: unknown): value is RepairStatus {
