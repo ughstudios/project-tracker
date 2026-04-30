@@ -251,14 +251,13 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
           >
             <colgroup>
               <col className="w-10" />
-              <col className="w-14" />
-              <col className="w-[13%]" />
-              <col className="w-[23%]" />
-              <col className="w-[17%]" />
-              <col className="w-[9%]" />
-              <col className="w-[9%]" />
-              <col className="w-[13%]" />
+              <col className="w-[15%]" />
+              <col className="w-[25%]" />
+              <col className="w-[18%]" />
               <col className="w-[10%]" />
+              <col className="w-[10%]" />
+              <col className="w-[13%]" />
+              <col className="w-[9%]" />
               <col className="w-20" />
             </colgroup>
             <thead>
@@ -266,7 +265,6 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                 <th className="border-r border-[#185c37] px-2 py-2 text-center">
                   #
                 </th>
-                <th className="border-r border-[#185c37] px-2 py-2">Qty</th>
                 <th className="border-r border-[#185c37] px-2 py-2">
                   Processor
                 </th>
@@ -293,20 +291,6 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                 >
                   <td className="border-r border-t border-[#d9d9d9] bg-[#f3f2f1] px-2 py-1 text-center text-xs tabular-nums text-zinc-600 dark:border-zinc-700 dark:bg-[#1f2937] dark:text-zinc-300">
                     {index + 1}
-                  </td>
-                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
-                    <input
-                      className={inputClassName("tabular-nums")}
-                      min={0}
-                      type="number"
-                      value={row.quantity}
-                      onChange={(event) =>
-                        void updateRepair(row.id, {
-                          quantity:
-                            Number.parseInt(event.target.value, 10) || 0,
-                        })
-                      }
-                    />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <select
@@ -467,13 +451,10 @@ function RepairsDashboard({
       ) : null}
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Repair rows" value={repairs.length} />
-        <Metric label="Processor units" value={repairUnitTotal(repairs)} />
+        <Metric label="Processors" value={repairUnitTotal(repairs)} />
+        <Metric label="Open processors" value={repairUnitTotal(openRepairs)} />
         <Metric
-          label="Open repair units"
-          value={repairUnitTotal(openRepairs)}
-        />
-        <Metric
-          label="Completed repair units"
+          label="Completed processors"
           value={repairUnitTotal(completedRepairs)}
         />
       </div>
@@ -508,7 +489,7 @@ function RepairsDashboard({
                   className="flex items-center justify-between gap-3 border-b border-zinc-200 pb-2 text-sm last:border-b-0 dark:border-zinc-800"
                 >
                   <span>
-                    {row.quantity} x {row.model || "Unnamed processor"}
+                    {row.model || "Unnamed processor"}
                     <br />
                     <span className="text-xs text-zinc-500 dark:text-zinc-400">
                       {row.company || "No company"} -{" "}

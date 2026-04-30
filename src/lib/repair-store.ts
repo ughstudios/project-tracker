@@ -113,7 +113,7 @@ function mailingAddressText(payload: ProcessorRmaPayload): string {
 function toRepairRow(row: DbRepairRow): RepairRow {
   return {
     id: row.id,
-    quantity: row.quantity,
+    quantity: 1,
     model: normalizeRepairProductName(row.model),
     repairType: row.repair_type,
     issueDescription: row.issue_description || row.repair_type,
@@ -191,6 +191,11 @@ export async function ensureRepairTables() {
       `ALTER TABLE processor_repairs ADD COLUMN IF NOT EXISTS ${column}`,
     );
   }
+  await prisma.$executeRawUnsafe(`
+    UPDATE processor_repairs
+    SET quantity = 1
+    WHERE quantity <> 1
+  `);
 
   await prisma.$executeRawUnsafe(`
     CREATE TABLE IF NOT EXISTS app_seed_markers (
@@ -219,7 +224,7 @@ export async function seedRepairsOnce() {
       ON CONFLICT (id) DO NOTHING
       `,
       row.id,
-      row.quantity,
+      1,
       row.model,
       row.repairType,
       row.issueDescription,
@@ -442,7 +447,7 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
     RETURNING ${repairRowColumns}
     `,
     row.id,
-    row.quantity,
+    1,
     model,
     row.repairType,
     row.issueDescription,
@@ -518,7 +523,7 @@ export async function updateRepair(
     RETURNING ${repairRowColumns}
     `,
     id,
-    Math.max(0, Math.trunc(next.quantity || 0)),
+    1,
     model,
     next.repairType,
     next.issueDescription,
