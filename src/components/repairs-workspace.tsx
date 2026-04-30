@@ -25,6 +25,7 @@ type EmployeeOption = { id: string; name: string; email: string };
 type RepairColumnId =
   | "row"
   | "processor"
+  | "serial"
   | "issue"
   | "company"
   | "rma"
@@ -46,6 +47,7 @@ const REPAIR_COLUMNS: Array<{
 }> = [
   { id: "row", label: "#", width: 44, minWidth: 44, align: "center" },
   { id: "processor", label: "Processor", width: 160, minWidth: 120 },
+  { id: "serial", label: "Serial #", width: 150, minWidth: 110 },
   { id: "issue", label: "Description of issue", width: 360, minWidth: 180 },
   { id: "company", label: "Company", width: 240, minWidth: 160 },
   { id: "rma", label: "RMA #", width: 120, minWidth: 90 },
@@ -508,6 +510,14 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                         </option>
                       ))}
                     </select>
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <EditableTextCell
+                      value={row.serialNumber}
+                      onCommit={(value) =>
+                        updateRepair(row.id, { serialNumber: value })
+                      }
+                    />
                   </td>
                   <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
                     <EditableTextCell
