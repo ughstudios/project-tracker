@@ -13,7 +13,7 @@ export const PRODUCT_GROUPS: Array<{ group: string; items: string[] }> = [
   },
   {
     group: "Z Series",
-    items: ["Z8t", "Z6 Pro G2", "Z5", "Z4 Pro", "Z3"],
+    items: ["Z8t", "Z6 Pro G2", "Z6", "Z5", "Z4 Pro", "Z3"],
   },
   {
     group: "VX Series",
@@ -80,7 +80,9 @@ export const PROCESSOR_PROJECT_GROUP_NAMES = new Set([
 
 /** Flat list of processor models shown on Projects → processors (same as inventory processor picker). */
 export function listProcessorModelsForProjects(): string[] {
-  return PRODUCT_GROUPS.filter((g) => PROCESSOR_PROJECT_GROUP_NAMES.has(g.group)).flatMap((g) => g.items);
+  return PRODUCT_GROUPS.filter((g) =>
+    PROCESSOR_PROJECT_GROUP_NAMES.has(g.group),
+  ).flatMap((g) => g.items);
 }
 
 const processorRmaModelSet = new Set(listProcessorModelsForProjects());

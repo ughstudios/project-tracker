@@ -13,7 +13,7 @@ const PRODUCT_NAME_ALIASES = new Map<string, string>([
   ["z4 old", "Z4"],
   ["z4(old)", "Z4"],
   ["z5", "Z5"],
-  ["z6", "Z6 Pro G2"],
+  ["z6", "Z6"],
   ["z8", "Z8t"],
   ["x2m", "X2M"],
   ["x4e", "X4E"],
@@ -23,7 +23,9 @@ const PRODUCT_NAME_ALIASES = new Map<string, string>([
 
 export const REPAIR_PRODUCT_OPTIONS = [
   ...new Set([
-    ...PRODUCT_GROUPS.filter((group) => !EXCLUDED_REPAIR_PRODUCT_GROUPS.has(group.group)).flatMap((group) => group.items),
+    ...PRODUCT_GROUPS.filter(
+      (group) => !EXCLUDED_REPAIR_PRODUCT_GROUPS.has(group.group),
+    ).flatMap((group) => group.items),
     ...REPAIR_ONLY_PRODUCTS,
   ]),
 ].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
@@ -37,7 +39,9 @@ function productKey(value: string): string {
 export function normalizeRepairProductName(value: string): string {
   const trimmed = value.trim();
   if (!trimmed) return "";
-  const direct = REPAIR_PRODUCT_OPTIONS.find((option) => option.toLowerCase() === trimmed.toLowerCase());
+  const direct = REPAIR_PRODUCT_OPTIONS.find(
+    (option) => option.toLowerCase() === trimmed.toLowerCase(),
+  );
   if (direct) return direct;
   return PRODUCT_NAME_ALIASES.get(productKey(trimmed)) ?? trimmed;
 }
