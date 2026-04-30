@@ -9,7 +9,11 @@ import {
 } from "@/lib/repairs";
 import { REPAIR_PRODUCT_OPTIONS } from "@/lib/repair-products";
 import Link from "next/link";
-import type { ChangeEvent, KeyboardEvent } from "react";
+import type {
+  ChangeEvent,
+  KeyboardEvent,
+  MouseEvent as ReactMouseEvent,
+} from "react";
 import { useEffect, useMemo, useState } from "react";
 
 type RepairsWorkspaceProps = {
@@ -18,6 +22,44 @@ type RepairsWorkspaceProps = {
 
 type CustomerOption = { id: string; name: string };
 type EmployeeOption = { id: string; name: string; email: string };
+type RepairColumnId =
+  | "row"
+  | "processor"
+  | "issue"
+  | "company"
+  | "rma"
+  | "form"
+  | "repairedBy"
+  | "notes"
+  | "status"
+  | "created"
+  | "updated"
+  | "action";
+
+const REPAIR_COLUMN_STORAGE_KEY = "project-tracker.repairs.column-widths.v1";
+const REPAIR_COLUMNS: Array<{
+  id: RepairColumnId;
+  label: string;
+  width: number;
+  minWidth: number;
+  align?: "center";
+}> = [
+  { id: "row", label: "#", width: 44, minWidth: 44, align: "center" },
+  { id: "processor", label: "Processor", width: 160, minWidth: 120 },
+  { id: "issue", label: "Description of issue", width: 360, minWidth: 180 },
+  { id: "company", label: "Company", width: 240, minWidth: 160 },
+  { id: "rma", label: "RMA #", width: 120, minWidth: 90 },
+  { id: "form", label: "RMA form", width: 130, minWidth: 110 },
+  { id: "repairedBy", label: "Repaired by", width: 170, minWidth: 130 },
+  { id: "notes", label: "Solution notes", width: 240, minWidth: 160 },
+  { id: "status", label: "Status", width: 120, minWidth: 100 },
+  { id: "created", label: "Created", width: 100, minWidth: 90 },
+  { id: "updated", label: "Updated", width: 100, minWidth: 90 },
+  { id: "action", label: "Action", width: 88, minWidth: 80 },
+];
+const DEFAULT_REPAIR_COLUMN_WIDTHS = Object.fromEntries(
+  REPAIR_COLUMNS.map((column) => [column.id, column.width]),
+) as Record<RepairColumnId, number>;
 
 const statusLabels: Record<RepairStatus, string> = {
   OPEN: "Open",
@@ -40,6 +82,59 @@ function inputClassName(extra = "") {
   ]
     .filter(Boolean)
     .join(" ");
+}
+
+function readStoredColumnWidths(): Partial<Record<RepairColumnId, number>> {
+  if (typeof window === "undefined") return {};
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(REPAIR_COLUMN_STORAGE_KEY) ?? "{}",
+    ) as Record<string, unknown>;
+    return Object.fromEntries(
+      REPAIR_COLUMNS.flatMap((column) => {
+        const value = parsed[column.id];
+        return typeof value === "number" && Number.isFinite(value)
+          ? [[column.id, Math.max(column.minWidth, value)]]
+          : [];
+      }),
+    ) as Partial<Record<RepairColumnId, number>>;
+  } catch {
+    return {};
+  }
+}
+
+function ResizableHeader({
+  column,
+  width,
+  onResizeStart,
+}: {
+  column: (typeof REPAIR_COLUMNS)[number];
+  width: number;
+  onResizeStart: (
+    column: (typeof REPAIR_COLUMNS)[number],
+    startWidth: number,
+    event: ReactMouseEvent<HTMLButtonElement>,
+  ) => void;
+}) {
+  return (
+    <th
+      className={[
+        "relative border-r border-[#185c37] px-2 py-2",
+        column.align === "center" ? "text-center" : "",
+      ]
+        .filter(Boolean)
+        .join(" ")}
+      style={{ width }}
+    >
+      <span className="block truncate pr-2">{column.label}</span>
+      <button
+        type="button"
+        aria-label={`Resize ${column.label} column`}
+        className="absolute right-0 top-0 h-full w-2 cursor-col-resize border-r border-transparent hover:border-white/80 focus:border-white focus:outline-none"
+        onMouseDown={(event) => onResizeStart(column, width, event)}
+      />
+    </th>
+  );
 }
 
 function EditableTextCell({
@@ -223,10 +318,59 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
   } = useRepairs();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | RepairStatus>("ALL");
+  const [columnWidths, setColumnWidths] = useState<
+    Record<RepairColumnId, number>
+  >(DEFAULT_REPAIR_COLUMN_WIDTHS);
   const customersByName = useMemo(
     () => new Map(customers.map((customer) => [customer.name, customer])),
     [customers],
   );
+  const tableWidth = useMemo(
+    () =>
+      REPAIR_COLUMNS.reduce((sum, column) => sum + columnWidths[column.id], 0),
+    [columnWidths],
+  );
+
+  useEffect(() => {
+    setColumnWidths((widths) => ({ ...widths, ...readStoredColumnWidths() }));
+  }, []);
+
+  useEffect(() => {
+    window.localStorage.setItem(
+      REPAIR_COLUMN_STORAGE_KEY,
+      JSON.stringify(columnWidths),
+    );
+  }, [columnWidths]);
+
+  function startColumnResize(
+    column: (typeof REPAIR_COLUMNS)[number],
+    startWidth: number,
+    event: ReactMouseEvent<HTMLButtonElement>,
+  ) {
+    event.preventDefault();
+    event.stopPropagation();
+    const startX = event.clientX;
+
+    function onMouseMove(moveEvent: MouseEvent) {
+      const nextWidth = Math.max(
+        column.minWidth,
+        Math.round(startWidth + moveEvent.clientX - startX),
+      );
+      setColumnWidths((widths) => ({ ...widths, [column.id]: nextWidth }));
+    }
+
+    function onMouseUp() {
+      window.removeEventListener("mousemove", onMouseMove);
+      window.removeEventListener("mouseup", onMouseUp);
+      document.body.style.cursor = "";
+      document.body.style.userSelect = "";
+    }
+
+    document.body.style.cursor = "col-resize";
+    document.body.style.userSelect = "none";
+    window.addEventListener("mousemove", onMouseMove);
+    window.addEventListener("mouseup", onMouseUp);
+  }
 
   const filteredRepairs = useMemo(() => {
     const q = query.trim().toLowerCase();
@@ -317,49 +461,28 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
 
         <div className="max-h-[calc(100vh-220px)] overflow-auto">
           <table
-            className="w-full table-fixed border-collapse text-sm"
+            className="min-w-full table-fixed border-collapse text-sm"
             aria-label="Editable repairs spreadsheet"
+            style={{ width: tableWidth }}
           >
             <colgroup>
-              <col className="w-10" />
-              <col className="w-[15%]" />
-              <col className="w-[25%]" />
-              <col className="w-[18%]" />
-              <col className="w-[10%]" />
-              <col className="w-[10%]" />
-              <col className="w-[12%]" />
-              <col className="w-[14%]" />
-              <col className="w-[9%]" />
-              <col className="w-[8%]" />
-              <col className="w-[8%]" />
-              <col className="w-20" />
+              {REPAIR_COLUMNS.map((column) => (
+                <col
+                  key={column.id}
+                  style={{ width: columnWidths[column.id] }}
+                />
+              ))}
             </colgroup>
             <thead>
               <tr className="sticky top-0 z-10 bg-[#217346] text-left text-xs font-semibold uppercase tracking-normal text-white">
-                <th className="border-r border-[#185c37] px-2 py-2 text-center">
-                  #
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">
-                  Processor
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">
-                  Description of issue
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">Company</th>
-                <th className="border-r border-[#185c37] px-2 py-2">RMA #</th>
-                <th className="border-r border-[#185c37] px-2 py-2">
-                  RMA form
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">
-                  Repaired by
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">
-                  Solution notes
-                </th>
-                <th className="border-r border-[#185c37] px-2 py-2">Status</th>
-                <th className="border-r border-[#185c37] px-2 py-2">Created</th>
-                <th className="border-r border-[#185c37] px-2 py-2">Updated</th>
-                <th className="px-2 py-2">Action</th>
+                {REPAIR_COLUMNS.map((column) => (
+                  <ResizableHeader
+                    key={column.id}
+                    column={column}
+                    width={columnWidths[column.id]}
+                    onResizeStart={startColumnResize}
+                  />
+                ))}
               </tr>
             </thead>
             <tbody>
