@@ -5,8 +5,6 @@ import { useId, useState } from "react";
 
 export type PendingCustomerRequestsTabId = "calibration" | "processor-rma";
 
-const TAB_IDS: PendingCustomerRequestsTabId[] = ["calibration", "processor-rma"];
-
 function tabButtonLabel(id: PendingCustomerRequestsTabId, count: number): string {
   const base = id === "calibration" ? "Calibration" : "Processor RMA";
   return count > 0 ? `${base} (${count})` : base;
@@ -27,6 +25,7 @@ export function PendingCustomerRequestsTabs({
 }) {
   const baseId = useId();
   const [active, setActive] = useState<PendingCustomerRequestsTabId>(defaultTab);
+  const tabIds: PendingCustomerRequestsTabId[] = rmaCount > 0 ? ["calibration", "processor-rma"] : ["calibration"];
 
   const panels: Record<PendingCustomerRequestsTabId, ReactNode> = {
     calibration: calibrationPanel,
@@ -45,7 +44,7 @@ export function PendingCustomerRequestsTabs({
         aria-label="Pending customer request types"
         className="flex flex-wrap gap-1 rounded-t-xl bg-zinc-100/90 p-1.5 dark:bg-zinc-950/60 sm:p-2"
       >
-        {TAB_IDS.map((id) => {
+        {tabIds.map((id) => {
           const selected = active === id;
           const panelId = `${baseId}-panel-${id}`;
           const tabId = `${baseId}-tab-${id}`;
@@ -72,7 +71,7 @@ export function PendingCustomerRequestsTabs({
         })}
       </div>
       <div className="border-t border-zinc-200/80 p-4 dark:border-zinc-700/80 sm:p-5">
-        {TAB_IDS.map((id) => {
+        {tabIds.map((id) => {
           const panelId = `${baseId}-panel-${id}`;
           const tabId = `${baseId}-tab-${id}`;
           const isActive = active === id;

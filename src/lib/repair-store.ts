@@ -1,4 +1,5 @@
 import { prisma } from "@/lib/prisma";
+import { parseProcessorRmaSubmission, type ProcessorRmaPayload } from "@/lib/pending-customer-request-payload";
 import { SEEDED_REPAIRS, type RepairRow, type RepairStatus, normalizeStatus } from "@/lib/repairs";
 
 type DbRepairRow = {
@@ -18,6 +19,42 @@ type DbRepairRow = {
 };
 
 const seedKey = "processor-repair-seed-2026-04-29";
+
+function processorRmaRepairId(submissionId: string): string {
+  return `rma-${submissionId}`;
+}
+
+function processorRmaNotes(payload: ProcessorRmaPayload): string {
+  const mailing = payload.mailingAddress
+    ? [
+        payload.mailingAddress.line1,
+        payload.mailingAddress.line2,
+        `${payload.mailingAddress.city}, ${payload.mailingAddress.stateProvince} ${payload.mailingAddress.postalCode}`,
+        payload.mailingAddress.countryName,
+      ]
+        .filter(Boolean)
+        .join("\n")
+    : payload.address;
+  const photoLines = payload.files.map((file) => `- ${file.originalName}: ${file.storagePath}`);
+  return [
+    `Public RMA submission ${payload.id}`,
+    `Submitted: ${payload.submittedAt}`,
+    `Contact: ${payload.contactName}`,
+    `Email: ${payload.contactEmail}`,
+    `Phone: ${payload.phoneNumber}`,
+    mailing ? `Mailing address:\n${mailing}` : "",
+    `Firmware: ${payload.firmware || "-"}`,
+    `Serial: ${payload.serialNumber || "-"}`,
+    `Purchase number: ${payload.purchaseNumber || "-"}`,
+    `Date purchased: ${payload.datePurchased || "-"}`,
+    `Issue:\n${payload.issueDescription || "-"}`,
+    `Usage environment:\n${payload.usageEnvironment || "-"}`,
+    photoLines.length > 0 ? `Photos:\n${photoLines.join("\n")}` : "Photos: none",
+    payload.attachmentWarnings?.length ? `Attachment warnings:\n${payload.attachmentWarnings.join("\n")}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n\n");
+}
 
 function toRepairRow(row: DbRepairRow): RepairRow {
   return {
@@ -104,7 +141,70 @@ export async function seedRepairsOnce() {
   );
 }
 
+export async function upsertProcessorRmaRepair(payload: ProcessorRmaPayload, rmaFormUrl = "") {
+  await ensureRepairTables();
+  await prisma.$executeRawUnsafe(
+    `
+    INSERT INTO processor_repairs (
+      id, quantity, model, repair_type, company, rma_number, rma_form_url,
+      assigned_to, repaired_by, status, notes, created_at, updated_at
+    )
+    VALUES ($1, 1, $2, 'Processor RMA', $3, $4, $5, '', '', 'OPEN', $6, $7::timestamptz, NOW())
+    ON CONFLICT (id) DO UPDATE SET
+      model = EXCLUDED.model,
+      repair_type = EXCLUDED.repair_type,
+      company = EXCLUDED.company,
+      rma_number = EXCLUDED.rma_number,
+      rma_form_url = COALESCE(NULLIF(EXCLUDED.rma_form_url, ''), processor_repairs.rma_form_url),
+      notes = EXCLUDED.notes
+    `,
+    processorRmaRepairId(payload.id),
+    payload.processorModel,
+    payload.companyName,
+    payload.id.slice(0, 8),
+    rmaFormUrl,
+    processorRmaNotes(payload),
+    payload.submittedAt,
+  );
+}
+
+export async function migratePendingProcessorRmasToRepairs(): Promise<number> {
+  await ensureRepairTables();
+  const tickets = await prisma.publicCustomerRequest.findMany({
+    where: { kind: "PROCESSOR_RMA" },
+    select: { submissionId: true, sourceAuditLogId: true },
+  });
+  if (tickets.length === 0) return 0;
+
+  let moved = 0;
+  for (const ticket of tickets) {
+    const audit = await prisma.auditLog.findFirst({
+      where: {
+        action: "CREATE",
+        entityType: "PublicProcessorRmaRequest",
+        OR: [
+          ...(ticket.sourceAuditLogId ? [{ id: ticket.sourceAuditLogId }] : []),
+          { entityId: ticket.submissionId },
+        ],
+      },
+      orderBy: { createdAt: "desc" },
+    });
+    if (!audit) continue;
+    const payload = parseProcessorRmaSubmission(audit.description);
+    if (!payload) continue;
+
+    await upsertProcessorRmaRepair(
+      payload,
+      `/uploads/public-form-submissions/${payload.id}/submission.json`,
+    );
+    await prisma.publicCustomerRequest.delete({ where: { submissionId: ticket.submissionId } });
+    moved += 1;
+  }
+  return moved;
+}
+
 export async function listRepairs(): Promise<RepairRow[]> {
+  await migratePendingProcessorRmasToRepairs();
   await seedRepairsOnce();
   const rows = await prisma.$queryRawUnsafe<DbRepairRow[]>(`
     SELECT *

@@ -9,6 +9,7 @@ import {
 } from "@/lib/pending-customer-request-payload";
 import { autoArchiveClosedPublicCustomerRequests } from "@/lib/public-customer-request-auto-archive";
 import { prisma } from "@/lib/prisma";
+import { migratePendingProcessorRmasToRepairs } from "@/lib/repair-store";
 import { PendingCustomerRequestStaffPanel } from "@/components/pending-customer-request-staff-panel";
 import { PendingCustomerRequestsTabs } from "@/components/pending-customer-requests-tabs";
 import { getServerTranslator } from "@/i18n/server";
@@ -102,10 +103,11 @@ export default async function PendingCustomerRequestsPage() {
   }
 
   await autoArchiveClosedPublicCustomerRequests();
+  await migratePendingProcessorRmasToRepairs();
 
   const [tickets, assigneeOptions] = await Promise.all([
     prisma.publicCustomerRequest.findMany({
-      where: { archivedAt: null },
+      where: { archivedAt: null, kind: "CALIBRATION" },
       orderBy: { createdAt: "desc" },
       take: 200,
       include: {
@@ -201,8 +203,7 @@ export default async function PendingCustomerRequestsPage() {
       <div className="panel-surface rounded-xl p-5">
         <h1 className="text-xl font-semibold text-zinc-900 dark:text-zinc-100">Pending Customer Requests</h1>
         <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
-          Public calibration requests and per-processor RMA submissions. Switch tabs to work each queue separately. Use
-          status, assignee, thread, and archive like issues. Closed items auto-archive after 24 hours.
+          Public calibration requests. Processor RMA submissions are added to Repairs as separate rows.
         </p>
       </div>
 

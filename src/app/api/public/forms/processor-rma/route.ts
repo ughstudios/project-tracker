@@ -9,7 +9,7 @@ import {
 } from "@/lib/mailing-address";
 import { localeFromFormData, publicFormTranslator } from "@/lib/public-form-locale";
 import { isAllowedProcessorRmaModel } from "@/lib/product-catalog";
-import { registerPublicCustomerRequestRow } from "@/lib/register-public-customer-request";
+import { upsertProcessorRmaRepair } from "@/lib/repair-store";
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 
@@ -268,7 +268,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       ...(attachmentWarnings.length > 0 ? { attachmentWarnings } : {}),
     };
 
-    const audit = await prisma.auditLog.create({
+    await prisma.auditLog.create({
       data: {
         entityType: "PublicProcessorRmaRequest",
         entityId: submissionId,
@@ -276,22 +276,18 @@ export async function POST(request: Request): Promise<NextResponse> {
         description: JSON.stringify(payload),
       },
     });
-    await registerPublicCustomerRequestRow({
-      submissionId,
-      kind: "PROCESSOR_RMA",
-      sourceAuditLogId: audit.id,
-    }).catch((error) => {
-      console.error("[public-forms] failed to register PublicCustomerRequest row", error);
-    });
 
     const localDir = path.join(process.cwd(), "data", "public-form-submissions", submissionId);
-    await writeUploadedFile({
+    const submissionJson = await writeUploadedFile({
       buffer: Buffer.from(JSON.stringify(payload, null, 2), "utf8"),
       blobPathname: `public-form-submissions/${submissionId}/submission.json`,
       localDir,
       publicUrlDir: `/uploads/public-form-submissions/${submissionId}`,
       fileName: "submission.json",
       contentType: "application/json",
+    });
+    await upsertProcessorRmaRepair(payload, submissionJson.fileUrl).catch((error) => {
+      console.error("[public-forms] failed to create processor repair row", error);
     });
 
     const baseMessage = t("publicForms.processorRma.api.successMessage");
