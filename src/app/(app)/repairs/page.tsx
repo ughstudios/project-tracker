@@ -9,7 +9,7 @@ export default function RepairsPage() {
           Processor repair tracking with spreadsheet-style editing, company/RMA links, assignment, and repair ownership.
         </p>
       </header>
-      <section className="panel-surface rounded-xl p-4">
+      <section>
         <RepairsWorkspace mode="table" />
       </section>
     </div>

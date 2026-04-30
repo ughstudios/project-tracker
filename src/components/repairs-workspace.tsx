@@ -14,7 +14,14 @@ const statusLabels: Record<RepairStatus, string> = {
 };
 
 function inputClassName(extra = "") {
-  return ["input w-full", extra].filter(Boolean).join(" ");
+  return [
+    "h-8 w-full rounded-none border-0 bg-transparent px-2 py-1 text-sm text-zinc-950 outline-none",
+    "focus:bg-white focus:shadow-[inset_0_0_0_2px_#217346]",
+    "dark:text-zinc-100 dark:focus:bg-[#111827]",
+    extra,
+  ]
+    .filter(Boolean)
+    .join(" ");
 }
 
 function useRepairs() {
@@ -125,112 +132,153 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
   return (
     <>
       {error ? <p className="mb-3 text-sm text-red-700 dark:text-red-300">{error}</p> : null}
-      <div className="mb-4 flex flex-wrap items-end gap-3">
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">Search</span>
-          <input
-            className="input w-72 max-w-full"
-            placeholder="Model, company, RMA, employee..."
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
-        <label className="block text-sm">
-          <span className="mb-1 block font-medium text-zinc-800 dark:text-zinc-200">Status</span>
-          <select className="input" value={statusFilter} onChange={(event) => setStatusFilter(event.target.value as "ALL" | RepairStatus)}>
-            <option value="ALL">All statuses</option>
-            <option value="OPEN">Open</option>
-            <option value="IN_PROGRESS">In progress</option>
-            <option value="DONE">Done</option>
-          </select>
-        </label>
-        <button
-          type="button"
-          className="rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-2 text-sm font-semibold text-white hover:bg-zinc-700 dark:border-zinc-100 dark:bg-zinc-100 dark:text-zinc-950 dark:hover:bg-zinc-300"
-          onClick={addRepair}
-        >
-          Add repair
-        </button>
-      </div>
+      <div className="overflow-hidden border border-[#a6a6a6] bg-white shadow-sm dark:border-zinc-700 dark:bg-[#111827]">
+        <div className="flex flex-wrap items-end gap-2 border-b border-[#b7b7b7] bg-[#f3f2f1] px-2 py-2 text-xs dark:border-zinc-700 dark:bg-[#1f2937]">
+          <label className="block">
+            <span className="mb-1 block font-semibold text-zinc-700 dark:text-zinc-200">Search</span>
+            <input
+              className="h-8 w-72 max-w-full border border-[#a6a6a6] bg-white px-2 text-sm text-zinc-950 outline-none focus:border-[#217346] focus:shadow-[0_0_0_1px_#217346] dark:border-zinc-600 dark:bg-[#111827] dark:text-zinc-100"
+              placeholder="Model, company, RMA, employee..."
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className="mb-1 block font-semibold text-zinc-700 dark:text-zinc-200">Status</span>
+            <select
+              className="h-8 border border-[#a6a6a6] bg-white px-2 text-sm text-zinc-950 outline-none focus:border-[#217346] focus:shadow-[0_0_0_1px_#217346] dark:border-zinc-600 dark:bg-[#111827] dark:text-zinc-100"
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as "ALL" | RepairStatus)}
+            >
+              <option value="ALL">All statuses</option>
+              <option value="OPEN">Open</option>
+              <option value="IN_PROGRESS">In progress</option>
+              <option value="DONE">Done</option>
+            </select>
+          </label>
+          <button
+            type="button"
+            className="h-8 border border-[#185c37] bg-[#217346] px-3 text-sm font-semibold text-white hover:bg-[#185c37] disabled:opacity-60"
+            onClick={addRepair}
+          >
+            + Add row
+          </button>
+          <div className="ml-auto hidden text-right text-xs text-zinc-500 dark:text-zinc-400 sm:block">
+            {filteredRepairs.length} rows
+          </div>
+        </div>
 
-      <datalist id="repair-employees">
-        {employees.map((employee) => (
-          <option key={employee} value={employee} />
-        ))}
-      </datalist>
+        <datalist id="repair-employees">
+          {employees.map((employee) => (
+            <option key={employee} value={employee} />
+          ))}
+        </datalist>
 
-      <div className="overflow-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
-        <table className="min-w-[1180px] w-full border-collapse text-sm" aria-label="Editable repairs table">
-          <thead>
-            <tr className="bg-zinc-100 text-xs uppercase text-zinc-600 dark:bg-zinc-900 dark:text-zinc-300">
-              <th className="px-2 py-2 text-left">Qty</th>
-              <th className="px-2 py-2 text-left">Processor</th>
-              <th className="px-2 py-2 text-left">Repair</th>
-              <th className="px-2 py-2 text-left">Company</th>
-              <th className="px-2 py-2 text-left">RMA #</th>
-              <th className="px-2 py-2 text-left">RMA form</th>
-              <th className="px-2 py-2 text-left">Assigned to</th>
-              <th className="px-2 py-2 text-left">Repaired by</th>
-              <th className="px-2 py-2 text-left">Status</th>
-              <th className="px-2 py-2 text-left">Notes</th>
-              <th className="px-2 py-2 text-left">Updated</th>
-              <th className="px-2 py-2 text-left">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredRepairs.map((row) => (
-              <tr key={row.id} className="border-t border-zinc-200 dark:border-zinc-800">
-                <td className="w-20 px-2 py-2 align-top">
-                  <input
-                    className={inputClassName()}
-                    min={0}
-                    type="number"
-                    value={row.quantity}
-                    onChange={(event) => void updateRepair(row.id, { quantity: Number.parseInt(event.target.value, 10) || 0 })}
-                  />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} value={row.model} onChange={(event) => void updateRepair(row.id, { model: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} value={row.repairType} onChange={(event) => void updateRepair(row.id, { repairType: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} value={row.company} onChange={(event) => void updateRepair(row.id, { company: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} value={row.rmaNumber} onChange={(event) => void updateRepair(row.id, { rmaNumber: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} placeholder="https://..." value={row.rmaFormUrl} onChange={(event) => void updateRepair(row.id, { rmaFormUrl: event.target.value })} />
-                  {row.rmaFormUrl ? <a className="mt-1 block text-xs text-zinc-500 underline" href={row.rmaFormUrl} target="_blank" rel="noreferrer">Open form</a> : null}
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} list="repair-employees" value={row.assignedTo} onChange={(event) => void updateRepair(row.id, { assignedTo: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <input className={inputClassName()} list="repair-employees" value={row.repairedBy} onChange={(event) => void updateRepair(row.id, { repairedBy: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <select className={inputClassName()} value={row.status} onChange={(event) => void updateRepair(row.id, { status: normalizeStatus(event.target.value) })}>
-                    <option value="OPEN">Open</option>
-                    <option value="IN_PROGRESS">In progress</option>
-                    <option value="DONE">Done</option>
-                  </select>
-                </td>
-                <td className="px-2 py-2 align-top">
-                  <textarea className={inputClassName()} rows={2} value={row.notes} onChange={(event) => void updateRepair(row.id, { notes: event.target.value })} />
-                </td>
-                <td className="px-2 py-2 align-top text-xs text-zinc-500">{new Date(row.updatedAt).toLocaleDateString()}</td>
-                <td className="px-2 py-2 align-top">
-                  <button type="button" className="rounded-lg border border-red-200 px-3 py-2 text-sm text-red-700 hover:bg-red-50 dark:border-red-900 dark:text-red-300 dark:hover:bg-red-950/40" onClick={() => void removeRepair(row.id)}>
-                    Delete
-                  </button>
-                </td>
+        <div className="max-h-[calc(100vh-220px)] overflow-auto">
+          <table className="w-full min-w-[1260px] border-collapse table-fixed text-sm" aria-label="Editable repairs spreadsheet">
+            <colgroup>
+              <col className="w-12" />
+              <col className="w-16" />
+              <col className="w-36" />
+              <col className="w-40" />
+              <col className="w-36" />
+              <col className="w-28" />
+              <col className="w-44" />
+              <col className="w-36" />
+              <col className="w-36" />
+              <col className="w-32" />
+              <col className="w-64" />
+              <col className="w-24" />
+              <col className="w-20" />
+            </colgroup>
+            <thead>
+              <tr className="sticky top-0 z-10 bg-[#217346] text-left text-xs font-semibold uppercase tracking-normal text-white">
+                <th className="border-r border-[#185c37] px-2 py-2 text-center">#</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Qty</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Processor</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Repair</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Company</th>
+                <th className="border-r border-[#185c37] px-2 py-2">RMA #</th>
+                <th className="border-r border-[#185c37] px-2 py-2">RMA form</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Assigned to</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Repaired by</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Status</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Notes</th>
+                <th className="border-r border-[#185c37] px-2 py-2">Updated</th>
+                <th className="px-2 py-2">Action</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {filteredRepairs.map((row, index) => (
+                <tr key={row.id} className="group bg-white text-zinc-950 even:bg-[#f8fbf8] hover:bg-[#eaf4ec] dark:bg-[#111827] dark:text-zinc-100 dark:even:bg-[#162032] dark:hover:bg-[#1d3b2b]">
+                  <td className="border-r border-t border-[#d9d9d9] bg-[#f3f2f1] px-2 py-1 text-center text-xs tabular-nums text-zinc-600 dark:border-zinc-700 dark:bg-[#1f2937] dark:text-zinc-300">
+                    {index + 1}
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input
+                      className={inputClassName("tabular-nums")}
+                      min={0}
+                      type="number"
+                      value={row.quantity}
+                      onChange={(event) => void updateRepair(row.id, { quantity: Number.parseInt(event.target.value, 10) || 0 })}
+                    />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName("font-medium")} value={row.model} onChange={(event) => void updateRepair(row.id, { model: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.repairType} onChange={(event) => void updateRepair(row.id, { repairType: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.company} onChange={(event) => void updateRepair(row.id, { company: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} value={row.rmaNumber} onChange={(event) => void updateRepair(row.id, { rmaNumber: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <div className="flex items-center">
+                      <input
+                        className={inputClassName("min-w-0 flex-1")}
+                        placeholder="https://..."
+                        value={row.rmaFormUrl}
+                        onChange={(event) => void updateRepair(row.id, { rmaFormUrl: event.target.value })}
+                      />
+                      {row.rmaFormUrl ? (
+                        <a className="px-2 text-xs font-semibold text-[#217346] underline-offset-2 hover:underline dark:text-emerald-300" href={row.rmaFormUrl} target="_blank" rel="noreferrer">
+                          Open
+                        </a>
+                      ) : null}
+                    </div>
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} list="repair-employees" value={row.assignedTo} onChange={(event) => void updateRepair(row.id, { assignedTo: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <input className={inputClassName()} list="repair-employees" value={row.repairedBy} onChange={(event) => void updateRepair(row.id, { repairedBy: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <select className={inputClassName()} value={row.status} onChange={(event) => void updateRepair(row.id, { status: normalizeStatus(event.target.value) })}>
+                      <option value="OPEN">Open</option>
+                      <option value="IN_PROGRESS">In progress</option>
+                      <option value="DONE">Done</option>
+                    </select>
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <textarea className={inputClassName("min-h-8 resize-none leading-6")} rows={1} value={row.notes} onChange={(event) => void updateRepair(row.id, { notes: event.target.value })} />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] px-2 py-1 align-middle text-xs tabular-nums text-zinc-600 dark:border-zinc-700 dark:text-zinc-300">
+                    {new Date(row.updatedAt).toLocaleDateString()}
+                  </td>
+                  <td className="border-t border-[#d9d9d9] px-2 py-1 align-middle dark:border-zinc-700">
+                    <button type="button" className="h-7 w-full border border-transparent text-xs font-semibold text-red-700 hover:border-red-300 hover:bg-red-50 dark:text-red-300 dark:hover:border-red-800 dark:hover:bg-red-950/30" onClick={() => void removeRepair(row.id)}>
+                      Delete
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </>
   );
