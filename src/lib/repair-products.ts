@@ -1,6 +1,7 @@
 import { PRODUCT_GROUPS } from "@/lib/product-catalog";
 
 const REPAIR_ONLY_PRODUCTS = ["C7", "X16", "X2M", "X4E", "Z4"];
+const EXCLUDED_REPAIR_PRODUCT_GROUPS = new Set(["Receiver cards"]);
 
 const PRODUCT_NAME_ALIASES = new Map<string, string>([
   ["c3 pro", "C3 Pro"],
@@ -21,7 +22,10 @@ const PRODUCT_NAME_ALIASES = new Map<string, string>([
 ]);
 
 export const REPAIR_PRODUCT_OPTIONS = [
-  ...new Set([...PRODUCT_GROUPS.flatMap((group) => group.items), ...REPAIR_ONLY_PRODUCTS]),
+  ...new Set([
+    ...PRODUCT_GROUPS.filter((group) => !EXCLUDED_REPAIR_PRODUCT_GROUPS.has(group.group)).flatMap((group) => group.items),
+    ...REPAIR_ONLY_PRODUCTS,
+  ]),
 ].sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
 
 const allowedRepairProductSet = new Set(REPAIR_PRODUCT_OPTIONS);
