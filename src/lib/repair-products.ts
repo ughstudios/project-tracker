@@ -1,6 +1,6 @@
 import { PRODUCT_GROUPS } from "@/lib/product-catalog";
 
-const REPAIR_ONLY_PRODUCTS = ["C7", "X16", "X2M", "X4E", "Z4"];
+const REPAIR_ONLY_PRODUCTS = ["C7", "X16", "X2M", "X2S", "X4E", "Z4"];
 const EXCLUDED_REPAIR_PRODUCT_GROUPS = new Set(["Receiver cards"]);
 
 const PRODUCT_NAME_ALIASES = new Map<string, string>([
@@ -16,6 +16,7 @@ const PRODUCT_NAME_ALIASES = new Map<string, string>([
   ["z6", "Z6"],
   ["z8", "Z8t"],
   ["x2m", "X2M"],
+  ["x2s", "X2S"],
   ["x4e", "X4E"],
   ["x16", "X16"],
   ["c7", "C7"],
