@@ -7,6 +7,7 @@ export type RepairRow = {
   model: string;
   repairType: string;
   issueDescription: string;
+  brokenParts: string;
   company: string;
   contactName: string;
   contactEmail: string;
@@ -45,6 +46,7 @@ export function makeBlankRepair(): RepairRow {
     model: REPAIR_PRODUCT_OPTIONS[0] ?? "",
     repairType: "Processor repair",
     issueDescription: "",
+    brokenParts: "",
     company: "",
     contactName: "",
     contactEmail: "",

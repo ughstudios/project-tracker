@@ -27,6 +27,7 @@ type RepairColumnId =
   | "processor"
   | "serial"
   | "issue"
+  | "brokenParts"
   | "company"
   | "rma"
   | "form"
@@ -49,6 +50,12 @@ const REPAIR_COLUMNS: Array<{
   { id: "processor", label: "Processor", width: 160, minWidth: 120 },
   { id: "serial", label: "Serial #", width: 150, minWidth: 110 },
   { id: "issue", label: "Description of issue", width: 360, minWidth: 180 },
+  {
+    id: "brokenParts",
+    label: "Broken parts / components",
+    width: 220,
+    minWidth: 140,
+  },
   { id: "company", label: "Company", width: 240, minWidth: 160 },
   { id: "rma", label: "RMA #", width: 120, minWidth: 90 },
   { id: "form", label: "RMA form", width: 130, minWidth: 110 },
@@ -525,6 +532,15 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
                       value={row.issueDescription}
                       onCommit={(value) =>
                         updateRepair(row.id, { issueDescription: value })
+                      }
+                    />
+                  </td>
+                  <td className="border-r border-t border-[#d9d9d9] align-middle dark:border-zinc-700">
+                    <EditableTextCell
+                      multiline
+                      value={row.brokenParts}
+                      onCommit={(value) =>
+                        updateRepair(row.id, { brokenParts: value })
                       }
                     />
                   </td>

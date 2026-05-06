@@ -18,6 +18,7 @@ type DbRepairRow = {
   model: string;
   repair_type: string;
   issue_description: string;
+  broken_parts: string;
   company: string;
   contact_name: string;
   contact_email: string;
@@ -46,6 +47,7 @@ const repairRowColumns = `
   model,
   repair_type,
   issue_description,
+  broken_parts,
   company,
   contact_name,
   contact_email,
@@ -113,6 +115,7 @@ function toRepairRow(row: DbRepairRow): RepairRow {
     model: normalizeRepairProductName(row.model),
     repairType: row.repair_type,
     issueDescription: row.issue_description || row.repair_type,
+    brokenParts: row.broken_parts,
     company: row.company,
     contactName: row.contact_name,
     contactEmail: row.contact_email,
@@ -142,6 +145,7 @@ export async function ensureRepairTables() {
       model TEXT NOT NULL DEFAULT '',
       repair_type TEXT NOT NULL DEFAULT '',
       issue_description TEXT NOT NULL DEFAULT '',
+      broken_parts TEXT NOT NULL DEFAULT '',
       company TEXT NOT NULL DEFAULT '',
       contact_name TEXT NOT NULL DEFAULT '',
       contact_email TEXT NOT NULL DEFAULT '',
@@ -185,6 +189,7 @@ export async function ensureRepairTables() {
     "usage_environment TEXT NOT NULL DEFAULT ''",
     "mailing_address TEXT NOT NULL DEFAULT ''",
     "photo_count INTEGER NOT NULL DEFAULT 0",
+    "broken_parts TEXT NOT NULL DEFAULT ''",
   ]) {
     await prisma.$executeRawUnsafe(
       `ALTER TABLE processor_repairs ADD COLUMN IF NOT EXISTS ${column}`,
@@ -308,12 +313,12 @@ export async function upsertProcessorRmaRepair(
   await prisma.$executeRawUnsafe(
     `
     INSERT INTO processor_repairs (
-      id, model, repair_type, issue_description, company, contact_name, contact_email,
+      id, model, repair_type, issue_description, broken_parts, company, contact_name, contact_email,
       phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
       date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes, created_at, updated_at
     )
-    VALUES ($1, $2, 'Processor RMA', $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, '', '', 'OPEN', $17, $18::timestamptz, NOW())
+    VALUES ($1, $2, 'Processor RMA', $3, '', $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, '', '', 'OPEN', $17, $18::timestamptz, NOW())
     ON CONFLICT (id) DO UPDATE SET
       model = EXCLUDED.model,
       repair_type = EXCLUDED.repair_type,
@@ -412,18 +417,19 @@ export async function createRepair(row: RepairRow): Promise<RepairRow> {
   const inserted = await prisma.$queryRawUnsafe<DbRepairRow[]>(
     `
     INSERT INTO processor_repairs (
-      id, model, repair_type, issue_description, company, contact_name, contact_email,
+      id, model, repair_type, issue_description, broken_parts, company, contact_name, contact_email,
       phone_number, rma_number, rma_form_url, firmware, serial_number, purchase_number,
       date_purchased, usage_environment, mailing_address, photo_count,
       assigned_to, repaired_by, status, notes
     )
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21)
+    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19, $20, $21, $22)
     RETURNING ${repairRowColumns}
     `,
     row.id,
     model,
     row.repairType,
     row.issueDescription,
+    row.brokenParts,
     company,
     row.contactName,
     row.contactEmail,
@@ -474,22 +480,23 @@ export async function updateRepair(
     SET model = $2,
         repair_type = $3,
         issue_description = $4,
-        company = $5,
-        contact_name = $6,
-        contact_email = $7,
-        phone_number = $8,
-        rma_number = $9,
-        firmware = $10,
-        serial_number = $11,
-        purchase_number = $12,
-        date_purchased = $13,
-        usage_environment = $14,
-        mailing_address = $15,
-        photo_count = $16,
+        broken_parts = $5,
+        company = $6,
+        contact_name = $7,
+        contact_email = $8,
+        phone_number = $9,
+        rma_number = $10,
+        firmware = $11,
+        serial_number = $12,
+        purchase_number = $13,
+        date_purchased = $14,
+        usage_environment = $15,
+        mailing_address = $16,
+        photo_count = $17,
         assigned_to = '',
-        repaired_by = $17,
-        status = $18,
-        notes = $19,
+        repaired_by = $18,
+        status = $19,
+        notes = $20,
         updated_at = NOW()
     WHERE id = $1
     RETURNING ${repairRowColumns}
@@ -498,6 +505,7 @@ export async function updateRepair(
     model,
     next.repairType,
     next.issueDescription,
+    next.brokenParts,
     company,
     next.contactName,
     next.contactEmail,
