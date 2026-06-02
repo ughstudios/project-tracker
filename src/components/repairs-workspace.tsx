@@ -82,6 +82,34 @@ function formatRepairDate(value: string) {
   return date.toLocaleDateString();
 }
 
+function repairedProductsFallbackFilename() {
+  return `repaired-products-${new Date().toISOString().slice(0, 10)}.csv`;
+}
+
+function filenameFromContentDisposition(
+  disposition: string | null,
+): string | null {
+  if (!disposition) return null;
+  const quoted = /filename="([^"]+)"/i.exec(disposition);
+  if (quoted) return quoted[1];
+  const unquoted = /filename=([^;]+)/i.exec(disposition);
+  return unquoted?.[1]?.trim() ?? null;
+}
+
+function downloadCsvFile(filename: string, csvBody: string) {
+  const body = csvBody.startsWith("\uFEFF") ? csvBody : `\uFEFF${csvBody}`;
+  const blob = new Blob([body], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = filename;
+  link.rel = "noopener";
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  URL.revokeObjectURL(url);
+}
+
 function inputClassName(extra = "") {
   return [
     "h-8 w-full rounded-none border-0 bg-transparent px-2 py-1 text-sm text-zinc-950 outline-none",
@@ -327,6 +355,8 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
   } = useRepairs();
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<"ALL" | RepairStatus>("ALL");
+  const [exportingRepaired, setExportingRepaired] = useState(false);
+  const [exportError, setExportError] = useState("");
   const [columnWidths, setColumnWidths] = useState<
     Record<RepairColumnId, number>
   >(DEFAULT_REPAIR_COLUMN_WIDTHS);
@@ -339,6 +369,7 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
       REPAIR_COLUMNS.reduce((sum, column) => sum + columnWidths[column.id], 0),
     [columnWidths],
   );
+  const displayError = error || exportError;
 
   useEffect(() => {
     setColumnWidths((widths) => ({ ...widths, ...readStoredColumnWidths() }));
@@ -409,6 +440,32 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
     });
   }, [query, repairs, statusFilter]);
 
+  async function downloadRepairedProducts() {
+    setExportError("");
+    setExportingRepaired(true);
+    try {
+      const response = await fetch("/api/repairs/repaired-products/export", {
+        cache: "no-store",
+      });
+      if (!response.ok) {
+        const data = (await response.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        setExportError(data.error ?? "Could not export repaired products.");
+        return;
+      }
+      const csv = await response.text();
+      const filename =
+        filenameFromContentDisposition(response.headers.get("Content-Disposition")) ??
+        repairedProductsFallbackFilename();
+      downloadCsvFile(filename, csv);
+    } catch {
+      setExportError("Could not export repaired products.");
+    } finally {
+      setExportingRepaired(false);
+    }
+  }
+
   if (loading) {
     return (
       <div className="panel-surface rounded-xl p-4 text-sm text-zinc-600 dark:text-zinc-400">
@@ -418,13 +475,22 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
   }
 
   if (mode === "dashboard") {
-    return <RepairsDashboard repairs={repairs} error={error} />;
+    return (
+      <RepairsDashboard
+        repairs={repairs}
+        error={displayError}
+        exportingRepaired={exportingRepaired}
+        onExportRepaired={downloadRepairedProducts}
+      />
+    );
   }
 
   return (
     <>
-      {error ? (
-        <p className="mb-3 text-sm text-red-700 dark:text-red-300">{error}</p>
+      {displayError ? (
+        <p className="mb-3 text-sm text-red-700 dark:text-red-300">
+          {displayError}
+        </p>
       ) : null}
       <div className="overflow-hidden border border-[#a6a6a6] bg-white shadow-sm dark:border-zinc-700 dark:bg-[#111827]">
         <div className="flex flex-wrap items-end gap-2 border-b border-[#b7b7b7] bg-[#f3f2f1] px-2 py-2 text-xs dark:border-zinc-700 dark:bg-[#1f2937]">
@@ -462,6 +528,14 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
             onClick={addRepair}
           >
             + Add row
+          </button>
+          <button
+            type="button"
+            className="h-8 whitespace-nowrap border border-[#217346] bg-white px-3 text-sm font-semibold text-[#185c37] hover:bg-[#eaf4ec] disabled:opacity-60 dark:bg-[#111827] dark:text-emerald-200 dark:hover:bg-[#1d3b2b]"
+            onClick={() => void downloadRepairedProducts()}
+            disabled={exportingRepaired}
+          >
+            {exportingRepaired ? "Exporting..." : "Export repaired products"}
           </button>
           <div className="ml-auto hidden text-right text-xs text-zinc-500 dark:text-zinc-400 sm:block">
             {filteredRepairs.length} rows
@@ -669,9 +743,13 @@ export function RepairsWorkspace({ mode }: RepairsWorkspaceProps) {
 function RepairsDashboard({
   repairs,
   error,
+  exportingRepaired,
+  onExportRepaired,
 }: {
   repairs: RepairRow[];
   error: string;
+  exportingRepaired: boolean;
+  onExportRepaired: () => Promise<void>;
 }) {
   const openRepairs = repairs.filter((row) => row.status !== "DONE");
   const completedRepairs = repairs.filter((row) => row.status === "DONE");
@@ -681,9 +759,24 @@ function RepairsDashboard({
 
   return (
     <section className="space-y-4" aria-label="Repair dashboard summary">
-      {error ? (
-        <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
-      ) : null}
+      <div
+        className={[
+          "flex flex-wrap items-center gap-3",
+          error ? "justify-between" : "justify-end",
+        ].join(" ")}
+      >
+        {error ? (
+          <p className="text-sm text-red-700 dark:text-red-300">{error}</p>
+        ) : null}
+        <button
+          type="button"
+          className="btn-secondary whitespace-nowrap rounded-md px-3 py-2 text-sm font-medium"
+          onClick={() => void onExportRepaired()}
+          disabled={exportingRepaired}
+        >
+          {exportingRepaired ? "Exporting..." : "Export repaired products"}
+        </button>
+      </div>
       <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <Metric label="Repair rows" value={repairs.length} />
         <Metric label="Processors" value={repairUnitTotal(repairs)} />
